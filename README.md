@@ -1,2 +1,3 @@
 # datetick
-Sensible date tick labels in Python
+
+Sensible time and date tick labels for Matplotlib
