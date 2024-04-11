@@ -82,6 +82,9 @@ def datetick(dir, **kwargs):
         #label = label.rstrip(".")
         return label
 
+    def on_xlims_change(ax): datetick('x', axes=ax, set_cb=False)
+    def on_ylims_change(ax): datetick('y', axes=ax, set_cb=False)
+    def draw(fig): fig.canvas.draw()
 
     DOPTS = {}
     DOPTS.update({'debug': True})
@@ -104,20 +107,19 @@ def datetick(dir, **kwargs):
 
     debug = DOPTS['debug']
 
-    def on_xlims_change(ax): datetick('x', axes=ax, set_cb=False)
-    def on_ylims_change(ax): datetick('y', axes=ax, set_cb=False)
-    def draw(fig): fig.canvas.draw()
-
+    draw(fig)
     bbox = axes.dataLim
 
     if dir == 'x':
         datamin = bbox.x0
         datamax = bbox.x1
         lim = axes.get_xlim()
+        ticks = axes.get_xticks()
     else:
         datamin = bbox.y0
         datamax = bbox.y1
         lim = axes.get_ylim()
+        ticks = axes.get_yticks()
 
     try:
         mpld.num2date(lim[0])
@@ -136,14 +138,14 @@ def datetick(dir, **kwargs):
     except:
         raise ValueError('Maximum data value of %f is not a valid Matplotlib datenum' % datamax)
 
-    tmin = np.max((lim[0], datamin))
-    tmax = np.min((lim[1], datamax))
+    tmin = np.min((lim[0], datamin))
+    tmax = np.max((lim[1], datamax))
 
     time = mpld.num2date((tmin,tmax))
 
     if datamin == datamax:
-        axes.set_xticks([time[0]])
-        axes.set_xticklabels([datetime.strftime(time[0],'%Y-%m-%dT%H:%M:%S')])
+        axes.set_xticks([mpld.num2date(datamin)])
+        axes.set_xticklabels([datetime.strftime(mpld.num2date(datamin),'%Y-%m-%dT%H:%M:%S')])
         return
 
     deltaT = time[-1] - time[0]
@@ -401,19 +403,17 @@ def datetick(dir, **kwargs):
         fmt1  = mpld.DateFormatter('%Y')
         fmt2  = ''
 
-    xt = axes.get_xticks()
-    xl = axes.get_xlim()
 
     if debug == True:
         print(f'Data min:           {mpld.num2date(datamin)}')
-        print(f'Default {dir}lim[0]:    {mpld.num2date(xl[0])}')
-        print(f'Default {dir}ticks[0]:  {mpld.num2date(xt[0])}')
+        print(f'Default {dir}lim[0]:    {mpld.num2date(lim[0])}')
+        print(f'Default {dir}ticks[0]:  {mpld.num2date(ticks[0])}')
         print(f'Data max:           {mpld.num2date(datamax)}')
-        print(f'Default {dir}lim[-1]:   {mpld.num2date(xl[-1])}')
-        print(f'Default {dir}ticks[-1]: {mpld.num2date(xt[-1])}')
-        print(f'Default {dir}tick labels:')
-        for i in range(0,len(xt)):
-            print(f' {mpld.num2date(xt[i])}')
+        print(f'Default {dir}lim[-1]:   {mpld.num2date(lim[-1])}')
+        print(f'Default {dir}ticks[-1]: {mpld.num2date(ticks[-1])}')
+        print(f'Default {dir}ticks:')
+        for i in range(0,len(ticks)):
+            print(f' {mpld.num2date(ticks[i])}')
 
     if dir == 'x':
         axes.xaxis.set_major_locator(Mtick)
@@ -434,7 +434,7 @@ def datetick(dir, **kwargs):
 
     if debug:
         xl = axes.get_xlim()
-        print(f'New tick labels:')
+        print(f'New {dir}ticks:')
         for i in range(0,len(ticks)):
             note = ''
             if ticks[i] < xl[0] or ticks[i] > xl[1]:

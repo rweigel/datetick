@@ -13,12 +13,17 @@ def plotit(ds1, ds2):
     dt2 = dateutil.parser.parse(ds2)
     x = np.array([dt1,dt2], dtype=object)
     y = [0.0,0.0]
-    plt.figure()
-    plt.plot(x, y, '*')
-    plt.title(ds1 + ' - ' + ds2)
-    datetick('x')
-    plt.grid()
-    #plt.show()
+    fig, (ax1, ax2) = plt.subplots(2, figsize=(8,4) )
+    ax1.set_title(ds1 + ' - ' + ds2)
+    ax1.plot(x, y, '*')
+    ax1.text(x[0], 0.04, 'matplotlib')
+    ax1.grid()
+
+    ax2.plot(x, y, '*')
+    ax2.text(x[0], 0.04, 'datetick')
+    datetick('x', axes=ax2)
+    ax2.grid()
+
     ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
     ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
     plt.savefig(f'datetick_test/datetick_test_{ds1}-{ds2}.png', bbox_inches='tight')

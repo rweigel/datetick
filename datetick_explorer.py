@@ -9,30 +9,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 import datetime
-import sys
-#sys.path.append('../hapiclient/util')
-from hapiclient.plot.datetick import datetick
-  
+
+from datetick import datetick
+
 def update(val):
-    
+
     YI = sYearI.val
     mI = sMonthI.val
     DI = sDayI.val
     HI = sHourI.val
     MI = sMinuteI.val
     SI = sSecondI.val
-    
+
     YF = sYearF.val
     mF = sMonthF.val
     DF = sDayF.val
     HF = sHourF.val
     MF = sMinuteF.val
     SF = sSecondF.val
-    
+
     xlow = datetime.datetime(int(YI), int(mI), int(DI), int(HI), int(MI), int(SI))
     xhigh = datetime.datetime(int(YF), int(mF), int(DF), int(HF), int(MF), int(SF))
     print(xlow,xhigh)
-
+    print(f"---Update to {xlow.isoformat()} to {xhigh.isoformat()}---")
     plotit(xlow,xhigh)
 
 def reset(event):
@@ -42,32 +41,32 @@ def reset(event):
     sHourI.reset()
     sMinuteI.reset()
     sSecondI.reset()
-    
+
     sYearF.reset()
     sMonthF.reset()
     sDayF.reset()
     sHourF.reset()
     sMinuteF.reset()
     sSecondF.reset()
-    
+
     YI = sYearI.val
     mI = sMonthI.val
     DI = sDayI.val
     HI = sHourI.val
     MI = sMinuteI.val
     SI = sSecondI.val
-    
+
     YF = sYearF.val
     mF = sMonthF.val
     DF = sDayF.val
     HF = sHourF.val
     MF = sMinuteF.val
     SF = sSecondF.val
-    
+
     xlow = datetime.datetime(int(YI), int(mI), int(DI), int(HI), int(MI), int(SI))
     xhigh = datetime.datetime(int(YF), int(mF), int(DF), int(HF), int(MF), int(SF))
     plotit(xlow,xhigh)
-    
+
 def plotit(xlow,xhigh):
     global ax1,t1
 
@@ -76,29 +75,27 @@ def plotit(xlow,xhigh):
     t1.set_xdata(x)
     ax1.set_xlim(xlow, xhigh)
     ax1.set_title(xlow.isoformat() + " to " + xhigh.isoformat())
-    datetick('x', axes=ax1)
-    
+
 # Globals
 ax1 = None
 t1 = None
-        
+
 fig1 = plt.figure(figsize=(16,9))
 plt.subplots_adjust(bottom=0.4)
 
 if True:
     ax1 = plt.gca()
     y = [0.0, 0.0]
-    
+
     xlow = datetime.datetime(1999, 1, 1, 0, 0, 0)
-    xhigh = datetime.datetime(1999, 1, 1, 2, 0, 0)   
-    
+    xhigh = datetime.datetime(1999, 1, 1, 2, 0, 0)
+
     x = np.array([xlow,xhigh], dtype=object)
-    
+
     t1, = ax1.plot(x, y, '*')
     ax1.set_xlim(xlow, xhigh)
-    ax1.set_title(xlow.isoformat() + " to " + xhigh.isoformat()) 
+    ax1.set_title(xlow.isoformat() + " to " + xhigh.isoformat())
     datetick('x', axes=ax1, debug=True)
-
 
 # designate axes object for sliders
 axYearI = plt.axes([0.15, 0.23, 0.3, 0.02])
@@ -120,7 +117,7 @@ axEnd = plt.axes([0.63, 0.27, 0.15, 0.03])
 
 axreset = plt.axes([0.47, 0.29, 0.05, 0.05])
 
-# make sliders and add update function 
+# make sliders and add update function
 sYearI = Slider(axYearI, 'Year', 1900, 2100, valinit=1999, valfmt='%0.0f')
 sYearI.on_changed(update)
 sMonthI = Slider(axMonthI, 'Month', 1, 12, valinit=1, valfmt='%0.0f')
@@ -152,3 +149,4 @@ bEnd = Button(axEnd, 'End',color='1.0',hovercolor='1.0')
 
 breset = Button(axreset, 'Reset')
 breset.on_clicked(reset)
+plt.show()
