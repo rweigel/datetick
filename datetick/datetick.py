@@ -82,12 +82,12 @@ def datetick(dir, **kwargs):
         #label = label.rstrip(".")
         return label
 
-    def on_xlims_change(ax): datetick('x', axes=ax, set_cb=False)
-    def on_ylims_change(ax): datetick('y', axes=ax, set_cb=False)
+    def on_xlims_change(ax): datetick('x', **{**kwargs, 'set_cb': False})
+    def on_ylims_change(ax): datetick('y', **{**kwargs, 'set_cb': False})
     def draw(fig): fig.canvas.draw()
 
     DOPTS = {}
-    DOPTS.update({'debug': True})
+    DOPTS.update({'debug': False})
     DOPTS.update({'set_cb': True})
     DOPTS.update({'axes': None})
 
@@ -443,7 +443,7 @@ def datetick(dir, **kwargs):
 
     if fmt2 != '':
         first = 0
-        if ticks[0] < xl[0]:
+        if ticks[0] < lim[0]:
             # Work-around for bug in Matplotlib where left-most tick is less than
             # lower x-limit.
             first = 1
