@@ -49,12 +49,11 @@ def datetick(dir, **kwargs):
     Example:
     --------
         import datetime as dt
-        import numpy as np
         import matplotlib.pyplot as plt
-        from hapiclient.plot.datetick import datetick
+        from datetick import datetick
         d1 = dt.datetime(1900, 1, 2)
         d2 = dt.datetime.fromordinal(10 + dt.datetime.toordinal(d1))
-        x = np.array([d1, d2], dtype=object)
+        x = [d1, d2]
         y = [0.0,1.0]
         plt.clf()
         plt.plot(x, y)
@@ -64,7 +63,6 @@ def datetick(dir, **kwargs):
     # Based on spacepy/plot/utils.py on 07/10/2017, but many additions.
     # See also https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
 
-    # TODO: Account for leap years instead of using 367, 366, etc.
     # TODO: Use numsize() to determine if figure width and height
     #       will cause overlap when default number major tick labels is used.
     # TODO: If time[0].day > 28, need to make first tick at time[0].day = 28
@@ -157,27 +155,26 @@ def datetick(dir, **kwargs):
 
     # fmt1 is format of the tick labels
     # fmt2 contains additional information that is used for the first tick label
-    # or when there is a majore change. For example, if
-    # fmt1 = %M:%S and fmt2 = %H, the labels will have only minute and hour and
-    # the first tick will have a label of %M:%S\n%H. If there is a change
-    # in hour somewhere on the axis, that label will include the new hour.
+    # or when there is a major change. For example, if
+    #   fmt1 = %M:%S and fmt2 = %H,
+    # the labels will have only minute and hour and the first tick will have a
+    # label of %M:%S\n%H. If there is a change in hour somewhere on the axis,
+    # that label will include the new hour.
 
     # Note that interval=... is specified even when it would seem to be
     # redundant. It is needed to workaround the bug discussed at
-    # https://stackoverflow.com/questions/31072589/matplotlib-date-ticker-exceeds-locator-maxticks-error-for-no-apparent-reason
+    # https://stackoverflow.com/q/31072589
+
     if deltaT.total_seconds() < 0.1:
         # < 0.1 second
-        # At this level of zoom, would need original datetime data
-        # which has not been converted by date2num and then re-plot
-        # using integer number of milliseconds. E.g., call
-        # plotd(dtobj,y)
-        # where
-        # t = dtobj converted to milliseconds since first array value
-        # plotd() calls
-        # plot(t,y)
-        # and then makes first label indicate %Y-%m-%dT%H:%M:%S
-        warnings.warn("Warning: Cannot create accurate time labels with this time resolution.")
-        # This does not locate microseconds.
+        # TODO: Matplotlib's date2num has round-off error at this level below
+        # 22 ms. This is a limitation of Matplotlib's representation of time.
+        # To handle this case, use
+        # datetick('x', time=time), where time is the original datetime array.
+        # Then put a timestamp at the first tick, e.g., 2001-01-01\n00:00:21
+        # and have the other ticks be, e.g, 0.001, 0.002, etc.
+        warnings.warn("Warning: May not be able to create accurate time labels with this time resolution due to limitation in Matplotlib's representation of time.")
+        # This does not locate microseconds properly due to round-off.
         Mtick = mpld.MicrosecondLocator(interval=10000)
         mtick = mpld.MicrosecondLocator(interval=2000)
         from matplotlib.ticker import FuncFormatter
@@ -363,8 +360,6 @@ def datetick(dir, **kwargs):
     elif deltaT.days < 366*15:
         to = axes.lines[0].get_xdata()[0]
         tf = axes.lines[0].get_xdata()[-1]
-        print(to)
-        print(tf)
         # Ideally would set byyear=list(range(to.year, tf.year,2)) but
         # byyear is not a kwarg. Would need to something like
         # https://stackoverflow.com/questions/48428729/matplotlib-dates-yearlocator-with-odd-intervals
@@ -480,11 +475,12 @@ def datetick(dir, **kwargs):
             else:
                 labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
 
-        # Without the set_xticks(), warning is generated in more recent version of Matplotlib:
+        # Without the set_xticks(), warning is generated:
         #   UserWarning: set_ticklabels() should only be used.
         # Additional discussion: https://github.com/matplotlib/matplotlib/issues/18848
         # The correct way to avoid the warning: https://stackoverflow.com/a/69126185
-        # Better: Create custom class: https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
+        # Better: Create custom class:
+        #   https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
         if dir == 'x':
             axes.set_xticks(axes.get_xticks())
             axes.set_xticklabels(labels)
