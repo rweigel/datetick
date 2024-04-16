@@ -6,20 +6,29 @@ Sensible numeric time and date tick labels for Matplotlib
 
 Matplotlib's default time tick labels are rarely useable, and adjusting the time tick labels requires using locators and formatters on an ad-hoc basis.
 
+`datetick()` contains logic for locators and formatters. One only needs to add the command `datetick('x')` after the usual Matplotlib `plt.plot(...)` command.
+
 # Usage
 
 ```
 import datetime as dt
 import matplotlib.pyplot as plt
 from datetick import datetick
+
 dt1 = dt.datetime(2011, 1, 2)
 dt2 = dt1 + dt.timedelta(days=1, hours=1, minutes=1)
-x = [dt1, dt2]
-y = [0.0,1.0]
-plt.clf()
-plt.plot(x, y)
-datetick('x')
+
+plt.plot([dt1, dt2], [0.0,1.0])
+datetick()
 plt.show()
+# or
+# datetick('x') (use 'y' if y variable is a time)
+# or
+# datetick('x', axes=plt.gca())
+# or
+# fig, axes = plt.subplots(2)
+# plt.plot([dt1, dt2], [0.0, 1.0])
+# datetick('x', axes=axes[0])
 ```
 
 # Comparison to default Matplotlib

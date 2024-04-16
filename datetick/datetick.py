@@ -38,7 +38,7 @@ else:
             except:
                 continue
 
-def datetick(dir, **kwargs):
+def datetick(*args, **kwargs):
     '''
     datetick('x') or datetick('y') formats the major and minor tick labels
     of the current figure.
@@ -83,6 +83,11 @@ def datetick(dir, **kwargs):
     def on_xlims_change(ax): datetick('x', **{**kwargs, 'set_cb': False})
     def on_ylims_change(ax): datetick('y', **{**kwargs, 'set_cb': False})
     def draw(fig): fig.canvas.draw()
+
+    if len(args) == 0:
+        dir = 'x'
+    else:
+        dir = args[0]
 
     DOPTS = {}
     DOPTS.update({'debug': False})
