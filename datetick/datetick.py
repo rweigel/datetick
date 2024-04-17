@@ -172,14 +172,6 @@ def datetick(*args, **kwargs):
 
     if deltaT.total_seconds() < 0.1:
         # < 0.1 second
-        # TODO: Matplotlib's date2num has round-off error at this level below
-        # 22 ms. This is a limitation of Matplotlib's representation of time.
-        # To handle this case, use
-        # datetick('x', time=time), where time is the original datetime array.
-        # Then put a timestamp at the first tick, e.g., 2001-01-01\n00:00:21
-        # and have the other ticks be, e.g, 0.001, 0.002, etc.
-        warnings.warn("Warning: May not be able to create accurate time labels with this time resolution due to limitation in Matplotlib's representation of time.")
-        # This does not locate microseconds properly due to round-off.
         Mtick = mpld.MicrosecondLocator(interval=10000)
         mtick = mpld.MicrosecondLocator(interval=2000)
         from matplotlib.ticker import FuncFormatter
@@ -189,7 +181,6 @@ def datetick(*args, **kwargs):
         # < 0.5 seconds
         # Locators don't locate at this resolution.
         # Need to do this manually. See comment above.
-        warnings.warn("Warning: Cannot create accurate time labels with this time resolution.")
         Mtick = mpld.MicrosecondLocator(interval=50000)
         mtick = mpld.MicrosecondLocator(interval=10000)
         from matplotlib.ticker import FuncFormatter
