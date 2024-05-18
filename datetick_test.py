@@ -1,4 +1,4 @@
-# Plots two points separated by varying time ranges.
+# Create plots with varying time ranges.
 
 import os
 import dateutil.parser
@@ -19,6 +19,7 @@ def append_to_readme(image_links):
   lines.append("\n" + "\n".join(image_links))
   with open('README.md', 'w') as file:
     file.writelines(lines)
+
 
 image_links = []
 def plot(ds1, ds2):

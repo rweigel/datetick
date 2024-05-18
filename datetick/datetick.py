@@ -190,7 +190,7 @@ def datetick(*args, **kwargs):
         # < 1 second
         # https://matplotlib.org/api/dates_api.html#matplotlib.dates.MicrosecondLocator
         # MircosecondLocator() does not have a "bymicrosecond" option. If
-        # First point is not at zero microseconds, it won't be labeled.
+        # first point is not at zero microseconds, it won't be labeled.
         Mtick = mpld.MicrosecondLocator(interval=100000)
         mtick = mpld.MicrosecondLocator(interval=20000)
         from matplotlib.ticker import FuncFormatter
