@@ -432,6 +432,11 @@ def datetick(*args, **kwargs):
                 note = ' (will be clipped)'
             print(f' {mpld.num2date(ticks[i])} {note}')
 
+    if len(labels) == 0:
+        if debug:
+            print('No labels to format')
+        return
+
     if fmt2 != '':
         first = 0
         if ticks[0] < lim[0]:
