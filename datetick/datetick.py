@@ -4,6 +4,8 @@ import numpy as np
 
 import matplotlib
 import matplotlib.dates as mpld
+from matplotlib.ticker import FuncFormatter
+
 if matplotlib.get_backend() == 'MacOSX':
     # With MacOSX backend, draw() does not update the ticks
     # See warning at
@@ -155,7 +157,7 @@ def datetick(*args, **kwargs):
     nDays  = deltaT.days
     nHours = deltaT.days * 24.0 + deltaT.seconds/3600.0
     nSecs  = deltaT.total_seconds()
-    if debug == True:
+    if debug:
         print("Total seconds: %s" % deltaT.total_seconds())
 
     # fmt1 is format of the tick labels
@@ -174,7 +176,6 @@ def datetick(*args, **kwargs):
         # < 0.1 second
         Mtick = mpld.MicrosecondLocator(interval=10000)
         mtick = mpld.MicrosecondLocator(interval=2000)
-        from matplotlib.ticker import FuncFormatter
         fmt1 = FuncFormatter(millis)
         fmt2  = '%H:%M:%S\n%Y-%m-%d'
     if deltaT.total_seconds() < 0.5:
@@ -183,7 +184,6 @@ def datetick(*args, **kwargs):
         # Need to do this manually. See comment above.
         Mtick = mpld.MicrosecondLocator(interval=50000)
         mtick = mpld.MicrosecondLocator(interval=10000)
-        from matplotlib.ticker import FuncFormatter
         fmt1 = FuncFormatter(millis)
         fmt2  = '%H:%M:%S\n%Y-%m-%d'
     if deltaT.total_seconds() < 1:
@@ -193,7 +193,6 @@ def datetick(*args, **kwargs):
         # first point is not at zero microseconds, it won't be labeled.
         Mtick = mpld.MicrosecondLocator(interval=100000)
         mtick = mpld.MicrosecondLocator(interval=20000)
-        from matplotlib.ticker import FuncFormatter
         fmt1 = FuncFormatter(millis)
         #fmt1  = mpld.DateFormatter('%M:%S.%f')
         fmt2  = '%H:%M:%S\n%Y-%m-%d'
@@ -394,12 +393,11 @@ def datetick(*args, **kwargs):
         fmt1  = mpld.DateFormatter('%Y')
         fmt2  = ''
 
-
-    if debug == True:
-        print(f'Data min:           {mpld.num2date(datamin)}')
+    if debug:
+        print(f'{dir} data min:         {mpld.num2date(datamin)}')
         print(f'Default {dir}lim[0]:    {mpld.num2date(lim[0])}')
         print(f'Default {dir}ticks[0]:  {mpld.num2date(ticks[0])}')
-        print(f'Data max:           {mpld.num2date(datamax)}')
+        print(f'{dir} data max:         {mpld.num2date(datamax)}')
         print(f'Default {dir}lim[-1]:   {mpld.num2date(lim[-1])}')
         print(f'Default {dir}ticks[-1]: {mpld.num2date(ticks[-1])}')
         print(f'Default {dir}ticks:')
