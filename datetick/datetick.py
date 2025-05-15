@@ -141,8 +141,12 @@ def datetick(*args, **kwargs):
     except:
         raise ValueError('Maximum data value of %f is not a valid Matplotlib datenum' % datamax)
 
-    tmin = np.min((lim[0], datamin))
-    tmax = np.max((lim[1], datamax))
+    # Need to document why this was used. It creates
+    # problems if labels extend beyond the axis limits.
+    #tmin = np.min((lim[0], datamin))
+    #tmax = np.max((lim[1], datamax))
+    tmin = lim[0]
+    tmax = lim[1]
 
     time = mpld.num2date((tmin,tmax))
 
@@ -393,7 +397,6 @@ def datetick(*args, **kwargs):
         mtick = mpld.YearLocator(10)
         fmt1  = mpld.DateFormatter('%Y')
         fmt2  = ''
-
 
     if debug == True:
         print(f'Data min:           {mpld.num2date(datamin)}')
