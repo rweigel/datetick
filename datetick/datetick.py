@@ -1,47 +1,5 @@
-import warnings
-from datetime import datetime
-import numpy as np
-
-import matplotlib
-import matplotlib.dates as mpld
-from matplotlib.ticker import FuncFormatter
-
-if matplotlib.get_backend() == 'MacOSX':
-    # With MacOSX backend, draw() does not update the ticks
-    # See warning at
-    # https://matplotlib.org/3.3.0/tutorials/advanced/blitting.html#sphx-glr-tutorials-advanced-blitting-py
-    import sys
-    if sys.version_info[0:2] < (3, 6):
-        # warnings.filterwarnings("ignore", '.*backend.*', category=UserWarning)
-        # the above should work and is better because more specific.
-        warnings.simplefilter("ignore", category=UserWarning)
-    gui_env = ['Qt5Agg', 'QT4Agg', 'GTKAgg', 'TKAgg', 'WXAgg']
-    for gui in gui_env:
-        try:
-            #print('Trying ' + gui)
-            matplotlib.use(gui, force=True)
-            import matplotlib.pyplot as plt
-            #print('Success with ' + gui)
-            break
-        except:
-            #print('Failure with ' + gui)
-            continue
-else:
-    try:
-        import matplotlib.pyplot as plt
-    except:
-        #print('Failed: import matplotlib.pyplot as plt')
-        gui_env = ['Qt5Agg','QT4Agg','GTKAgg','TKAgg','WXAgg']
-        for gui in gui_env:
-            try:
-                matplotlib.use(gui, force=True)
-                import matplotlib.pyplot as plt
-                break
-            except:
-                continue
-
 def datetick(*args, **kwargs):
-    '''
+    """
     datetick('x') or datetick('y') formats the major and minor tick labels
     of the current figure.
 
@@ -60,7 +18,7 @@ def datetick(*args, **kwargs):
         plt.clf()
         plt.plot(x, y)
         datetick('x')
-    '''
+    """
 
     # Based on spacepy/plot/utils.py on 07/10/2017, but many additions.
     # See also https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
@@ -74,6 +32,45 @@ def datetick(*args, **kwargs):
     #       MicrosecondLocator() does not take a keyword argument of
     #       "bymicroseconds".
     # TODO: Adjust lower and upper limits as in 366*8 span
+
+    import warnings
+    from datetime import datetime
+
+    import matplotlib
+    import matplotlib.dates as mpld
+
+    if matplotlib.get_backend() == 'MacOSX':
+        # With MacOSX backend, draw() does not update the ticks. See warning at
+        # https://matplotlib.org/3.3.0/tutorials/advanced/blitting.html
+        import sys
+        if sys.version_info[0:2] < (3, 6):
+            # warnings.filterwarnings("ignore", '.*backend.*', category=UserWarning)
+            # the above should work and is better because more specific.
+            warnings.simplefilter("ignore", category=UserWarning)
+        gui_env = ['Qt5Agg', 'QT4Agg', 'GTKAgg', 'TKAgg', 'WXAgg']
+        for gui in gui_env:
+            try:
+                #print('Trying ' + gui)
+                matplotlib.use(gui, force=True)
+                import matplotlib.pyplot as plt
+                #print('Success with ' + gui)
+                break
+            except:
+                #print('Failure with ' + gui)
+                continue
+    else:
+        try:
+            import matplotlib.pyplot as plt
+        except:
+            #print('Failed: import matplotlib.pyplot as plt')
+            gui_env = ['Qt5Agg','QT4Agg','GTKAgg','TKAgg','WXAgg']
+            for gui in gui_env:
+                try:
+                    matplotlib.use(gui, force=True)
+                    import matplotlib.pyplot as plt
+                    break
+                except:
+                    continue
 
     def millis(x, pos):
         x = matplotlib.dates.num2date(x)
@@ -180,7 +177,7 @@ def datetick(*args, **kwargs):
         # < 0.1 second
         Mtick = mpld.MicrosecondLocator(interval=10000)
         mtick = mpld.MicrosecondLocator(interval=2000)
-        fmt1 = FuncFormatter(millis)
+        fmt1 = matplotlib.ticker.FuncFormatter(millis)
         fmt2  = '%H:%M:%S\n%Y-%m-%d'
     if deltaT.total_seconds() < 0.5:
         # < 0.5 seconds
@@ -188,7 +185,7 @@ def datetick(*args, **kwargs):
         # Need to do this manually. See comment above.
         Mtick = mpld.MicrosecondLocator(interval=50000)
         mtick = mpld.MicrosecondLocator(interval=10000)
-        fmt1 = FuncFormatter(millis)
+        fmt1 = matplotlib.ticker.FuncFormatter(millis)
         fmt2  = '%H:%M:%S\n%Y-%m-%d'
     if deltaT.total_seconds() < 1:
         # < 1 second
@@ -197,7 +194,7 @@ def datetick(*args, **kwargs):
         # first point is not at zero microseconds, it won't be labeled.
         Mtick = mpld.MicrosecondLocator(interval=100000)
         mtick = mpld.MicrosecondLocator(interval=20000)
-        fmt1 = FuncFormatter(millis)
+        fmt1 = matplotlib.ticker.FuncFormatter(millis)
         #fmt1  = mpld.DateFormatter('%M:%S.%f')
         fmt2  = '%H:%M:%S\n%Y-%m-%d'
     elif deltaT.total_seconds() < 5:
@@ -499,6 +496,7 @@ def datetick(*args, **kwargs):
             axes.callbacks.connect('ylim_changed', on_ylims_change)
 
 def numsize():
+    from matplotlib import pyplot as plt
     '''Returns (width, height) of number '0' in pixels'''
     # Not used.
     # Based on https://stackoverflow.com/q/5320205

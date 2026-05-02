@@ -23,20 +23,28 @@ def append_to_readme(image_links):
 
 image_links = []
 def plot(ds1, ds2):
+  _, axes = plt.subplots(2, figsize=(8,2))
+  plt.subplots_adjust(hspace=1.0)
+
   dt1 = dateutil.parser.parse(ds1)
   dt2 = dateutil.parser.parse(ds2)
   x = [dt1, dt2]
+  xt = x[0] + (x[1] - x[0])/2
   y = [0.0,0.0]
-  _, axes = plt.subplots(2, figsize=(8,4) )
-  axes[0].set_title(ds1 + ' - ' + ds2)
+
+  axes[0].set_title(ds1 + ' - ' + ds2, fontfamily='monospace')
   axes[0].plot(x, y, '*')
-  axes[0].text(x[0], 0.04, 'matplotlib')
+  axes[0].text(xt, 0.00, 'matplotlib', ha='center', bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
   axes[0].grid()
+  axes[0].spines[['top', 'right', 'left']].set_visible(False)
+  axes[0].yaxis.set_visible(False)
 
   axes[1].plot(x, y, '*')
-  axes[1].text(x[0], 0.04, 'datetick')
+  axes[1].text(xt, 0.00, 'datetick', ha='center', bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
   datetick('x', axes=axes[1])
   axes[1].grid()
+  axes[1].spines[['top', 'right', 'left']].set_visible(False)
+  axes[1].yaxis.set_visible(False)
 
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
