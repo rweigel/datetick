@@ -1,37 +1,44 @@
 import warnings
 from datetime import datetime
-import numpy as np
 
 import matplotlib
 import matplotlib.dates as mpld
 from matplotlib.ticker import FuncFormatter
 
+gui_env = ['Qt5Agg','QT4Agg','GTKAgg','TKAgg','WXAgg']
+
 if matplotlib.get_backend() == 'MacOSX':
     # With MacOSX backend, draw() does not update the ticks
     # See warning at
     # https://matplotlib.org/3.3.0/tutorials/advanced/blitting.html#sphx-glr-tutorials-advanced-blitting-py
+    # and
+    # https://github.com/matplotlib/matplotlib/issues/19268/
     import sys
     if sys.version_info[0:2] < (3, 6):
         # warnings.filterwarnings("ignore", '.*backend.*', category=UserWarning)
         # the above should work and is better because more specific.
         warnings.simplefilter("ignore", category=UserWarning)
-    gui_env = ['Qt5Agg', 'QT4Agg', 'GTKAgg', 'TKAgg', 'WXAgg']
     for gui in gui_env:
+        found = False
         try:
             #print('Trying ' + gui)
             matplotlib.use(gui, force=True)
             import matplotlib.pyplot as plt
             #print('Success with ' + gui)
             break
-        except:
+        except Exception as e:
             #print('Failure with ' + gui)
+            #print(e)
             continue
+
+    if not found:
+        import matplotlib.pyplot as plt
+
 else:
     try:
         import matplotlib.pyplot as plt
     except:
         #print('Failed: import matplotlib.pyplot as plt')
-        gui_env = ['Qt5Agg','QT4Agg','GTKAgg','TKAgg','WXAgg']
         for gui in gui_env:
             try:
                 matplotlib.use(gui, force=True)
@@ -95,6 +102,8 @@ def datetick(*args, **kwargs):
     DOPTS.update({'debug': False})
     DOPTS.update({'set_cb': True})
     DOPTS.update({'axes': None})
+    DOPTS.update({'adjust_last_xlabel': False})
+    DOPTS.update({'adjust_first_xlabel': False})
 
     # Override defaults
     for key, value in kwargs.items():
@@ -134,14 +143,19 @@ def datetick(*args, **kwargs):
         mpld.num2date(lim[1])
     except:
         raise ValueError('Upper axis limit of %f is not a valid Matplotlib datenum' % lim[1])
+
+    # If all values are NaN, datamin = np.inf and datamax = -np.inf.
+    msg = "is not a valid Matplotlib datenum. Are all data values NaN? Cannot use datetick()"
     try:
         mpld.num2date(datamin)
     except:
-        raise ValueError('Minimum data value of %f is not a valid Matplotlib datenum' % datamin)
+        warnings.warn(f'Minimum value of %f {msg}' % datamin)
+        return
     try:
         mpld.num2date(datamax)
     except:
-        raise ValueError('Maximum data value of %f is not a valid Matplotlib datenum' % datamax)
+        warnings.warn(f'Maximum value of %f {msg}' % datamax)
+        return
 
     # Need to document why this was used. It creates
     # problems if labels extend beyond the axis limits.
@@ -467,7 +481,8 @@ def datetick(*args, **kwargs):
             if nSecs < 1 and time[i].second > time[i-1].second:
                 modify = True
 
-            if not modify: continue
+            if not modify:
+                continue
 
             if i == first + 1 and dir == 'x':
                 # If first two major tick labels have fmt2 applied, the will
@@ -491,6 +506,43 @@ def datetick(*args, **kwargs):
             axes.set_yticks(axes.get_yticks())
             axes.set_yticklabels(labels)
 
+        if dir == 'x':
+            xticklabels = axes.get_xticklabels()
+            lastlabel_text = xticklabels[-1].get_text()
+            firstlabel_text = xticklabels[0].get_text()
+            import matplotlib.transforms as mtransforms
+            adjusted = False
+            if DOPTS['adjust_last_xlabel'] and '\n' in lastlabel_text:
+                if len(lastlabel_text.split('\n')[-1]) > 7:
+                    adjusted = True
+                    # If fmt1 iin last label longer than YYYY-MM, set justification to right.
+                    xticklabels[-1].set_ha('right')
+                    # Shift to left by 1/2 width of fmt1 in last label.
+                    last_fmt1 = lastlabel_text.split('\n')[0]
+                    num_wh = numsize(axes, last_fmt1)
+                    delta = num_wh[0]/len(last_fmt1)
+                    offset = mtransforms.ScaledTranslation(-delta/72, 0, axes.figure.dpi_scale_trans)
+                    xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
+            if DOPTS['adjust_first_xlabel'] and '\n' in firstlabel_text:
+                if len(firstlabel_text.split('\n')[-1]) > 7:
+                    adjusted = True
+                    # If fmt1 in first label longer than YYYY-MM, set justification to left.
+                    xticklabels[0].set_ha('left')
+                    # Shift to right by 1/2 width of fmt1 in first label.
+                    first_fmt1 = firstlabel_text.split('\n')[0]
+                    num_wh = numsize(axes, first_fmt1)
+                    delta = num_wh[0]/len(first_fmt1)
+                    offset = mtransforms.ScaledTranslation(delta/72, 0, axes.figure.dpi_scale_trans)
+                    xticklabels[0].set_transform(xticklabels[0].get_transform() - offset)
+
+            if adjusted:
+                # Make all labels without newline slightly smaller than default fontsize 
+                # so it is clearer that fmt2 applies to larger number.
+                for label in xticklabels:
+                    if '\n' not in label.get_text():
+                        label.set_fontsize(label.get_fontsize()*0.85)
+
+
     # Trigger update of ticks when limits change due to user interaction.
     if DOPTS['set_cb']:
         if dir == 'x':
@@ -498,16 +550,21 @@ def datetick(*args, **kwargs):
         else:
             axes.callbacks.connect('ylim_changed', on_ylims_change)
 
-def numsize():
-    '''Returns (width, height) of number '0' in pixels'''
-    # Not used.
-    # Based on https://stackoverflow.com/q/5320205
-    # TODO: numsize(fig, dir) should inspect fig to get used fonts
-    # for dir='x' and dir='y' and get bounding box for x and y labels.
-    r = plt.figure().canvas.get_renderer()
-    t = plt.text(0.5, 0.5, '0')
-    bb = t.get_window_extent(renderer=r)
-    w = bb.width
-    h = bb.height
-    plt.close()
-    return (w,h)
+def numsize(ax, num):
+    '''Returns (width, height) of str(num) in pixels.
+
+    If ax is given, measures against that axes' renderer and DPI (correct).
+    Otherwise creates a temporary figure using rcParams figure.dpi.
+    '''
+    import matplotlib
+    import matplotlib.figure
+    import matplotlib.backends.backend_agg
+    #dpi = ax.figure.get_dpi() if ax is not None else matplotlib.rcParams['figure.dpi']
+    fig = matplotlib.figure.Figure(dpi=72)
+    canvas = matplotlib.backends.backend_agg.FigureCanvasAgg(fig)
+    ax_tmp = fig.add_subplot(111)
+    renderer = canvas.get_renderer()
+    fontsize = matplotlib.rcParams['xtick.labelsize']
+    t = ax_tmp.text(0.5, 0.5, str(num), fontsize=fontsize)
+    w, h, d = renderer.get_text_width_height_descent(str(num), t.get_fontproperties(), ismath=False)
+    return (w, h)
