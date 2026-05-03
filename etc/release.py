@@ -1,27 +1,172 @@
 """
-Create GitHub and PyPi releases with the same version number as the datetick package.
-This script should be run after updating the version number in pyproject.toml
-and before pushing to GitHub.
+Usage:
+  python release.py
+    [path/to/pyproject.toml]
+    [--pypi-config-file path/to/pypirc]
+    [--increment-release major|minor|patch]
+
+Creates GitHub and PyPi releases with the same version number in pyproject.toml.
+
+If path/to/pyproject.toml is not specified, it will look for it in the parent
+directory of this script.
+
+Requires:
+  A GitHub token file at ~/git/admin/etc/github_token (plain text, one line).
+  A PyPI config file at ~/git/admin/etc/pypirc
 """
 
 import os
 import sys
 import subprocess
-from importlib.metadata import version as pkg_version, PackageNotFoundError
 
-def main():
+try:
+  import tomllib
+except ImportError:
   try:
-    version = pkg_version('datetick')
-  except PackageNotFoundError:
-    print("datetick is not installed. Run: pip install -e .")
+    import tomli as tomllib
+  except ImportError:
+    cmd_list = [sys.executable, '-m', 'pip', 'install', 'tomli']
+    print("Executing:", " ".join(cmd_list))
+    subprocess.run(cmd_list, check=True)
+    import tomli as tomllib
+
+
+def main(toml_path, pypi_config_file, increment_version=None, dry_run=False):
+
+  if not os.path.exists(toml_path):
+    print(f"Could not find pyproject.toml at {toml_path}")
     sys.exit(1)
 
-  print(f"Creating release {version} on GitHub and PyPi")
+  with open(toml_path, 'rb') as f:
+    data = tomllib.load(f)
+
+  version = data.get('project', {}).get('version')
+  if not version:
+    print(f"Could not find [project] version in {toml_path}")
+    sys.exit(1)
+
+  if increment_version is not None:
+    version = _increment_version(toml_path, version, increment_version, dry_run)
+
+  # Check if gh CLI is installed
+  if not dry_run:
+    try:
+      subprocess.run(['gh', '--version'], check=True, stdout=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+      print("Error: gh CLI is not installed. Please install it from https://cli.github.com/")
+      sys.exit(1)
 
   # Create GitHub release
-  subprocess.run(['gh', 'release', 'create', version, '-t', version, '-n', f'Release {version}'], check=True)
+  cmd_list = ['gh', 'release', 'create', version, '-t', version, '-n', f'Release {version}']
+  _run(cmd_list, dry_run)
 
-  # Create PyPi release
-  subprocess.run(['python', '-m', 'build'], check=True)
-  config_file = os.path.expanduser('~/git/admin/etc/pypirc')
-  subprocess.run(['twine', 'upload', '--config-file', config_file, 'dist/*'], check=True)
+  # Build package
+  cmd_list = [sys.executable, '-m', 'build']
+  _run(cmd_list, dry_run)
+
+  # Upload package to PyPi
+  cmd_list = ['twine', 'upload', '--config-file', pypi_config_file, 'dist/*']
+  _run(cmd_list, dry_run)
+
+
+def _increment_version(toml_path, version, increment, dry_run=False):
+    parts = version.split('.')
+    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+      print(f"Version '{version}' is not in MAJOR.MINOR.PATCH format")
+      sys.exit(1)
+    major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2])
+    if increment == 'major':
+      major += 1; minor = 0; patch = 0
+    elif increment == 'minor':
+      minor += 1; patch = 0
+    elif increment == 'patch':
+      patch += 1
+    new_version = f"{major}.{minor}.{patch}"
+    with open(toml_path, 'r') as f:
+      toml_text = f.read()
+    old_line = f'version = "{version}"'
+    new_line = f'version = "{new_version}"'
+    if old_line not in toml_text:
+      print(f"Could not find '{old_line}' in {toml_path}")
+      sys.exit(1)
+    toml_text = toml_text.replace(old_line, new_line, 1)
+    if dry_run:
+      print(f"[dry-run] Would increment version {version} -> {new_version} in {toml_path}")
+    else:
+      with open(toml_path, 'w') as f:
+        f.write(toml_text)
+      print(f"Incremented version {version} -> {new_version} in {toml_path}")
+    version = new_version
+    return version
+
+
+def _cli():
+  import argparse
+
+  script_dir = os.path.dirname(os.path.realpath(__file__))
+  default_toml_path = os.path.join(script_dir, '..', 'pyproject.toml')
+
+
+  parser = argparse.ArgumentParser(
+    description='Release datetick to GitHub and PyPi'
+  )
+  parser.add_argument(
+    'toml_path',
+    nargs='?',
+    default=default_toml_path,
+    help='Path to pyproject.toml'
+  )
+  parser.add_argument(
+    '--pypi-config-file',
+    default=os.path.expanduser('~/git/admin/etc/pypirc'),
+    help='Path to PyPi config file (default: ~/git/admin/etc/pypirc)'
+  )
+  parser.add_argument(
+    '--increment-version',
+    choices=['major', 'minor', 'patch'],
+    help='Increment the release version (e.g. 1.0.0 -> 1.1.0 for minor)'
+  )
+  parser.add_argument(
+    '--dry-run',
+    action='store_true',
+    help='Print the commands that would be executed without actually running them'
+  )
+
+  return parser.parse_args()
+
+
+def _run(cmd_list, dry_run):
+  if dry_run:
+    msg = "[dry-run] Would execute:"
+  else:
+    msg = "Executing:"
+  print(msg, " ".join(cmd_list))
+  if not dry_run:
+    subprocess.run(cmd_list, check=True)
+
+
+def _install_deps():
+  try:
+    import build  # noqa: F401
+  except ImportError:
+    cmd_list = [sys.executable, '-m', 'pip', 'install', 'build']
+    print("Executing:", " ".join(cmd_list))
+    subprocess.run(cmd_list, check=True)
+
+  try:
+    import twine  # noqa: F401
+  except ImportError:
+    cmd_list = [sys.executable, '-m', 'pip', 'install', 'twine']
+    print("Executing:", " ".join(cmd_list))
+    subprocess.run(cmd_list, check=True)
+
+
+if __name__ == '__main__':
+  _install_deps()
+  args = _cli()
+  main(
+    args.toml_path,
+    args.pypi_config_file,
+    increment_version=args.increment_version,
+    dry_run=args.dry_run
+  )
