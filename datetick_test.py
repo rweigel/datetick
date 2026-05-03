@@ -6,24 +6,32 @@ import matplotlib.pyplot as plt
 
 from datetick import datetick
 
-if not os.path.exists('datetick_test'):
-    os.makedirs('datetick_test', exist_ok=True)
+debug = True
 
-def append_to_readme(image_links):
+if not os.path.exists('datetick_test'):
+  os.makedirs('datetick_test', exist_ok=True)
+
+def append_to_readme(files):
 
   with open('README.md', 'r+') as file:
     lines = file.readlines()
 
   index = next(i for i, line in enumerate(lines) if "Comparison to default Matplotlib" in line)
   del lines[index+1:]
-  lines.append("\n" + "\n".join(image_links))
+
+  image_links = []
+  for file in files:
+    image_links.append(f'![{file}]({file})')
+
+  lines.append("\n" + "\n\n".join(image_links))
+
   with open('README.md', 'w') as file:
     file.writelines(lines)
 
 
-image_links = []
-def plot(ds1, ds2):
-  _, axes = plt.subplots(2, figsize=(8,2))
+files = []
+def plot(ds1, ds2, **kwargs):
+  _, axes = plt.subplots(2, figsize=(8, 2))
   plt.subplots_adjust(hspace=1.0)
 
   dt1 = dateutil.parser.parse(ds1)
@@ -32,32 +40,46 @@ def plot(ds1, ds2):
   xt = x[0] + (x[1] - x[0])/2
   y = [0.0,0.0]
 
+  bbox = dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8)
+
   axes[0].set_title(ds1 + ' - ' + ds2, fontfamily='monospace')
   axes[0].plot(x, y, '*')
-  axes[0].text(xt, 0.00, 'matplotlib', ha='center', bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
+  axes[0].text(xt, 0.00, 'matplotlib', ha='center', bbox=bbox)
   axes[0].grid()
   axes[0].spines[['top', 'right', 'left']].set_visible(False)
   axes[0].yaxis.set_visible(False)
 
+  text = 'datetick'
+  if kwargs:
+    bbox['facecolor'] = 'lightblue'
+    for key, value in kwargs.items():
+      text += f'\n{key}={value}'
   axes[1].plot(x, y, '*')
-  axes[1].text(xt, 0.00, 'datetick', ha='center', bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
-  datetick('x', axes=axes[1])
+  axes[1].text(xt, 0.00, text, ha='center', bbox=bbox)
+  datetick('x', axes=axes[1], debug=debug, **kwargs)
   axes[1].grid()
   axes[1].spines[['top', 'right', 'left']].set_visible(False)
   axes[1].yaxis.set_visible(False)
 
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
-  fname = f'datetick_test/{ds1}-{ds2}.svg'
-  print("Writing", fname)
-  plt.savefig(fname, bbox_inches='tight')
-  plt.close()
-  image_links.append(f'![{fname}]({fname})')
+
+  file = f'datetick_test/{ds1}-{ds2}.svg'
+  if file in files:
+    v = 2
+    file = f'datetick_test/{ds1}-{ds2}_{v}.svg'
+    while file in files:
+      file = f'datetick_test/{ds1}-{ds2}_{v}.svg'
+      v += 1
+
+  print("Writing", file)
+  plt.savefig(file, bbox_inches='tight')
+  files.append(file)
 
 ###############################################################################
 # 0.1 <= dt < 0.5 second
-plot('2001-01-01T00:00:00.0Z','2001-01-01T00:00:00.2Z')
 plot('2001-01-01T00:00:00.0Z','2001-01-01T00:00:00.1Z')
+plot('2001-01-01T00:00:00.0Z','2001-01-01T00:00:00.2Z')
 
 ###############################################################################
 # .5 <= dt < 1 second
@@ -143,6 +165,7 @@ plot('2001-01-01T00:00:00Z','2001-01-01T00:00:21Z')
 plot('2001-01-01T00:00:00Z','2001-01-01T06:00:00Z')
 plot('2001-01-01T00:00:00Z','2001-01-01T09:00:00Z')
 plot('2001-01-01T00:00:00Z','2001-01-01T11:00:00Z')
+plot('2001-01-01T00:00:00Z','2001-01-01T11:00:00Z')
 
 # Cross hour boundary
 plot('2001-01-01T00:59:58Z','2001-01-01T01:00:28Z')
@@ -163,6 +186,9 @@ plot('2001-01-01T02:00:00Z','2001-01-02T01:00:00Z')
 
 plot('2001-01-01T00:00:00Z','2001-01-02T01:00:00Z')
 plot('2001-01-01T00:00:00Z','2001-01-02T23:00:00Z')
+plot('2001-01-01T00:00:00Z','2001-01-02T23:00:00Z', adjust_first_xlabel=True)
+plot('2001-01-01T00:00:00Z','2001-01-02T23:00:00Z', adjust_last_xlabel=True)
+plot('2001-01-01T00:00:00Z','2001-01-02T23:00:00Z', adjust_first_xlabel=True, adjust_last_xlabel=True)
 plot('2001-01-01T06:00:00Z','2001-01-02T07:00:00Z')
 plot('2001-01-01T00:30:00Z','2001-01-02T01:00:00Z')
 
@@ -253,4 +279,4 @@ plot('2004-01-01T00:00:00Z','2030-01-04T00:00:00Z')
 
 plot('1950-01-01T00:00:00Z','2012-01-04T00:00:00Z')
 
-append_to_readme(image_links)
+append_to_readme(files)

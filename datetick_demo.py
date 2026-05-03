@@ -6,21 +6,23 @@ dt2 = dt1 + dt.timedelta(days=1, hours=1, minutes=1)
 x = [dt1, dt2]
 y = [0.0,1.0]
 
+debug = True
 method = 4
 if method == 1:
   plt.plot(x, y)
-  datetick()
+  datetick(debug=debug)
 if method == 2:
   plt.plot(x, y)
   datetick('x')
 if method == 3:
   plt.plot(x, y)
-  datetick('x', axes=plt.gca())
+  datetick('x', axes=plt.gca(), debug=debug)
 if method == 4:
   fig, axes = plt.subplots(2, figsize=(8,6))
   axes[0].plot(x, y)
   axes[1].plot(x, y)
-  datetick('x', axes=axes[0])
-  datetick('x', axes=axes[1])
+  datetick('x', axes=axes[0], debug=debug)
+  datetick('x', axes=axes[1], debug=debug)
 
+plt.savefig('datetick_demo.png', bbox_inches='tight', dpi=300)
 plt.show()
