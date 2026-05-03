@@ -3,7 +3,9 @@ def datetick(*args,
              set_cb=True,
              adjust_last_xlabel=False,
              adjust_first_xlabel=False,
-             debug=False, **kwargs):
+             adjust_xrange=False,
+             adjust_yrange=False,
+             debug=False):
   """
   datetick('x') or datetick('y') formats the major and minor tick labels
   of the current figure.
@@ -27,7 +29,7 @@ def datetick(*args,
   # Based on spacepy/plot/utils.py on 07/10/2017, but many additions.
   # See also https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
 
-  # TODO: Use numsize() to determine if figure width and height
+  # TODO: Use _numsize() to determine if figure width and height
   #       will cause overlap when default number major tick labels is used.
   # TODO: If time[0].day > 28, need to make first tick at time[0].day = 28
   #       as needed.
@@ -43,73 +45,14 @@ def datetick(*args,
   import warnings
   from datetime import datetime
 
-  import matplotlib
   import matplotlib.dates as mpld
-
-  if matplotlib.get_backend() == 'MacOSX':
-    # With MacOSX backend, draw() does not update the ticks. See warning at
-    # https://matplotlib.org/3.3.0/tutorials/advanced/blitting.html
-    import sys
-    if sys.version_info[0:2] < (3, 6):
-      # warnings.filterwarnings("ignore", '.*backend.*', category=UserWarning)
-      # the above should work and is better because more specific.
-      warnings.simplefilter("ignore", category=UserWarning)
-    gui_env = ['Qt5Agg', 'QT4Agg', 'GTKAgg', 'TKAgg', 'WXAgg']
-    for gui in gui_env:
-      cmd = f"matplotlib.use('{gui}', force=True)"
-      try:
-        if debug:
-          print(f"Trying {cmd}")
-        matplotlib.use(gui, force=True)
-        import matplotlib.pyplot as plt
-        if debug:
-          print("  Success.")
-        break
-      except:
-        if debug:
-          print(" Failure.")
-        continue
-  else:
-    try:
-      import matplotlib.pyplot as plt
-    except:
-      print('Failed: import matplotlib.pyplot as plt')
-      gui_env = ['Qt5Agg','QT4Agg','GTKAgg','TKAgg','WXAgg']
-      cmd = f"matplotlib.use('{gui}', force=True)"
-      for gui in gui_env:
-        try:
-          if debug:
-            print(f"Trying {cmd}")
-          matplotlib.use(gui, force=True)
-          import matplotlib.pyplot as plt
-          if debug:
-            print("  Success.")
-          break
-        except:
-          if debug:
-            print(" Failure.")
-          continue
-
-  def millis(x, pos):
-    x = matplotlib.dates.num2date(x)
-    label = x.strftime('.%f')
-    label = label[0:3]
-    #label = label.rstrip(".")
-    return label
-
-  def on_xlims_change(ax):
-    datetick('x', **{**kwargs, 'set_cb': False})
-
-  def on_ylims_change(ax):
-    datetick('y', **{**kwargs, 'set_cb': False})
-
-  def draw(fig):
-    fig.canvas.draw()
 
   if len(args) == 0:
     dir = 'x'
   else:
     dir = args[0]
+
+  plt = _get_plt(debug=debug)
 
   if 'axes' in kwargs:
     axes = kwargs['axes']
@@ -118,7 +61,7 @@ def datetick(*args,
     axes = plt.gca()
     fig = plt.gcf()
 
-  draw(fig)
+  fig.canvas.draw()
   bbox = axes.dataLim
 
   if dir == 'x':
@@ -135,11 +78,13 @@ def datetick(*args,
   try:
     mpld.num2date(lim[0])
   except:
-    raise ValueError('Lower axis limit of %f is not a valid Matplotlib datenum' % lim[0])
+    msg = 'Lower axis limit of %f is not a valid Matplotlib datenum' % lim[0]
+    raise ValueError(msg)
   try:
     mpld.num2date(lim[1])
   except:
-    raise ValueError('Upper axis limit of %f is not a valid Matplotlib datenum' % lim[1])
+    msg = 'Upper axis limit of %f is not a valid Matplotlib datenum' % lim[1]
+    raise ValueError(msg)
 
   # If all values are NaN, datamin = np.inf and datamax = -np.inf.
   msg = "is not a valid Matplotlib datenum. Are all data values NaN? Cannot use datetick()"
@@ -154,6 +99,12 @@ def datetick(*args,
     warnings.warn(f'Maximum value of %f {msg}' % datamax)
     return
 
+  if datamin == datamax:
+    axes.set_xticks([mpld.num2date(datamin)])
+    xticklabel = datetime.strftime(mpld.num2date(datamin),'%Y-%m-%dT%H:%M:%S')
+    axes.set_xticklabels([xticklabel])
+    return
+
   # Need to document why this was used. It creates
   # problems if labels extend beyond the axis limits.
   #tmin = np.min((lim[0], datamin))
@@ -161,17 +112,9 @@ def datetick(*args,
   tmin = lim[0]
   tmax = lim[1]
 
-  time = mpld.num2date((tmin,tmax))
+  tspan = mpld.num2date((tmin, tmax))
 
-  if datamin == datamax:
-    axes.set_xticks([mpld.num2date(datamin)])
-    axes.set_xticklabels([datetime.strftime(mpld.num2date(datamin),'%Y-%m-%dT%H:%M:%S')])
-    return
-
-  deltaT = time[-1] - time[0]
-  nDays  = deltaT.days
-  nHours = deltaT.days * 24.0 + deltaT.seconds/3600.0
-  nSecs  = deltaT.total_seconds()
+  deltaT = tspan[-1] - tspan[0]
   if debug:
     print("Total seconds: %s" % deltaT.total_seconds())
 
@@ -189,11 +132,267 @@ def datetick(*args,
   It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
   """
 
+  Mtick, mtick, fmt1, fmt2 = _locator(axes, deltaT, debug=debug)
+
+  if debug:
+    print(f'{dir} data min:         {mpld.num2date(datamin)}')
+    print(f'Default {dir}lim[0]:    {mpld.num2date(lim[0])}')
+    print(f'Default {dir}ticks[0]:  {mpld.num2date(ticks[0])}')
+    print(f'{dir} data max:         {mpld.num2date(datamax)}')
+    print(f'Default {dir}lim[-1]:   {mpld.num2date(lim[-1])}')
+    print(f'Default {dir}ticks[-1]: {mpld.num2date(ticks[-1])}')
+    print(f'Default {dir}ticks:')
+    for i in range(0,len(ticks)):
+      print(f' {mpld.num2date(ticks[i])}')
+
+  if dir == 'x':
+    axes.xaxis.set_major_locator(Mtick)
+    axes.xaxis.set_minor_locator(mtick)
+    axes.xaxis.set_major_formatter(fmt1)
+    if adjust_xrange:
+      _adjust_range(dir, fig, axes, datamin, datamax, debug=debug)
+    fig.canvas.draw() # Render new labels so updated for next line
+    labels = [item.get_text() for item in axes.get_xticklabels()]
+    ticks = axes.get_xticks()
+  else:
+    axes.yaxis.set_major_locator(Mtick)
+    axes.yaxis.set_minor_locator(mtick)
+    axes.yaxis.set_major_formatter(fmt1)
+    if adjust_xrange:
+      _adjust_range(dir, fig, axes, datamin, datamax, debug=debug)
+    fig.canvas.draw() # Render new labels so updated for next line
+    labels = [item.get_text() for item in axes.get_yticklabels()]
+    ticks = axes.get_yticks()
+
+  if debug:
+    xl = axes.get_xlim()
+    print(f'New {dir}ticks:')
+    for i in range(0,len(ticks)):
+      note = ''
+      if ticks[i] < xl[0] or ticks[i] > xl[1]:
+        note = ' (will be clipped by mpl b/c outside of axis limits)'
+      print(f' {mpld.num2date(ticks[i])} {note}')
+
+  if len(labels) == 0:
+    if debug:
+      print('No labels.')
+    return
+
+  if debug:
+    print(f'fmt1 {dir}labels:')
+    for i in range(0,len(labels)):
+      print(f' {labels[i]}')
+
+  if fmt2 != '':
+    labels = _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, debug=debug)
+
+    if debug:
+      print(f'fmt1 + fmt2 {dir}labels:')
+      for i in range(0,len(labels)):
+        print(f' {labels[i].replace("\n", "\\n")}')
+
+    if dir == 'x':
+      # Without the set_xticks(), warning is generated:
+      #   UserWarning: set_ticklabels() should only be used.
+      # Additional discussion: https://github.com/matplotlib/matplotlib/issues/18848
+      # The correct way to avoid the warning: https://stackoverflow.com/a/69126185
+      # Better: Create custom class:
+      #   https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
+      axes.set_xticks(axes.get_xticks())
+      axes.set_xticklabels(labels)
+      _adjust_xlabels(axes,
+                      adjust_first_xlabel=adjust_first_xlabel,
+                      adjust_last_xlabel=adjust_last_xlabel,
+                      debug=debug)
+
+    if dir == 'y':
+      axes.set_yticks(axes.get_yticks())
+      axes.set_yticks(axes.get_yticks())
+      axes.set_yticklabels(labels)
+
+  # Trigger update of ticks when limits change due to user interaction.
+  if 'set_cb':
+    def on_xlims_change(ax):
+      datetick('x', **{**kwargs, 'set_cb': False})
+
+    def on_ylims_change(ax):
+      datetick('y', **{**kwargs, 'set_cb': False})
+
+    if dir == 'x':
+      axes.callbacks.connect('xlim_changed', on_xlims_change)
+    else:
+      axes.callbacks.connect('ylim_changed', on_ylims_change)
+
+
+def _adjust_range(dir, fig, axes, datamin, datamax, debug=False):
+  if dir == 'x':
+    ticks = axes.get_xticks()
+  else:
+    ticks = axes.get_yticks()
+  if len(ticks) >= 2:
+    fig.canvas.draw()
+    dt = ticks[1] - ticks[0]
+    pad = 0.05 * dt
+    first_candidates  = ticks[ticks <= datamin]
+    last_candidates = ticks[ticks >= datamax]
+    first  = first_candidates[-1]  if len(first_candidates)  > 0 else ticks[0] - dt
+    last = last_candidates[0]  if len(last_candidates) > 0 else ticks[-1] + dt
+    if dir == 'x':
+      axes.set_xlim(first - pad, last + pad)
+    else:
+      axes.set_ylim(first - pad, last + pad)
+
+
+def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, debug=False):
+  from datetime import datetime
+  import matplotlib.dates as mpld
+
+  time = mpld.num2date(ticks)
+
+  nDays  = deltaT.days
+  nSecs  = deltaT.total_seconds()
+
+  first = 0
+  if ticks[0] < lim[0]:
+    if debug:
+      msg = 'First tick is less than lower axis limit. Applying fmt2 to second tick label.'
+      print(msg)
+    # Work-around for bug in Matplotlib where left-most tick is less than
+    # lower x-limit. Could more than one tick be less than lower x-limit?
+    first = 1
+
+  # Always apply fmt2 to first tick label
+  if debug:
+    print(f'Applying fmt2 to first tick label at {mpld.num2date(ticks[first])}.')
+  labels[first] = '%s\n%s' % (labels[first], datetime.strftime(time[first], fmt2))
+
+  for i in range(first+1, len(time)):
+    # First label will always have fmt1 applied.
+    # Modify labels after first under certain conditions.
+    modify = False
+
+    if time[i].year > time[i-1].year:
+      modify = True
+    if nDays < 60 and time[i].month > time[i-1].month:
+      modify = True
+    if nDays < 4 and time[i].day > time[i-1].day:
+      modify = True
+    if nSecs < 60*30 and time[i].hour > time[i-1].hour:
+      modify = True
+    if nSecs < 1 and time[i].minute > time[i-1].minute:
+      modify = True
+    if nSecs < 1 and time[i].second > time[i-1].second:
+      modify = True
+
+    if not modify:
+      continue
+
+    if i == first + 1 and dir == 'x':
+      # If first two major tick labels have fmt2 applied, the will
+      # likely run together. This keeps fmt2 label for second major
+      # tick.
+      if debug:
+        print(f'Removing fmt2 to first tick label at {mpld.num2date(ticks[first])} to avoid overlap with second label.')
+        print(f'Applying fmt2 to tick label at           {mpld.num2date(ticks[i])}.')
+      labels[first] = labels[first].split('\n')[0]
+      labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
+    else:
+      if debug:
+        print(f'Applying fmt2 to tick label at       {mpld.num2date(ticks[i])}.')
+      labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
+
+  return labels
+
+
+def _get_plt(debug=False):
+  import warnings
+  import matplotlib
+  import matplotlib.rcsetup
+
+  # TODO: Determine earliest version of Matplotlib where the problems
+  #       addressed here are fixed.
+  try:    # Available in Matplotlib >= 3.9
+    if matplotlib.__version__.split(".") >= (3, 9):
+      import matplotlib.backends.backend_registry
+      backends = matplotlib.backends.backend_registry.list_builtin()
+    else:
+      backends = matplotlib.rcsetup.all_backends
+  except Exception:
+    # In earlier versions of Matplotlib (at least 3.3), the list of backends
+    # was not available and get_backend() did not return lower-case names.
+    backends = ['Qt5Agg', 'QT4Agg', 'GTKAgg', 'TKAgg', 'WXAgg']
+
+  if debug:
+    print(f'Matplotlib version: {matplotlib.__version__}')
+    print(f'Matplotlib backend: {matplotlib.get_backend()}')
+    print(f'Available backends: {backends}')
+
+  if matplotlib.get_backend() == 'MacOSX':
+    """
+    With MacOSX backend, draw() does not update the ticks. See warning at
+    https://matplotlib.org/3.3.0/tutorials/advanced/blitting.html
+    """
+    import sys
+    if debug:
+      print('Matplotlib backend is MacOSX. Switching backend globally to workaround draw() not updating ticks.')
+    if sys.version_info[0:2] < (3, 6):
+      # warnings.filterwarnings("ignore", '.*backend.*', category=UserWarning)
+      # the above should work and is better because more specific.
+      warnings.simplefilter("ignore", category=UserWarning)
+    for backend in backends:
+      cmd = f"matplotlib.use('{backend}', force=True)"
+      try:
+        if debug:
+          print(f"Trying {cmd}")
+        matplotlib.use(backend, force=True)
+        import matplotlib.pyplot as plt
+        if debug:
+          print("  Success.")
+        break
+      except:
+        if debug:
+          print(" Failure.")
+        continue
+  else:
+    try:
+      import matplotlib.pyplot as plt
+    except:
+      print('Failed: "import matplotlib.pyplot as plt". Switching backend globally.')
+      cmd = f"matplotlib.use('{backends}', force=True)"
+      for backend in backends:
+        try:
+          if debug:
+            print(f"Trying {cmd}")
+          matplotlib.use(backend, force=True)
+          import matplotlib.pyplot as plt
+          if debug:
+            print("  Success.")
+          break
+        except:
+          if debug:
+            print(" Failure.")
+          continue
+
+  return plt
+
+
+def _locator(axes, deltaT, debug=False):
+  import matplotlib
+  import matplotlib.dates as mpld
+
+  def _millis(x, pos):
+    x = matplotlib.dates.num2date(x)
+    label = x.strftime('.%f')
+    label = label[0:3]
+    #label = label.rstrip(".")
+    return label
+
+  nHours = deltaT.days * 24.0 + deltaT.seconds/3600.0
   if deltaT.total_seconds() < 0.1:
     # < 0.1 second
     Mtick = mpld.MicrosecondLocator(interval=10000)
     mtick = mpld.MicrosecondLocator(interval=2000)
-    fmt1 = matplotlib.ticker.FuncFormatter(millis)
+    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
     fmt2  = '%H:%M:%S\n%Y-%m-%d'
   if deltaT.total_seconds() < 0.5:
     # < 0.5 seconds
@@ -201,7 +400,7 @@ def datetick(*args,
     # Need to do this manually. See comment above.
     Mtick = mpld.MicrosecondLocator(interval=50000)
     mtick = mpld.MicrosecondLocator(interval=10000)
-    fmt1 = matplotlib.ticker.FuncFormatter(millis)
+    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
     fmt2  = '%H:%M:%S\n%Y-%m-%d'
   if deltaT.total_seconds() < 1:
     # < 1 second
@@ -210,7 +409,7 @@ def datetick(*args,
     # first point is not at zero microseconds, it won't be labeled.
     Mtick = mpld.MicrosecondLocator(interval=100000)
     mtick = mpld.MicrosecondLocator(interval=20000)
-    fmt1 = matplotlib.ticker.FuncFormatter(millis)
+    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
     #fmt1  = mpld.DateFormatter('%M:%S.%f')
     fmt2  = '%H:%M:%S\n%Y-%m-%d'
   elif deltaT.total_seconds() < 5:
@@ -409,148 +608,50 @@ def datetick(*args,
     fmt1  = mpld.DateFormatter('%Y')
     fmt2  = ''
 
-  if debug:
-    print(f'{dir} data min:         {mpld.num2date(datamin)}')
-    print(f'Default {dir}lim[0]:    {mpld.num2date(lim[0])}')
-    print(f'Default {dir}ticks[0]:  {mpld.num2date(ticks[0])}')
-    print(f'{dir} data max:         {mpld.num2date(datamax)}')
-    print(f'Default {dir}lim[-1]:   {mpld.num2date(lim[-1])}')
-    print(f'Default {dir}ticks[-1]: {mpld.num2date(ticks[-1])}')
-    print(f'Default {dir}ticks:')
-    for i in range(0,len(ticks)):
-      print(f' {mpld.num2date(ticks[i])}')
+  return Mtick, mtick, fmt1, fmt2
 
-  if dir == 'x':
-    axes.xaxis.set_major_locator(Mtick)
-    axes.xaxis.set_minor_locator(mtick)
-    axes.xaxis.set_major_formatter(fmt1)
-    draw(fig) # Render new labels so updated for next line
-    labels = [item.get_text() for item in axes.get_xticklabels()]
-    ticks = axes.get_xticks()
-    time = mpld.num2date(ticks)
-  else:
-    axes.yaxis.set_major_locator(Mtick)
-    axes.yaxis.set_minor_locator(mtick)
-    axes.yaxis.set_major_formatter(fmt1)
-    draw(fig) # Render new labels so updated for next line
-    labels = [item.get_text() for item in axes.get_yticklabels()]
-    ticks = axes.get_yticks()
-    time = mpld.num2date(ticks)
 
-  if debug:
-    xl = axes.get_xlim()
-    print(f'New {dir}ticks:')
-    for i in range(0,len(ticks)):
-      note = ''
-      if ticks[i] < xl[0] or ticks[i] > xl[1]:
-        note = ' (will be clipped by mpl b/c outside of axis limits)'
-      print(f' {mpld.num2date(ticks[i])} {note}')
+def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, debug=False):
+  xticklabels = axes.get_xticklabels()
+  lastlabel_text = xticklabels[-1].get_text()
+  firstlabel_text = xticklabels[0].get_text()
+  adjusted = False
 
-  if len(labels) == 0:
+  if adjust_first_xlabel and '\n' in firstlabel_text:
+    if len(firstlabel_text.split('\n')[-1]) > 7:
+      if debug:
+        print(f'Adjusting first x-label: "{firstlabel_text.replace("\n", "\\n")}"')
+      adjusted = True
+      # If fmt1 in first label longer than YYYY-MM, set justification to left.
+      xticklabels[0].set_ha('left')
+      # Shift to right by 1/2 width of fmt1 in first label.
+      first_fmt1 = firstlabel_text.split('\n')[0]
+      offset = _numsize(axes, first_fmt1, +1, debug=debug)
+      xticklabels[0].set_transform(xticklabels[0].get_transform() - offset)
+
+  if adjust_last_xlabel and '\n' in lastlabel_text:
+    if len(lastlabel_text.split('\n')[-1]) > 7:
+      if debug:
+        print(f'Adjusting last x-label: "{lastlabel_text.replace("\n", "\\n")}"')
+      adjusted = True
+      # If fmt1 iin last label longer than YYYY-MM, set justification to right.
+      xticklabels[-1].set_ha('right')
+      # Shift to left by 1/2 width of fmt1 in last label.
+      last_fmt1 = lastlabel_text.split('\n')[0]
+      offset = _numsize(axes, last_fmt1, -1, debug=debug)
+      xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
+
+  if adjusted:
+    # Make all labels without newline slightly smaller than default fontsize 
+    # so it is clearer that fmt2 applies to larger number.
     if debug:
-      print('No labels to format')
-    return
+      print('Adjusting font size of x-labels without newline')
+    for label in xticklabels:
+      if '\n' not in label.get_text():
+        label.set_fontsize(label.get_fontsize()*0.85)
 
-  if fmt2 != '':
-    first = 0
-    if ticks[0] < lim[0]:
-      # Work-around for bug in Matplotlib where left-most tick is less than
-      # lower x-limit.
-      first = 1
 
-    # Always apply fmt2 to first tick label
-    labels[first] = '%s\n%s' % (labels[first], datetime.strftime(time[first], fmt2))
-
-    for i in range(first+1, len(time)):
-      # First label will always have fmt1 applied.
-      # Modify labels after first under certain conditions.
-      modify = False
-
-      if time[i].year > time[i-1].year:
-        modify = True
-      if nDays < 60 and time[i].month > time[i-1].month:
-        modify = True
-      if nDays < 4 and time[i].day > time[i-1].day:
-        modify = True
-      if nSecs < 60*30 and time[i].hour > time[i-1].hour:
-        modify = True
-      if nSecs < 1 and time[i].minute > time[i-1].minute:
-        modify = True
-      if nSecs < 1 and time[i].second > time[i-1].second:
-        modify = True
-
-      if not modify:
-        continue
-
-      if i == first + 1 and dir == 'x':
-        # If first two major tick labels have fmt2 applied, the will
-        # likely run together. This keeps fmt2 label for second major
-        # tick.
-        #labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
-        pass
-      else:
-        labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
-
-    # Without the set_xticks(), warning is generated:
-    #   UserWarning: set_ticklabels() should only be used.
-    # Additional discussion: https://github.com/matplotlib/matplotlib/issues/18848
-    # The correct way to avoid the warning: https://stackoverflow.com/a/69126185
-    # Better: Create custom class:
-    #   https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
-    if dir == 'x':
-      axes.set_xticks(axes.get_xticks())
-      axes.set_xticklabels(labels)
-    if dir == 'y':
-      axes.set_yticks(axes.get_yticks())
-      axes.set_yticklabels(labels)
-
-    if dir == 'x':
-      xticklabels = axes.get_xticklabels()
-      lastlabel_text = xticklabels[-1].get_text()
-      firstlabel_text = xticklabels[0].get_text()
-      adjusted = False
-
-      if adjust_first_xlabel and '\n' in firstlabel_text:
-        if len(firstlabel_text.split('\n')[-1]) > 7:
-          if debug:
-            print(f'Adjusting first x-label: "{firstlabel_text.replace("\n", "\\n")}"')
-          adjusted = True
-          # If fmt1 in first label longer than YYYY-MM, set justification to left.
-          xticklabels[0].set_ha('left')
-          # Shift to right by 1/2 width of fmt1 in first label.
-          first_fmt1 = firstlabel_text.split('\n')[0]
-          offset = numsize(axes, first_fmt1, +1, debug=debug)
-          xticklabels[0].set_transform(xticklabels[0].get_transform() - offset)
-
-      if adjust_last_xlabel and '\n' in lastlabel_text:
-        if len(lastlabel_text.split('\n')[-1]) > 7:
-          if debug:
-            print(f'Adjusting last x-label: "{lastlabel_text.replace("\n", "\\n")}"')
-          adjusted = True
-          # If fmt1 iin last label longer than YYYY-MM, set justification to right.
-          xticklabels[-1].set_ha('right')
-          # Shift to left by 1/2 width of fmt1 in last label.
-          last_fmt1 = lastlabel_text.split('\n')[0]
-          offset = numsize(axes, last_fmt1, -1, debug=debug)
-          xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
-
-      if adjusted:
-        # Make all labels without newline slightly smaller than default fontsize 
-        # so it is clearer that fmt2 applies to larger number.
-        if debug:
-          print('Adjusting font size of x-labels without newline')
-        for label in xticklabels:
-          if '\n' not in label.get_text():
-            label.set_fontsize(label.get_fontsize()*0.85)
-
-  # Trigger update of ticks when limits change due to user interaction.
-  if 'set_cb':
-    if dir == 'x':
-      axes.callbacks.connect('xlim_changed', on_xlims_change)
-    else:
-      axes.callbacks.connect('ylim_changed', on_ylims_change)
-
-def numsize(ax, num, sign, debug=False):
+def _numsize(ax, num, sign, debug=False):
   '''Returns (width, height) of str(num) in pixels.
 
   If ax is given, measures against that axes' renderer and DPI (correct).
@@ -580,7 +681,7 @@ def numsize(ax, num, sign, debug=False):
   offset =  matplotlib.transforms.ScaledTranslation(sign*delta/dpi, 0, ax.figure.dpi_scale_trans)
 
   if debug:
-    print('numsize():')
+    print('_numsize():')
     print(f'  num      = "{num}"')
     print(f'  fontsize = {fontsize}')
     print(f'  dpi      = {dpi}')
