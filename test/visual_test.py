@@ -93,8 +93,9 @@ def _append_to_readme(files):
   image_links = []
   for file in files:
     # Make path relative to README
+    base = "https://raw.githubusercontent.com/rweigel/utilrsw/main/"
     file = os.path.relpath(file, os.path.dirname(readme))
-    image_links.append(f'![{file}]({file})')
+    image_links.append(f'![{file}]({base}/{file})')
 
   lines.append("\n" + "\n\n".join(image_links))
 
