@@ -52,7 +52,8 @@ def datetick(*args,
   else:
     dir = args[0]
 
-  plt = _get_plt(debug=debug)
+  from matplotlib import pyplot as plt
+  #plt = _get_plt(debug=debug)
 
   if 'axes' in kwargs:
     axes = kwargs['axes']
