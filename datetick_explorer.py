@@ -5,11 +5,13 @@ Created on Wed Oct  3 17:09:42 2018
 @author: Brendan
 """
 
+import datetime
+
 import dateutil.parser
 import numpy as np
 import matplotlib.pyplot as plt
+
 from matplotlib.widgets import Button, Slider
-import datetime
 
 from datetick import datetick
 

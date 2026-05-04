@@ -1,12 +1,22 @@
 # Create plots with varying time ranges.
 
 import os
-import yaml
-import pytest
 import dateutil.parser
 import matplotlib.pyplot as plt
 
 from datetick import datetick
+
+try:
+  import yaml
+except ImportError:
+  print("PyYAML is required to run this test. Please install it with 'pip install pyyaml'")
+  exit()
+
+try:
+  import pytest
+except ImportError:
+  print("pytest is required to run this test. Please install it with 'pip install pytest'")
+  exit()
 
 debug = False
 
