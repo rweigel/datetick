@@ -60,11 +60,11 @@ def _savefig(ds1, ds2, files):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
-  file = f'{_out_dir()}/{ds1}-{ds2}.svg'
+  file = f'{_out_dir()}/{ds1}-{ds2}.png'
   if file in files:
     v = 2
     while file in files:
-      file = f'{_out_dir()}/{ds1}-{ds2}_{v}.svg'
+      file = f'{_out_dir()}/{ds1}-{ds2}_{v}.png'
       v += 1
 
   if debug:
@@ -73,7 +73,7 @@ def _savefig(ds1, ds2, files):
   if not os.path.exists(dirname):
     os.makedirs(dirname, exist_ok=True)
 
-  plt.savefig(file, bbox_inches='tight')
+  plt.savefig(file, bbox_inches='tight', dpi=300)
   plt.close()
 
   return file
@@ -133,6 +133,7 @@ def _script_dir():
 def test_plot_short():
   test_plot(short=True)
 
+
 def test_plot(short=False):
   test_file = os.path.join(_script_dir(), 'visual_test.yaml')
   with open(test_file, 'r') as file:
@@ -153,6 +154,7 @@ def test_plot(short=False):
   if not short:
     _append_to_readme(files)
     _create_subdir_readme(files)
+
 
 if __name__ == '__main__':
   if False:
