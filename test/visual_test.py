@@ -148,16 +148,10 @@ if __name__ == '__main__':
   if False:
     debug = True
     ds1 = '2001-01-01T00:00:00.0Z'
-    ds2 = '2001-01-01T00:00:00.5Z'
-    file = plot(ds1, ds2)
-    _savefig(ds1, ds2, [file])
-    exit()
-
-    debug = True
-    ds1 = '2001-01-01T00:00:00.0Z'
     ds2 = '2001-01-01T00:00:00.1Z'
     file = plot(ds1, ds2)
     _savefig(ds1, ds2, [file])
+    exit()
 
 
   #test_plot(short=True)
