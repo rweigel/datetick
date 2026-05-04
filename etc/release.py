@@ -1,46 +1,17 @@
 """
 Usage:
-  python release.py
-    [path/to/pyproject.toml]
-    [--pypi-config-file path/to/pypirc]
-    [--increment-release major|minor|patch]
-
-Creates GitHub and PyPi releases with the same version number in pyproject.toml.
-
-If path/to/pyproject.toml is not specified, it will look for it in the parent
-directory of this script.
-
-Requires:
-  A GitHub token file at ~/git/admin/etc/github_token (plain text, one line).
-  A PyPI config file at ~/git/admin/etc/pypirc
+  python release.py --help
 """
 
 import os
 import sys
 import subprocess
 
-try:
-  import tomllib
-except ImportError:
-  try:
-    import tomli as tomllib
-  except ImportError:
-    cmd_list = [sys.executable, '-m', 'pip', 'install', 'tomli']
-    print("Executing:", " ".join(cmd_list))
-    subprocess.run(cmd_list, check=True)
-    import tomli as tomllib
-
-
 def main(toml_path, pypi_config_file, increment_version=None, dry_run=False):
 
-  if not os.path.exists(toml_path):
-    print(f"Could not find pyproject.toml at {toml_path}")
-    sys.exit(1)
+  toml = _read_toml(toml_path)
 
-  with open(toml_path, 'rb') as f:
-    data = tomllib.load(f)
-
-  version = data.get('project', {}).get('version')
+  version = toml.get('project', {}).get('version')
   if not version:
     print(f"Could not find [project] version in {toml_path}")
     sys.exit(1)
@@ -100,21 +71,51 @@ def _increment_version(toml_path, version, increment, dry_run=False):
     return version
 
 
+def _read_toml(toml_path):
+  try:
+    import tomllib
+  except ImportError:
+    try:
+      import tomli as tomllib
+    except ImportError:
+      cmd_list = [sys.executable, '-m', 'pip', 'install', 'tomli']
+      print("Executing:", " ".join(cmd_list))
+      subprocess.run(cmd_list, check=True)
+      import tomli as tomllib
+
+  if not os.path.exists(toml_path):
+    print(f"Could not find pyproject.toml at {toml_path}")
+    sys.exit(1)
+
+  with open(toml_path, 'rb') as f:
+    data = tomllib.load(f)
+
+  return data
+
+
 def _cli():
   import argparse
 
   script_dir = os.path.dirname(os.path.realpath(__file__))
   default_toml_path = os.path.join(script_dir, '..', 'pyproject.toml')
 
+  description = """
+  Create GitHub release and upload package to PyPi.
+
+  Must execute 'gh auth login' on command line before running this script.
+
+  Version is read from pyproject.toml and can be incremented with --increment-version flag.
+  """
 
   parser = argparse.ArgumentParser(
-    description='Release datetick to GitHub and PyPi'
+    description=description,
+    formatter_class=argparse.RawTextHelpFormatter
   )
   parser.add_argument(
     'toml_path',
     nargs='?',
     default=default_toml_path,
-    help='Path to pyproject.toml'
+    help=f'Path to pyproject.toml [{os.path.normpath(default_toml_path)}]'
   )
   parser.add_argument(
     '--pypi-config-file',
@@ -124,12 +125,12 @@ def _cli():
   parser.add_argument(
     '--increment-version',
     choices=['major', 'minor', 'patch'],
-    help='Increment the release version (e.g. 1.0.0 -> 1.1.0 for minor)'
+    help='Increment the release version (e.g. 1.0.0 -> 1.1.0 for minor).'
   )
   parser.add_argument(
     '--dry-run',
     action='store_true',
-    help='Print the commands that would be executed without actually running them'
+    help='Print the commands that would be executed without actually running them.'
   )
 
   return parser.parse_args()
