@@ -18,15 +18,23 @@ except ImportError:
   print("pytest is required to run this test. Please install it with 'pip install pytest'")
   exit()
 
-debug = False
+def plot(ds1, ds2, dir, **kwargs):
+  if dir == 'x':
+    figsize=(8, 2)
+    hspace = 1.0
+  else:
+    figsize=(2, 8)
+    hspace = 0.1
 
-def plot(ds1, ds2, **kwargs):
-  _, axes = plt.subplots(2, figsize=(8, 2))
-  plt.subplots_adjust(hspace=1.0)
+  _, axes = plt.subplots(2, figsize=figsize)
+  plt.subplots_adjust(hspace=hspace)
   for axis in axes:
     axis.grid()
-    axis.spines[['top', 'right', 'left']].set_visible(False)
-    axis.yaxis.set_visible(False)
+    if dir == 'x':
+      axis.spines[['top', 'right', 'left']].set_visible(False)
+      axis.yaxis.set_visible(False)
+    else:
+      axis.spines[['top', 'right']].set_visible(False)
 
   bbox = {
           'boxstyle': 'round,pad=0.3',
@@ -39,32 +47,49 @@ def plot(ds1, ds2, **kwargs):
   if kwargs:
     bbox['facecolor'] = 'lightblue'
     for key, value in kwargs.items():
+      if key == 'debug':
+        continue
       text_datetick += f'\n{key}={value}'
 
   dt1 = dateutil.parser.parse(ds1)
   dt2 = dateutil.parser.parse(ds2)
-  x = [dt1, dt2]
-  xt = x[0] + (x[1] - x[0])/2
-  y = [0.0,0.0]
+  if dir == 'x':
+    x = [dt1, dt2]
+    y = [0.0,0.0]
+    yt = 0.0
+    xt = x[0] + (x[1] - x[0])/2
+  else:
+    x = [0.0, 1.0]
+    y = [dt1, dt2]
+    xt = 0.5
+    yt = y[0] + (y[1] - y[0])/2
 
-  axes[0].set_title(ds1 + ' - ' + ds2, fontfamily='monospace')
+  if dir == 'x':
+    newline = ''
+    space = ''
+  else:
+    newline = '\n'
+    space = '   '
+  axes[0].set_title(ds1 + f' - {newline}' + ds2 + space, fontsize=10, fontfamily='monospace')
   axes[0].plot(x, y, '*')
-  axes[0].text(xt, 0.00, text_matplotlib, ha='center', bbox=bbox)
+  axes[0].text(xt, yt, text_matplotlib, ha='center', bbox=bbox)
 
   axes[1].plot(x, y, '*')
-  axes[1].text(xt, 0.00, text_datetick, ha='center', bbox=bbox)
-  datetick('x', axes=axes[1], debug=debug, **kwargs)
+  axes[1].text(xt, yt, text_datetick, ha='center', bbox=bbox)
+  datetick(dir, axes=axes[1], **kwargs)
 
 
-def _savefig(ds1, ds2, files):
+def _savefig(ds1, ds2, dir, files, debug=False):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
-  file = f'{_out_dir()}/{ds1}-{ds2}.png'
+  ext = 'png'
+  base = f'{_out_dir()}/{ds1}-{ds2}-{dir}'
+  file = f'{base}.{ext}'
   if file in files:
     v = 2
     while file in files:
-      file = f'{_out_dir()}/{ds1}-{ds2}_{v}.png'
+      file = f'{base}_v{v}.{ext}'
       v += 1
 
   if debug:
@@ -79,7 +104,7 @@ def _savefig(ds1, ds2, files):
   return file
 
 
-def _append_to_readme(files):
+def _append_to_readme(files, dir, debug=False):
 
   readme = 'README.md' # Repo README
   readme = os.path.join(_script_dir(), "..", readme)
@@ -97,7 +122,8 @@ def _append_to_readme(files):
     file = os.path.relpath(file, os.path.dirname(readme))
     image_links.append(f'![{file}]({base}/{file})')
 
-  lines.append("\n" + "\n\n".join(image_links))
+  lines.append(f"\n## <code>dir={dir}</code>\n\n")
+  lines.append("\n\n".join(image_links))
 
   if debug:
     print(f"Updating {readme} with {len(files)} images")
@@ -105,7 +131,7 @@ def _append_to_readme(files):
     file.writelines(lines)
 
 
-def _create_subdir_readme(files):
+def _create_subdir_readme(files, dir, debug=False):
   # Create README in mpl subdir
   image_links = []
   for file in files:
@@ -131,39 +157,40 @@ def _script_dir():
 
 
 @pytest.mark.short
-def test_plot_short():
-  test_plot(short=True)
+def test_plot_short(debug=False):
+  test_plot(short=True, debug=debug)
 
 
-def test_plot(short=False):
+def test_plot(short=False, debug=False):
   test_file = os.path.join(_script_dir(), 'visual_test.yaml')
   with open(test_file, 'r') as file:
     tests = yaml.safe_load(file)
 
+  dir = 'x'
   files = []
   for test_cat in ['kwargs', 'main']:
     for test in tests[test_cat]:
       kwargs = test[2] if len(test) > 2 else {}
       dt_str_o = test[0]
       dt_str_f = test[1]
-      plot(dt_str_o, dt_str_f, **kwargs)
-      file = _savefig(dt_str_o, dt_str_f, files)
+      plot(dt_str_o, dt_str_f, dir=dir, **kwargs)
+      file = _savefig(dt_str_o, dt_str_f, dir, files)
       files.append(file)
       if short:
         break
 
   if not short:
-    _append_to_readme(files)
-    _create_subdir_readme(files)
+    _append_to_readme(files, dir, debug=debug)
+    _create_subdir_readme(files, dir, debug=debug)
 
 
 if __name__ == '__main__':
   if False:
-    debug = True
+    dir = 'y'
     ds1 = '2001-01-01T00:00:00.0Z'
-    ds2 = '2001-01-01T00:00:00.1Z'
-    file = plot(ds1, ds2)
-    _savefig(ds1, ds2, [file])
+    ds2 = '2001-01-02T00:00:00.1Z'
+    file = plot(ds1, ds2, dir, debug=True)
+    _savefig(ds1, ds2, dir, [file], debug=True)
     exit()
 
 

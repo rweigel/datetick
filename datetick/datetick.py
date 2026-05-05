@@ -45,6 +45,9 @@ def datetick(*args,
   import warnings
   from datetime import datetime
 
+  from matplotlib import pyplot as plt
+  #plt = _get_plt(debug=debug)
+
   import matplotlib.dates as mpld
 
   if len(args) == 0:
@@ -52,8 +55,6 @@ def datetick(*args,
   else:
     dir = args[0]
 
-  from matplotlib import pyplot as plt
-  #plt = _get_plt(debug=debug)
 
   if 'axes' in kwargs:
     axes = kwargs['axes']
@@ -101,9 +102,14 @@ def datetick(*args,
     return
 
   if datamin == datamax:
-    axes.set_xticks([mpld.num2date(datamin)])
-    xticklabel = datetime.strftime(mpld.num2date(datamin),'%Y-%m-%dT%H:%M:%S')
-    axes.set_xticklabels([xticklabel])
+    if dir == 'x':
+      axes.set_xticks([mpld.num2date(datamin)])
+      xticklabel = datetime.strftime(mpld.num2date(datamin),'%Y-%m-%dT%H:%M:%S')
+      axes.set_xticklabels([xticklabel])
+    else:
+      axes.set_yticks([mpld.num2date(datamin)])
+      yticklabel = datetime.strftime(mpld.num2date(datamin),'%Y-%m-%dT%H:%M:%S')
+      axes.set_yticklabels([yticklabel])
     return
 
   # Need to document why this was used. It creates
@@ -146,7 +152,6 @@ def datetick(*args,
   """
 
   Mtick, mtick, fmt1, fmt2, trans = _locator(axes, deltaT, debug=debug)
-
   if Mtick is None:
     if debug:
       print('No locator found for this time span. Using default Matplotlib locator and formatter.')
