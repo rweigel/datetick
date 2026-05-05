@@ -46,7 +46,6 @@ def datetick(*args,
   from datetime import datetime
 
   from matplotlib import pyplot as plt
-  #plt = _get_plt(debug=debug)
 
   import matplotlib.dates as mpld
 
@@ -221,30 +220,36 @@ def datetick(*args,
 
   # Trigger update of ticks when limits change due to user interaction.
   if set_cb:
-    def on_xlims_change(ax):
-      if debug:
-        print('xlims changed. Updating datetick plot.')
-      ax.xaxis.set_minor_locator(mpld.AutoDateLocator())
-      ax.xaxis.set_major_locator(mpld.AutoDateLocator())
-      datetick('x', **{**kwargs, 'set_cb': False})
+    _set_cb(dir, axes, debug=debug)
 
-    def on_ylims_change(ax):
-      if debug:
-        print('xlims changed. Updating datetick plot.')
-      ax.yaxis.set_minor_locator(mpld.AutoDateLocator())
-      ax.yaxis.set_major_locator(mpld.AutoDateLocator())
-      datetick('y', **{**kwargs, 'set_cb': False})
 
-    if dir == 'x':
-      axes.callbacks.connect('xlim_changed', on_xlims_change)
-      if debug:
-        n = len(axes.callbacks.callbacks.get('xlim_changed', {}))
-        print(f'xlim_changed callbacks registered: {n}')
-    else:
-      axes.callbacks.connect('ylim_changed', on_ylims_change)
-      if debug:
-        n = len(axes.callbacks.callbacks.get('ylim_changed', {}))
-        print(f'ylim_changed callbacks registered: {n}')
+def _set_cb(dir, axes, debug=False):
+  import matplotlib.dates as mpld
+
+  def on_xlims_change(ax):
+    if debug:
+      print('xlims changed. Updating datetick plot.')
+    ax.xaxis.set_minor_locator(mpld.AutoDateLocator())
+    ax.xaxis.set_major_locator(mpld.AutoDateLocator())
+    datetick('x', **{**kwargs, 'set_cb': False})
+
+  def on_ylims_change(ax):
+    if debug:
+      print('xlims changed. Updating datetick plot.')
+    ax.yaxis.set_minor_locator(mpld.AutoDateLocator())
+    ax.yaxis.set_major_locator(mpld.AutoDateLocator())
+    datetick('y', **{**kwargs, 'set_cb': False})
+
+  if dir == 'x':
+    axes.callbacks.connect('xlim_changed', on_xlims_change)
+    if debug:
+      n = len(axes.callbacks.callbacks.get('xlim_changed', {}))
+      print(f'xlim_changed callbacks registered: {n}')
+  else:
+    axes.callbacks.connect('ylim_changed', on_ylims_change)
+    if debug:
+      n = len(axes.callbacks.callbacks.get('ylim_changed', {}))
+      print(f'ylim_changed callbacks registered: {n}')
 
 
 def _get_labels(dir, axes):
@@ -274,17 +279,6 @@ def _manual_labels(dir, axes):
       labels[i] += "." + fractional
 
   return ticks, labels, fmt2
-
-
-def _print_ticks(dir, axes, ticks, labels):
-  import matplotlib.dates as mpld
-  lim = axes.get_xlim() if dir == 'x' else axes.get_ylim()
-  for i in range(0, len(ticks)):
-    note = ''
-    if ticks[i] < lim[0] or ticks[i] > lim[1]:
-      note = ' (may be clipped by mpl b/c outside of axis limits)'
-    label = str(labels[i]).replace("\n", "\\n")
-    print(f' {label}    {mpld.num2date(ticks[i])} {note}')
 
 
 def _adjust_range(dir, fig, axes, datamin, datamax, debug=False):
@@ -387,93 +381,6 @@ def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=False):
       labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
 
   return labels
-
-
-def _get_plt(debug=False):
-  import sys
-  import warnings
-  import matplotlib
-  import matplotlib.rcsetup
-
-  plt = None
-
-  try:    # Available in Matplotlib >= 3.9
-    parts = matplotlib.__version__.split(".")
-    if [int(x) for x in parts[:2]] >= [3, 9]:
-      import matplotlib.backends.backend_registry
-      backends = matplotlib.backends.backend_registry.list_builtin()
-    else:
-      backends = matplotlib.rcsetup.all_backends
-  except Exception:
-    # In earlier versions of Matplotlib (at least 3.3), the list of backends
-    # was not available and get_backend() did not return lower-case names.
-    backends = ['Qt5Agg', 'QT4Agg', 'GTKAgg', 'TKAgg', 'WXAgg']
-
-  # Always ensure Agg (headless-safe) is available as a fallback.
-  fallback_backends = ['Agg'] + [b for b in backends if b.lower() != 'agg']
-
-  if debug:
-    print(f'Matplotlib version: {matplotlib.__version__}')
-    print(f'Matplotlib backend: {matplotlib.get_backend()}')
-    print(f'Available backends: {backends}')
-
-  def _try_import_pyplot():
-    """Import pyplot, clearing any partial sys.modules entry first."""
-    for key in list(sys.modules.keys()):
-      if key == 'matplotlib.pyplot':
-        del sys.modules[key]
-    import matplotlib.pyplot as _plt
-    return _plt
-
-  if matplotlib.get_backend() == 'MacOSX':
-    """
-    With MacOSX backend, draw() does not update the ticks. See warning at
-    https://matplotlib.org/3.3.0/tutorials/advanced/blitting.html
-    """
-    if debug:
-      print('Matplotlib backend is MacOSX. Switching backend globally to workaround draw() not updating ticks.')
-    if sys.version_info[0:2] < (3, 6):
-      warnings.simplefilter("ignore", category=UserWarning)
-    for backend in fallback_backends:
-      try:
-        if debug:
-          print(f"Trying matplotlib.use('{backend}', force=True)")
-        import matplotlib.pyplot as _close_plt
-        _close_plt.close('all')
-        matplotlib.use(backend, force=True)
-        plt = _try_import_pyplot()
-        if debug:
-          print("  Success.")
-        break
-      except:
-        if debug:
-          print(" Failure.")
-        continue
-  else:
-    try:
-      plt = _try_import_pyplot()
-    except:
-      print('Failed: "import matplotlib.pyplot as plt". Switching backend globally.')
-      for backend in fallback_backends:
-        try:
-          if debug:
-            print(f"Trying matplotlib.use('{backend}', force=True)")
-          import matplotlib.pyplot as _close_plt
-          _close_plt.close('all')
-          matplotlib.use(backend, force=True)
-          plt = _try_import_pyplot()
-          if debug:
-            print("  Success.")
-          break
-        except:
-          if debug:
-            print(" Failure.")
-          continue
-
-  if plt is None:
-    raise ImportError("Could not import matplotlib.pyplot with any available backend.")
-
-  return plt
 
 
 def _locator(axes, deltaT, debug=False):
@@ -808,3 +715,14 @@ def _numsize(ax, num, sign, debug=False):
     print(f'  offset   = {_offset}')
 
   return offset
+
+
+def _print_ticks(dir, axes, ticks, labels):
+  import matplotlib.dates as mpld
+  lim = axes.get_xlim() if dir == 'x' else axes.get_ylim()
+  for i in range(0, len(ticks)):
+    note = ''
+    if ticks[i] < lim[0] or ticks[i] > lim[1]:
+      note = ' (may be clipped by mpl b/c outside of axis limits)'
+    label = str(labels[i]).replace("\n", "\\n")
+    print(f' {label}    {mpld.num2date(ticks[i])} {note}')
