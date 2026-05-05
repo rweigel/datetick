@@ -120,7 +120,7 @@ def _append_to_readme(files, dir, debug=False):
     # Make path relative to README
     base = "https://raw.githubusercontent.com/rweigel/datetick/main/"
     file = os.path.relpath(file, os.path.dirname(readme))
-    image_links.append(f'![{file}]({base}/{file})')
+    image_links.append(f'![{file}]({base}{file})')
 
   lines.append(f"\n## <code>dir={dir}</code>\n\n")
   lines.append("\n\n".join(image_links))
@@ -130,6 +130,12 @@ def _append_to_readme(files, dir, debug=False):
   with open(readme, 'w') as file:
     file.writelines(lines)
 
+  # Create README.rel.md with base replaced with relative path for local viewing
+  readme_rel = os.path.join(os.path.dirname(readme), 'README.rel.md')
+  if debug:
+    print(f"Writing {readme_rel} with URL replaced by relative path")
+  with open(readme_rel, 'w') as file:
+    file.writelines(line.replace(base, "") for line in lines)
 
 def _create_subdir_readme(files, dir, debug=False):
   # Create README in mpl subdir
@@ -186,13 +192,13 @@ def test_plot(short=False, debug=False):
 
 if __name__ == '__main__':
   if False:
-    dir = 'y'
-    ds1 = '2001-01-01T00:00:00.0Z'
-    ds2 = '2001-01-02T00:00:00.1Z'
+    dir = 'x'
+    ds1 = '2001-02-12T00:00:00Z'
+    ds2 = '2002-01-31T00:00:00Z'
     file = plot(ds1, ds2, dir, debug=True)
-    _savefig(ds1, ds2, dir, [file], debug=True)
+    plt.savefig('a.png', bbox_inches='tight', dpi=300)
+    plt.close()
     exit()
 
-
   #test_plot(short=True)
-  test_plot()
+  test_plot(debug=True)

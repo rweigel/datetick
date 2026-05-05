@@ -172,12 +172,12 @@ def datetick(*args,
 
     if debug:
       print(f'{dir}labels and ticks after applying locator:')
-      _print_ticks(dir, axes, ticks, labels)
+      _print_ticks(dir, axes, ticks, _get_labels(dir, axes))
     if adjust_xrange or adjust_yrange:
       _adjust_range(dir, fig, axes, datamin, datamax, debug=debug)
       if debug:
         print(f'{dir}labels and ticks after adjusting range:')
-        _print_ticks(dir, axes, ticks, labels)
+        _print_ticks(dir, axes, ticks, _get_labels(dir, axes))
 
     fig.canvas.draw() # Render new labels so updated for next line
 
@@ -220,17 +220,31 @@ def datetick(*args,
       axes.set_yticklabels(labels)
 
   # Trigger update of ticks when limits change due to user interaction.
-  if 'set_cb':
+  if set_cb:
     def on_xlims_change(ax):
+      if debug:
+        print('xlims changed. Updating datetick plot.')
+      ax.xaxis.set_minor_locator(mpld.AutoDateLocator())
+      ax.xaxis.set_major_locator(mpld.AutoDateLocator())
       datetick('x', **{**kwargs, 'set_cb': False})
 
     def on_ylims_change(ax):
+      if debug:
+        print('xlims changed. Updating datetick plot.')
+      ax.yaxis.set_minor_locator(mpld.AutoDateLocator())
+      ax.yaxis.set_major_locator(mpld.AutoDateLocator())
       datetick('y', **{**kwargs, 'set_cb': False})
 
     if dir == 'x':
       axes.callbacks.connect('xlim_changed', on_xlims_change)
+      if debug:
+        n = len(axes.callbacks.callbacks.get('xlim_changed', {}))
+        print(f'xlim_changed callbacks registered: {n}')
     else:
       axes.callbacks.connect('ylim_changed', on_ylims_change)
+      if debug:
+        n = len(axes.callbacks.callbacks.get('ylim_changed', {}))
+        print(f'ylim_changed callbacks registered: {n}')
 
 
 def _get_labels(dir, axes):
@@ -269,7 +283,7 @@ def _print_ticks(dir, axes, ticks, labels):
     note = ''
     if ticks[i] < lim[0] or ticks[i] > lim[1]:
       note = ' (may be clipped by mpl b/c outside of axis limits)'
-    label = labels[i].replace("\n", "\\n")
+    label = str(labels[i]).replace("\n", "\\n")
     print(f' {label}    {mpld.num2date(ticks[i])} {note}')
 
 
@@ -322,18 +336,35 @@ def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=False):
     # First label will always have fmt1 applied.
     # Modify labels after first under certain conditions.
     modify = False
+    if debug:
+      print(f'Checking if fmt2 should be applied to tick label at {mpld.num2date(ticks[i])}.')
+      print(f'  trans = {trans}')
+      print(f'  time[{i-1}] = {time[i-1]}')
+      print(f'  time[{i}] = {time[i]}')
 
-    if trans == 'year' and time[i].year > time[i-1].year:
+    if trans == 'year' and time[i].year != time[i-1].year:
+      if debug:
+        print(f'  Year changed: {time[i-1].year} -> {time[i].year}')
       modify = True
-    if trans == 'month' and time[i].month > time[i-1].month:
+    if trans == 'month' and time[i].month != time[i-1].month:
+      if debug:
+        print(f'  Month changed: {time[i-1].month} -> {time[i].month}')
       modify = True
-    if trans == 'day' and time[i].day > time[i-1].day:
+    if trans == 'day' and time[i].day != time[i-1].day:
+      if debug:
+        print(f'  Day changed: {time[i-1].day} -> {time[i].day}')
       modify = True
-    if trans == 'hour' and time[i].hour > time[i-1].hour:
+    if trans == 'hour' and time[i].hour != time[i-1].hour:
+      if debug:
+        print(f'  Hour changed: {time[i-1].hour} -> {time[i].hour}')
       modify = True
-    if trans == 'minute' and time[i].minute > time[i-1].minute:
+    if trans == 'minute' and time[i].minute !=time[i-1].minute:
+      if debug:
+        print(f'  Minute changed: {time[i-1].minute} -> {time[i].minute}')
       modify = True
-    if trans == 'second' and time[i].second > time[i-1].second:
+    if trans == 'second' and time[i].second != time[i-1].second:
+      if debug:
+        print(f'  Second changed: {time[i-1].second} -> {time[i].second}')
       modify = True
 
     if not modify:
