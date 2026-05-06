@@ -83,7 +83,7 @@ def _savefig(ds1, ds2, dir, files, debug=False):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
-  ext = 'png'
+  ext = 'svg'
   base = f'{_out_dir()}/{ds1}-{ds2}-{dir}'
   file = f'{base}.{ext}'
   if file in files:
@@ -97,8 +97,14 @@ def _savefig(ds1, ds2, dir, files, debug=False):
   dirname = os.path.dirname(file)
   if not os.path.exists(dirname):
     os.makedirs(dirname, exist_ok=True)
+  if ext == 'png':
+    plt.savefig(file, bbox_inches='tight', dpi=220)
+  else:
+    if ext == 'svg':
+      # Don't convert text to paths in SVG to keep it searchable and selectable
+      plt.rcParams['svg.fonttype'] = 'none'
+    plt.savefig(file, bbox_inches='tight')
 
-  plt.savefig(file, bbox_inches='tight', dpi=300)
   plt.close()
 
   return file
@@ -115,11 +121,23 @@ def _append_to_readme(files, dir, debug=False):
   index = next(i for i, line in enumerate(lines) if "Comparison to default Matplotlib" in line)
   del lines[index+1:]
 
+  latest_dir = os.path.join(_script_dir(), 'visual_test', 'latest')
+  os.makedirs(latest_dir, exist_ok=True)
+
+  # Add python/mpl version
+  mpl = f"Matplotlib-{plt.matplotlib.__version__}"
+  py = f"Python-{os.sys.version_info.major}.{os.sys.version_info.minor}"
+  lines.append(f"\n\n{py} / {mpl}\n\n")
+
   image_links = []
   for file in files:
+    latest_file = os.path.join(latest_dir, os.path.basename(file))
+    # Copy file to test/visual_tests/latest for linking in README
+    with open(file, 'rb') as src, open(latest_file, 'wb') as dst:
+      dst.write(src.read())
     # Make path relative to README
     base = "https://raw.githubusercontent.com/rweigel/datetick/main/"
-    file = os.path.relpath(file, os.path.dirname(readme))
+    file = os.path.relpath(latest_file, os.path.dirname(readme))
     image_links.append(f'![{file}]({base}{file})')
 
   lines.append(f"\n## <code>dir={dir}</code>\n\n")
@@ -136,6 +154,7 @@ def _append_to_readme(files, dir, debug=False):
     print(f"Writing {readme_rel} with URL replaced by relative path")
   with open(readme_rel, 'w') as file:
     file.writelines(line.replace(base, "") for line in lines)
+
 
 def _create_subdir_readme(files, dir, debug=False):
   # Create README in mpl subdir

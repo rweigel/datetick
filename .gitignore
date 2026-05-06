@@ -4,3 +4,4 @@ __pycache__/
 dist/
 build/
 README.rel.md
+test/visual_test/python-*/*
