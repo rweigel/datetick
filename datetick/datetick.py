@@ -1,16 +1,20 @@
+"""
+  datetick formats the major and minor tick labels.
+"""
 def datetick(*args,
              axes=None,
-             set_cb=True,
              adjust_last_xlabel=False,
              adjust_first_xlabel=False,
              adjust_xrange=False,
              adjust_yrange=False,
+             set_cb=True,
              debug=False):
   """
-  datetick('x') or datetick('y') formats the major and minor tick labels
-  of the current figure.
+  datetick() formats the major and minor x-tick labels of the current figure.
 
-  datetick('x', axes=ax) or datetick('y', axes=ax) formats the given axes `ax`.
+  datetick('x') or datetick('y') formats the x- or y- labels
+
+  datetick('x', axes=ax) or datetick('y', axes=ax) formats the given axis `ax`.
 
   Example:
   --------
@@ -21,13 +25,25 @@ def datetick(*args,
     d2 = dt.datetime.fromordinal(10 + dt.datetime.toordinal(d1))
     x = [d1, d2]
     y = [0.0,1.0]
-    plt.clf()
     plt.plot(x, y)
     datetick('x')
+    plt.show()
+
+  Keywords:
+  --------
+  adjust_last_xlabel: If True, adjust last x-label to avoid extending past lower axis limit.
+  adjust_first_xlabel: If True, adjust first x-label to avoid extending past upper axis limit.
+
+  adjust_xrange: If True, expand x-range so data are always within a major tick.
+  adjust_yrange: If True, expand y-range so data are always within a major tick.
+
+  debug: If True, print debug information.
   """
 
   # Based on spacepy/plot/utils.py on 07/10/2017, but many additions.
-  # See also https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
+  # See also
+  #   https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
+  # and demo use at misc/geospacelab/demo.py
 
   # TODO: Use _numsize() to determine if figure width and height
   #       will cause overlap when default number major tick labels is used.
@@ -49,11 +65,12 @@ def datetick(*args,
 
   import matplotlib.dates as mpld
 
+  from .config import config
+
   if len(args) == 0:
     dir = 'x'
   else:
     dir = args[0]
-
 
   if 'axes' in kwargs:
     axes = kwargs['axes']
@@ -111,7 +128,7 @@ def datetick(*args,
       axes.set_yticklabels([yticklabel])
     return
 
-  # Need to document why this was used. It creates
+  # Need to document why this was used originally. If kept, it creates
   # problems if labels extend beyond the axis limits.
   #tmin = np.min((lim[0], datamin))
   #tmax = np.max((lim[1], datamax))
@@ -150,21 +167,22 @@ def datetick(*args,
   It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
   """
 
-  Mtick, mtick, fmt1, fmt2, trans = _locator(axes, deltaT, debug=debug)
-  if Mtick is None:
+  major, minor, fmt1, fmt2, trans = config(deltaT, debug=debug)
+
+  if major is None:
     if debug:
       print('No locator found for this time span. Using default Matplotlib locator and formatter.')
     ticks, labels, fmt2 = _manual_labels(dir, axes)
   else:
     if dir == 'x':
-      axes.xaxis.set_major_locator(Mtick)
-      axes.xaxis.set_minor_locator(mtick)
+      axes.xaxis.set_major_locator(major)
+      axes.xaxis.set_minor_locator(minor)
       axes.xaxis.set_major_formatter(fmt1)
       fig.canvas.draw() # Render new labels so updated for next line
       ticks = axes.get_xticks()
     else:
-      axes.yaxis.set_major_locator(Mtick)
-      axes.yaxis.set_minor_locator(mtick)
+      axes.yaxis.set_major_locator(major)
+      axes.yaxis.set_minor_locator(minor)
       axes.yaxis.set_major_formatter(fmt1)
       fig.canvas.draw() # Render new labels so updated for next line
       ticks = axes.get_yticks()
@@ -220,10 +238,11 @@ def datetick(*args,
 
   # Trigger update of ticks when limits change due to user interaction.
   if set_cb:
-    _set_cb(dir, axes, debug=debug)
+    _set_cb(dir, axes, kwargs, debug=debug)
 
+  return deltaT
 
-def _set_cb(dir, axes, debug=False):
+def _set_cb(dir, axes, kwargs, debug=False):
   import matplotlib.dates as mpld
 
   def on_xlims_change(ax):
@@ -257,28 +276,6 @@ def _get_labels(dir, axes):
     return [item.get_text() for item in axes.get_xticklabels()]
   else:
     return [item.get_text() for item in axes.get_yticklabels()]
-
-
-def _manual_labels(dir, axes):
-
-  fmt2 = '%Y-%m-%d'
-  ticks = axes.get_xticks()
-  labels = _get_labels(dir, axes)
-  # Make all labels have the same number of decimal places as one
-  # with the most decimal places.
-  n_places = 0
-  for i in range(0, len(labels)):
-    # Remove trailing zeros.
-    n_places = max(n_places, len(labels[i].rstrip("0").split(".")[-1]))
-  for i in range(0, len(labels)):
-    parts = labels[i].split(".")
-    labels[i] = parts[0]
-    if len(parts) > 1:
-      fractional = parts[1][0:n_places]
-    if n_places > 0:
-      labels[i] += "." + fractional
-
-  return ticks, labels, fmt2
 
 
 def _adjust_range(dir, fig, axes, datamin, datamax, debug=False):
@@ -368,7 +365,7 @@ def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=False):
       # If first two major tick labels have fmt2 applied, the will
       # likely run together. This keeps fmt2 label for second major
       # tick.
-      if trans in ['hour', 'minute', 'second']:
+      if trans in ['month', 'day', 'hour', 'minute', 'second']:
         if debug:
           print(f'Removing fmt2 to first tick label at {mpld.num2date(ticks[first])} to avoid overlap with second label.')
         labels[first] = labels[first].split('\n')[0]
@@ -381,254 +378,6 @@ def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=False):
       labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
 
   return labels
-
-
-def _locator(axes, deltaT, debug=False):
-  import matplotlib
-  import matplotlib.dates as mpld
-
-  def _millis(x, pos):
-    x = matplotlib.dates.num2date(x)
-    label = x.strftime('.%f')
-    label = label[0:3]
-    return label
-
-  nHours = deltaT.days * 24.0 + deltaT.seconds/3600.0
-  if deltaT.total_seconds() < 5:
-    # Locators don't locate at this resolution.
-    # Use default Matplotlib locator and formatter, which will show fractional seconds.
-    return None, None, None, None, None
-  elif deltaT.total_seconds() <= 5:
-    if debug:
-      print('Using <= 5 seconds locator')
-    Mtick = mpld.MicrosecondLocator(interval=200000)
-    mtick = mpld.MicrosecondLocator(interval=200000)
-    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
-    fmt2  = '%H:%M:%S\n%Y-%m-%d'
-    trans = 'second'
-  elif deltaT.total_seconds() < 10:
-    # < 10 seconds
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 1)) )
-    mtick = mpld.MicrosecondLocator(interval=500000)
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 20:
-    # < 20 seconds
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 2)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 1)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 30:
-    # < 30 seconds
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 5)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 1)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60:
-    # < 1 minute
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 10)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 2)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*2:
-    # < 2 minutes
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 20)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*3:
-    # < 3 minutes
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 20)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*5:
-    # < 5 minutes
-    Mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 30)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 10)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*10:
-    # < 10 minutes
-    Mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 1)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 15)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*20:
-    # < 20 minutes
-    Mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 2)) )
-    mtick = mpld.SecondLocator(bysecond=list(range(0, 60, 30)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*30:
-    # < 30 minutes
-    Mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 5)) )
-    mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 1)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif deltaT.total_seconds() < 60*60:
-    # < 60 minutes
-    Mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 10)) )
-    mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 2)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 2:
-    Mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 15)) )
-    mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 4:
-    Mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 20)) )
-    mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 6:
-    Mtick = mpld.HourLocator(byhour=list(range(0,24,1)) )
-    mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 10)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 12:
-    Mtick = mpld.HourLocator(byhour=list(range(0,24,2)) )
-    mtick = mpld.MinuteLocator(byminute=list(range(0, 60, 30)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 24:
-    # < 1 day
-    Mtick = mpld.HourLocator(byhour=list(range(0, 24, 3)) )
-    mtick = mpld.HourLocator(byhour=list(range(0, 24, 1)) )
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 48:
-    # < 2 days
-    Mtick = mpld.HourLocator(byhour=list(range(0, 24, 4)) )
-    mtick = mpld.HourLocator(byhour=list(range(0, 24, 2)) )
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 72:
-    # < 3 days
-    Mtick = mpld.HourLocator(byhour = list(range(0, 24, 6)))
-    mtick = mpld.HourLocator(byhour = list(range(0, 24, 3)))
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 96:
-    # < 4 days
-    Mtick = mpld.HourLocator(byhour = list(range(0, 24, 12)))
-    mtick = mpld.HourLocator(byhour = list(range(0, 24, 3)))
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif deltaT.days < 8:
-    Mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    mtick = mpld.HourLocator(byhour=list(range(0, 24, 4)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 16:
-    Mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 32:
-    Mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 4)))
-    mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 60:
-    Mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 7)))
-    mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 183:
-    Mtick = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    mtick = mpld.DayLocator(bymonthday=list(range(1, 32, 7)))
-    fmt1  = mpld.DateFormatter('%m')
-    fmt2  = '%Y'
-    trans = 'month'
-  elif deltaT.days < 367:
-    Mtick = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    mtick = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    fmt1  = mpld.DateFormatter('%m')
-    fmt2  = '%Y'
-    trans = 'month'
-  elif deltaT.days < 366*2:
-    Mtick = mpld.MonthLocator(bymonth=list(range(1, 13, 2)))
-    mtick = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    fmt1  = mpld.DateFormatter('%m')
-    fmt2  = '%Y'
-    trans = 'month'
-  elif deltaT.days < 366*8:
-    Mtick = mpld.YearLocator(1)
-    mtick = mpld.MonthLocator(bymonth=list(range(1, 13, 4)))
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*15:
-    to = axes.lines[0].get_xdata()[0]
-    tf = axes.lines[0].get_xdata()[-1]
-    # Ideally would set byyear=list(range(to.year, tf.year,2)) but
-    # byyear is not a kwarg. Would need to something like
-    # https://stackoverflow.com/questions/48428729/matplotlib-dates-yearlocator-with-odd-intervals
-    Mtick = mpld.YearLocator(1)
-    mtick = mpld.YearLocator(1)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-    if False:
-      xl = axes.get_xlim()
-      a = mpld.num2date(xl[0])
-      print(a)
-      import pdb;pdb.set_trace()
-      a = mpld.date2num(a.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0))
-      b = mpld.num2date(xl[1])
-      b = mpld.date2num(b.replace(year=(b.year+1), month=1, day=1, hour=0, minute=0, second=0, microsecond=0))
-      axes.set_xlim([a, b])
-  elif deltaT.days < 366*40:
-    Mtick = mpld.YearLocator(5)
-    mtick = mpld.YearLocator(1)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*100:
-    Mtick = mpld.YearLocator(10)
-    mtick = mpld.YearLocator(2)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*200:
-    Mtick = mpld.YearLocator(20)
-    mtick = mpld.YearLocator(5)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  else:
-    Mtick = mpld.YearLocator(50)
-    mtick = mpld.YearLocator(10)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-
-  return Mtick, mtick, fmt1, fmt2, trans
 
 
 def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, debug=False):
@@ -726,3 +475,27 @@ def _print_ticks(dir, axes, ticks, labels):
       note = ' (may be clipped by mpl b/c outside of axis limits)'
     label = str(labels[i]).replace("\n", "\\n")
     print(f' {label}    {mpld.num2date(ticks[i])} {note}')
+
+
+def _manual_labels(dir, axes):
+
+  fmt2 = '%Y-%m-%d'
+  ticks = axes.get_xticks()
+  labels = _get_labels(dir, axes)
+  # Make all labels have the same number of decimal places as one
+  # with the most decimal places.
+  n_places = 0
+  for i in range(0, len(labels)):
+    # Remove trailing zeros.
+    n_places = max(n_places, len(labels[i].rstrip("0").split(".")[-1]))
+  for i in range(0, len(labels)):
+    parts = labels[i].split(".")
+    labels[i] = parts[0]
+    if len(parts) > 1:
+      fractional = parts[1][0:n_places]
+    if n_places > 0:
+      labels[i] += "." + fractional
+
+  return ticks, labels, fmt2
+
+

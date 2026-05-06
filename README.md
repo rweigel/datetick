@@ -49,6 +49,8 @@ Python-3.13 / Matplotlib-3.10.9
 
 ![test/visual_test/latest/20001231170000-20010102190000-x_v2.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231170000-20010102190000-x_v2.svg)
 
+![test/visual_test/latest/20010101000000.0-20010101000000.9-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.9-x.svg)
+
 ![test/visual_test/latest/20010101000000-20010101000001-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000-20010101000001-x.svg)
 
 ![test/visual_test/latest/20010101000000-20010101000002-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000-20010101000002-x.svg)

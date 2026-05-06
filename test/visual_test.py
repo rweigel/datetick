@@ -64,19 +64,21 @@ def plot(ds1, ds2, dir, **kwargs):
     xt = 0.5
     yt = y[0] + (y[1] - y[0])/2
 
+  axes[0].plot(x, y, '*')
+  axes[0].text(xt, yt, text_matplotlib, ha='center', bbox=bbox)
+
+  axes[1].plot(x, y, '*')
+  axes[1].text(xt, yt, text_datetick, ha='center', bbox=bbox)
+  delta_t = datetick(dir, axes=axes[1], **kwargs)
+
   if dir == 'x':
     newline = ''
     space = ''
   else:
     newline = '\n'
     space = '   '
-  axes[0].set_title(ds1 + f' - {newline}' + ds2 + space, fontsize=10, fontfamily='monospace')
-  axes[0].plot(x, y, '*')
-  axes[0].text(xt, yt, text_matplotlib, ha='center', bbox=bbox)
-
-  axes[1].plot(x, y, '*')
-  axes[1].text(xt, yt, text_datetick, ha='center', bbox=bbox)
-  datetick(dir, axes=axes[1], **kwargs)
+  title = f"{ds1} - {ds2} | $\\Delta$t={delta_t}"
+  axes[0].set_title(title, fontsize=10, fontfamily='monospace')
 
 
 def _savefig(ds1, ds2, dir, files, debug=False):

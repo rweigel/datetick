@@ -1,4 +1,4 @@
-from datetick.datetick import datetick
+from .datetick import datetick
 from importlib.metadata import version, PackageNotFoundError
 
 try:
