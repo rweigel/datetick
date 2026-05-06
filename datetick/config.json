@@ -1,7 +1,7 @@
 [
   {
-    "comment": "< 0.1 seconds: use default matplotlib locator (fractional seconds)",
-    "if_seconds_lt": 0.1,
+    "comment": "< 5 seconds: use default matplotlib locator (fractional seconds)",
+    "if_seconds_lt": 5,
     "major": null,
     "minor": null,
     "fmt1": null,
@@ -9,52 +9,18 @@
     "trans": null
   },
   {
-    "comment": "< 1 second",
-    "if_seconds_lt": 1,
-    "major": {
-      "class": "MicrosecondLocator",
-      "interval": 100000
-    },
-    "minor": {
-      "class": "MicrosecondLocator",
-      "interval": 50000
-    },
-    "fmt1": {
-      "class": "MillisecondFuncFormatter"
-    },
-    "fmt2": "%H:%M:%S\n%Y-%m-%d",
-    "trans": "second"
-  },
-  {
-    "comment": "< 2 seconds",
-    "if_seconds_lt": 2,
-    "major": {
-      "class": "MicrosecondLocator",
-      "interval": 250000
-    },
-    "minor": {
-      "class": "MicrosecondLocator",
-      "interval": 125000
-    },
-    "fmt1": {
-      "class": "MillisecondFuncFormatter"
-    },
-    "fmt2": "%H:%M:%S\n%Y-%m-%d",
-    "trans": "second"
-  },
-  {
-    "comment": "< 5 seconds",
+    "comment": "< 5 seconds: use MicrosecondLocator with interval of 200 milliseconds",
     "if_seconds_lt": 5,
     "major": {
       "class": "MicrosecondLocator",
-      "interval": 500000
+      "interval": 200000
     },
     "minor": {
       "class": "MicrosecondLocator",
-      "interval": 250000
+      "interval": 100000
     },
     "fmt1": {
-      "class": "MillisecondFuncFormatter"
+      "class": "FuncFormatter"
     },
     "fmt2": "%H:%M:%S\n%Y-%m-%d",
     "trans": "second"
@@ -64,10 +30,7 @@
     "if_seconds_lt": 10,
     "major": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60
-      ]
+      "bysecond_arange": [0, 60]
     },
     "minor": {
       "class": "MicrosecondLocator",
@@ -85,18 +48,11 @@
     "if_seconds_lt": 20,
     "major": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        2
-      ]
+      "bysecond_arange": [0, 60, 2]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60
-      ]
+      "bysecond_arange": [0, 60]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -110,18 +66,11 @@
     "if_seconds_lt": 30,
     "major": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        5
-      ]
+      "bysecond_arange": [0, 60, 5]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60
-      ]
+      "bysecond_arange": [0, 60]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -135,19 +84,11 @@
     "if_seconds_lt": 60,
     "major": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        10
-      ]
+      "bysecond_arange": [0, 60, 10]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        2
-      ]
+      "bysecond_arange": [0, 60, 2]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -161,19 +102,11 @@
     "if_seconds_lt": 120,
     "major": {
       "class": "SecondLocator",
-      "bysecond": [
-        0,
-        20,
-        40
-      ]
+      "bysecond": [0, 20, 40]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        5
-      ]
+      "bysecond_arange": [0, 60, 5]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -187,19 +120,11 @@
     "if_seconds_lt": 180,
     "major": {
       "class": "SecondLocator",
-      "bysecond": [
-        0,
-        20,
-        40
-      ]
+      "bysecond": [0, 20, 40]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        5
-      ]
+      "bysecond_arange": [0, 60, 5]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -213,19 +138,11 @@
     "if_seconds_lt": 300,
     "major": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        30
-      ]
+      "bysecond_arange": [0, 60, 30]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        10
-      ]
+      "bysecond_arange": [0, 60, 10]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -239,18 +156,11 @@
     "if_seconds_lt": 600,
     "major": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60
-      ]
+      "byminute_arange": [0, 60]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        15
-      ]
+      "bysecond_arange": [0, 60, 15]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -264,19 +174,11 @@
     "if_seconds_lt": 1200,
     "major": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        2
-      ]
+      "byminute_arange": [0, 60, 2]
     },
     "minor": {
       "class": "SecondLocator",
-      "bysecond_arange": [
-        0,
-        60,
-        30
-      ]
+      "bysecond_arange": [0, 60, 30]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -290,18 +192,11 @@
     "if_seconds_lt": 1800,
     "major": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        5
-      ]
+      "byminute_arange": [0, 60, 5]
     },
     "minor": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60
-      ]
+      "byminute_arange": [0, 60]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -315,19 +210,11 @@
     "if_seconds_lt": 3600,
     "major": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        10
-      ]
+      "byminute_arange": [0, 60, 10]
     },
     "minor": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        2
-      ]
+      "byminute_arange": [0, 60, 2]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -341,19 +228,11 @@
     "if_seconds_lt": 7200,
     "major": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        15
-      ]
+      "byminute_arange": [0, 60, 15]
     },
     "minor": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        5
-      ]
+      "byminute_arange": [0, 60, 5]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -367,19 +246,11 @@
     "if_seconds_lt": 14400,
     "major": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        20
-      ]
+      "byminute_arange": [0, 60, 20]
     },
     "minor": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        5
-      ]
+      "byminute_arange": [0, 60, 5]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -393,18 +264,11 @@
     "if_seconds_lt": 21600,
     "major": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24
-      ]
+      "byhour_arange": [0, 24]
     },
     "minor": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        10
-      ]
+      "byminute_arange": [0, 60, 10]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -418,19 +282,11 @@
     "if_seconds_lt": 43200,
     "major": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        2
-      ]
+      "byhour_arange": [0, 24, 2]
     },
     "minor": {
       "class": "MinuteLocator",
-      "byminute_arange": [
-        0,
-        60,
-        30
-      ]
+      "byminute_arange": [0, 60, 30]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -444,18 +300,11 @@
     "if_seconds_lt": 86400,
     "major": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        3
-      ]
+      "byhour_arange": [0, 24, 3]
     },
     "minor": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24
-      ]
+      "byhour_arange": [0, 24]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -469,19 +318,11 @@
     "if_seconds_lt": 172800,
     "major": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        4
-      ]
+      "byhour_arange": [0, 24, 4]
     },
     "minor": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        2
-      ]
+      "byhour_arange": [0, 24, 2]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -495,19 +336,11 @@
     "if_seconds_lt": 259200,
     "major": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        6
-      ]
+      "byhour_arange": [0, 24, 6]
     },
     "minor": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        3
-      ]
+      "byhour_arange": [0, 24, 3]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -521,19 +354,11 @@
     "if_seconds_lt": 345600,
     "major": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        12
-      ]
+      "byhour_arange": [0, 24, 12]
     },
     "minor": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        3
-      ]
+      "byhour_arange": [0, 24, 3]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -547,18 +372,11 @@
     "if_seconds_lt": 691200,
     "major": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        32
-      ]
+      "bymonthday_arange": [1, 32]
     },
     "minor": {
       "class": "HourLocator",
-      "byhour_arange": [
-        0,
-        24,
-        4
-      ]
+      "byhour_arange": [0, 24, 4]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -572,17 +390,11 @@
     "if_seconds_lt": 1382400,
     "major": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        32
-      ]
+      "bymonthday_arange": [1, 32]
     },
     "minor": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        32
-      ]
+      "bymonthday_arange": [1, 32]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -596,18 +408,11 @@
     "if_seconds_lt": 2764800,
     "major": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        33,
-        4
-      ]
+      "bymonthday_arange": [1, 33, 4]
     },
     "minor": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        32
-      ]
+      "bymonthday_arange": [1, 32]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -621,18 +426,11 @@
     "if_seconds_lt": 5184000,
     "major": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        36,
-        7
-      ]
+      "bymonthday_arange": [1, 36, 7]
     },
     "minor": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        32
-      ]
+      "bymonthday_arange": [1, 32]
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -646,22 +444,15 @@
     "if_seconds_lt": 15811200,
     "major": {
       "class": "MonthLocator",
-      "bymonth_arange": [
-        1,
-        13
-      ]
+      "bymonth_arange": [1, 13]
     },
     "minor": {
       "class": "DayLocator",
-      "bymonthday_arange": [
-        1,
-        36,
-        7
-      ]
+      "bymonthday_arange": [1, 36, 7]
     },
     "fmt1": {
       "class": "DateFormatter",
-      "format": "%m"
+      "format": "%b"
     },
     "fmt2": "%Y",
     "trans": "month"
@@ -671,21 +462,15 @@
     "if_seconds_lt": 31708800,
     "major": {
       "class": "MonthLocator",
-      "bymonth_arange": [
-        1,
-        13
-      ]
+      "bymonth_arange": [1, 13]
     },
     "minor": {
       "class": "MonthLocator",
-      "bymonth_arange": [
-        1,
-        13
-      ]
+      "bymonth_arange": [1, 13]
     },
     "fmt1": {
       "class": "DateFormatter",
-      "format": "%m"
+      "format": "%b"
     },
     "fmt2": "%Y",
     "trans": "month"
@@ -695,22 +480,15 @@
     "if_seconds_lt": 63244800,
     "major": {
       "class": "MonthLocator",
-      "bymonth_arange": [
-        1,
-        13,
-        2
-      ]
+      "bymonth_arange": [1, 13, 2]
     },
     "minor": {
       "class": "MonthLocator",
-      "bymonth_arange": [
-        1,
-        13
-      ]
+      "bymonth_arange": [1, 13]
     },
     "fmt1": {
       "class": "DateFormatter",
-      "format": "%m"
+      "format": "%b"
     },
     "fmt2": "%Y",
     "trans": "month"
@@ -724,11 +502,7 @@
     },
     "minor": {
       "class": "MonthLocator",
-      "bymonth_arange": [
-        1,
-        13,
-        4
-      ]
+      "bymonth_arange": [1, 13, 4]
     },
     "fmt1": {
       "class": "DateFormatter",
