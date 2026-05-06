@@ -2,8 +2,10 @@ kwargs:
   - ["2001-01-01T00:00:00Z", "2001-01-02T23:00:00Z"]
   - ["2001-01-01T00:00:00Z", "2001-01-02T23:00:00Z", {adjust_first_xlabel: true}]
   - ["2001-01-01T00:00:00Z", "2001-01-02T23:00:00Z", {adjust_last_xlabel: true}]
+  - ["2001-01-01T00:00:00Z", "2001-01-02T23:00:00Z", {adjust_first_xlabel: true, adjust_last_xlabel: true}]
   - ["2000-12-31T17:00:00Z", "2001-01-02T19:00:00Z"]
   - ["2000-12-31T17:00:00Z", "2001-01-02T19:00:00Z", {adjust_xrange: true}]
+  - ["2000-12-31T17:00:00Z", "2001-01-02T19:00:00Z", {fmt1_shrink_factor: 0.65, fmt1_shrink_always: true}]
 
 main:
 

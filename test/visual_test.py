@@ -19,66 +19,95 @@ except ImportError:
   exit()
 
 def plot(ds1, ds2, dir, **kwargs):
-  if dir == 'x':
-    figsize=(8, 2)
-    hspace = 1.0
-  else:
-    figsize=(2, 8)
-    hspace = 0.1
 
-  _, axes = plt.subplots(2, figsize=figsize)
-  plt.subplots_adjust(hspace=hspace)
-  for axis in axes:
-    axis.grid()
+  def _set_title(ax, dir, delta_t):
     if dir == 'x':
-      axis.spines[['top', 'right', 'left']].set_visible(False)
-      axis.yaxis.set_visible(False)
+      newline = ''
+      space = ''
     else:
-      axis.spines[['top', 'right']].set_visible(False)
+      newline = '\n'
+      space = '  '
 
-  bbox = {
-          'boxstyle': 'round,pad=0.3',
-          'facecolor': 'white',
-          'edgecolor': 'gray',
-          'alpha': 0.8
-  }
-  text_matplotlib = 'matplotlib'
-  text_datetick = 'datetick'
-  if kwargs:
-    bbox['facecolor'] = 'lightblue'
-    for key, value in kwargs.items():
-      if key == 'debug':
-        continue
-      text_datetick += f'\n{key}={value}'
+    delta_t = str(delta_t)
+    delta_t = delta_t.replace(" ", "")
+    repl = {'day': 'd', 'month': 'm', 'year': 'y'}
+    for unit, abbrev in repl.items():
+      delta_t = delta_t.replace(unit + 's', abbrev)
+      delta_t = delta_t.replace(unit, abbrev)
+
+    title = f"{ds1}/{newline}{space}{ds2}{newline} Δt = {delta_t}"
+    ax.set_title(title, fontsize=10, fontfamily='monospace')
+
+
+  def _axes(dir):
+
+    if dir == 'x':
+      figsize=(8, 2)
+      hspace = 1.0
+    else:
+      figsize=(2, 8)
+      hspace = 0.1
+
+    fig, axes = plt.subplots(2, figsize=figsize)
+    plt.subplots_adjust(hspace=hspace)
+    for axis in axes:
+      axis.grid()
+      if dir == 'x':
+        axis.spines[['top', 'right', 'left']].set_visible(False)
+        axis.yaxis.set_visible(False)
+      else:
+        axis.spines[['top', 'right']].set_visible(False)
+
+    return fig, axes
+
+
+  def _set_label(ax, dir, x, y, text, datetick_kwargs=None):
+    if dir == 'x':
+      yt = 0.0
+      xt = x[0] + (x[1] - x[0])/2
+    if dir == 'y':
+      xt = 0.5
+      yt = y[0] + (y[1] - y[0])/2
+
+    bbox = {
+            'boxstyle': 'round,pad=0.3',
+            'facecolor': 'white',
+            'edgecolor': 'gray',
+            'alpha': 0.8
+    }
+
+    if datetick_kwargs:
+      bbox['facecolor'] = 'lightblue'
+      for key, value in kwargs.items():
+        if key == 'debug':
+          continue
+        text += f'\n{key}={value}'
+
+    ax.text(xt, yt, text, ha='center', va='center', bbox=bbox, fontsize=9)
+
+
+  fig, axes = _axes(dir)
 
   dt1 = dateutil.parser.parse(ds1)
   dt2 = dateutil.parser.parse(ds2)
   if dir == 'x':
     x = [dt1, dt2]
-    y = [0.0,0.0]
-    yt = 0.0
-    xt = x[0] + (x[1] - x[0])/2
+    y = [0.0, 0.0]
   else:
     x = [0.0, 1.0]
     y = [dt1, dt2]
-    xt = 0.5
-    yt = y[0] + (y[1] - y[0])/2
 
   axes[0].plot(x, y, '*')
-  axes[0].text(xt, yt, text_matplotlib, ha='center', bbox=bbox)
+  _set_label(axes[0], dir, x, y, 'matplotlib')
 
   axes[1].plot(x, y, '*')
-  axes[1].text(xt, yt, text_datetick, ha='center', bbox=bbox)
-  delta_t = datetick(dir, axes=axes[1], **kwargs)
+  _set_label(axes[1], dir, x, y, 'datetick', datetick_kwargs=kwargs)
 
-  if dir == 'x':
-    newline = ''
-    space = ''
-  else:
-    newline = '\n'
-    space = '   '
-  title = f"{ds1} - {ds2} | $\\Delta$t={delta_t}"
-  axes[0].set_title(title, fontsize=10, fontfamily='monospace')
+  cfg = datetick(dir, axes=axes[1], **kwargs)
+
+  _set_title(axes[0], dir, cfg['delta_t'])
+
+  return cfg
 
 
 def _savefig(ds1, ds2, dir, files, debug=False):
@@ -129,7 +158,7 @@ def _append_to_readme(files, dir, debug=False):
   # Add python/mpl version
   mpl = f"Matplotlib-{plt.matplotlib.__version__}"
   py = f"Python-{os.sys.version_info.major}.{os.sys.version_info.minor}"
-  lines.append(f"\n\n{py} / {mpl}\n\n")
+  lines.append(f"\n\n<code>{py}/{mpl}</code>\n\n")
 
   image_links = []
   for file in files:
@@ -200,7 +229,12 @@ def test_plot(short=False, debug=False):
       kwargs = test[2] if len(test) > 2 else {}
       dt_str_o = test[0]
       dt_str_f = test[1]
-      plot(dt_str_o, dt_str_f, dir=dir, **kwargs)
+      if False:
+        cfg2 = plot(dt_str_o, dt_str_f, dir=dir, use_config2=True, **kwargs)
+        plt.close()
+      cfg = plot(dt_str_o, dt_str_f, dir=dir, **kwargs)
+      if False:
+        _compare_cfgs(dt_str_o, dt_str_f, cfg, cfg2)
       file = _savefig(dt_str_o, dt_str_f, dir, files)
       files.append(file)
       if short:
@@ -210,6 +244,12 @@ def test_plot(short=False, debug=False):
     _append_to_readme(files, dir, debug=debug)
     _create_subdir_readme(files, dir, debug=debug)
 
+
+def _compare_cfgs(ds1, ds2, cfg1, cfg2):
+  #assert list(cfg1['ticks']) == list(cfg2['ticks']), f"Ticks differ: {cfg1['ticks']} vs {cfg2['ticks']}"
+  msg = f"Labels differ for {ds1} - {ds2}"
+  msg += f"\n  {cfg1['labels']}\nvs\n  {cfg2['labels']}"
+  assert list(cfg1['labels']) == list(cfg2['labels']), msg
 
 if __name__ == '__main__':
   if False:

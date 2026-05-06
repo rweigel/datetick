@@ -7,7 +7,10 @@ def datetick(*args,
              adjust_first_xlabel=False,
              adjust_xrange=False,
              adjust_yrange=False,
+             fmt1_shrink_factor=0.87,
+             fmt1_shrink_always=False,
              set_cb=True,
+             use_config2=False,
              debug=False):
   """
   datetick() formats the major and minor x-tick labels of the current figure.
@@ -37,23 +40,37 @@ def datetick(*args,
   adjust_xrange: If True, expand x-range so data are always within a major tick.
   adjust_yrange: If True, expand y-range so data are always within a major tick.
 
+  fmt1_shrink_factor: If adjust_first_xlabel or adjust_last_xlabel is True,
+                      shrink font size of x-labels without newline by this
+                      factor to make it clearer label is attached to tick above
+                      it even when not centered.
+
+  fmt1_shrink_always: If True, shrink font size of x-labels without newline by
+                      fmt1_shrink_factor even if adjust_{first,last}_xlabel is False.
+
   debug: If True, print debug information.
   """
 
-  # Based on spacepy/plot/utils.py on 07/10/2017, but many additions.
-  # See also
-  #   https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
-  # and demo use at misc/geospacelab/demo.py
-
-  # TODO: Use _numsize() to determine if figure width and height
-  #       will cause overlap when default number major tick labels is used.
-  # TODO: If time[0].day > 28, need to make first tick at time[0].day = 28
-  #       as needed.
-  # TODO: If first data point has fractional seconds, the plot won't have
-  #       a major x-label right below it. This is due to the fact that
-  #       MicrosecondLocator() does not take a keyword argument of
-  #       "bymicroseconds".
-  # TODO: Adjust lower and upper limits as in 366*8 span
+  """
+  Based on spacepy/plot/utils.py on 07/10/2017, but many additions.
+  See also
+    https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
+  and demo use at misc/geospacelab/demo.py
+  """
+  """
+  TODO:
+    * Add auto_adjust option that sets adjust_{first,last}_xlabel and
+      adjust_{x,y}range as needed.
+    * Use _numsize() to determine if figure width and height
+      will cause overlap when default number major tick labels is used.
+    * If time[0].day > 28, need to make first tick at time[0].day = 28
+      as needed.
+    * If first data point has fractional seconds, the plot won't have
+      a major x-label right below it. This is due to the fact that
+      MicrosecondLocator() does not take a keyword argument of
+      "bymicroseconds".
+    * Adjust lower and upper limits as in 366*8 span
+  """
 
   # Get all kwargs passed using locals
   kwargs = {k: v for k, v in locals().items() if k != 'args'}
@@ -167,23 +184,27 @@ def datetick(*args,
   It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
   """
 
-  major, minor, fmt1, fmt2, trans = config(deltaT, debug=debug)
+  if use_config2:
+    from .config import config2
+    cfg = config2(deltaT, debug=debug)
+  else:
+    cfg = config(deltaT, debug=debug)
 
-  if major is None:
+  if cfg['major'] is None:
     if debug:
       print('No locator found for this time span. Using default Matplotlib locator and formatter.')
-    ticks, labels, fmt2 = _manual_labels(dir, axes)
+    ticks, labels, cfg['fmt2'] = _manual_labels(dir, axes)
   else:
     if dir == 'x':
-      axes.xaxis.set_major_locator(major)
-      axes.xaxis.set_minor_locator(minor)
-      axes.xaxis.set_major_formatter(fmt1)
+      axes.xaxis.set_major_locator(cfg['major'])
+      axes.xaxis.set_minor_locator(cfg['minor'])
+      axes.xaxis.set_major_formatter(cfg['fmt1'])
       fig.canvas.draw() # Render new labels so updated for next line
       ticks = axes.get_xticks()
     else:
-      axes.yaxis.set_major_locator(major)
-      axes.yaxis.set_minor_locator(minor)
-      axes.yaxis.set_major_formatter(fmt1)
+      axes.yaxis.set_major_locator(cfg['major'])
+      axes.yaxis.set_minor_locator(cfg['minor'])
+      axes.yaxis.set_major_formatter(cfg['fmt1'])
       fig.canvas.draw() # Render new labels so updated for next line
       ticks = axes.get_yticks()
 
@@ -209,8 +230,8 @@ def datetick(*args,
     print(f'{dir}labels and ticks after applying fmt1:')
     _print_ticks(dir, axes, ticks, labels)
 
-  if fmt2 != '':
-    labels = _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=debug)
+  if cfg['fmt2'] != '':
+    labels = _add_fmt2(dir, cfg['fmt2'], cfg['trans'], lim, ticks, labels, debug=False)
 
     if debug:
       print(f'{dir}labels and ticks after applying fmt2:')
@@ -227,10 +248,14 @@ def datetick(*args,
       #   https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
       axes.set_xticks(axes.get_xticks())
       axes.set_xticklabels(labels)
-      _adjust_xlabels(axes,
-                      adjust_first_xlabel=adjust_first_xlabel,
-                      adjust_last_xlabel=adjust_last_xlabel,
-                      debug=debug)
+      kwargs = {
+        'adjust_first_xlabel': adjust_first_xlabel,
+        'adjust_last_xlabel': adjust_last_xlabel,
+        'fmt1_shrink_factor': fmt1_shrink_factor,
+        'fmt1_shrink_always': fmt1_shrink_always,
+        'debug': debug
+      }
+      _adjust_xlabels(axes, **kwargs)
 
     if dir == 'y':
       axes.set_yticks(axes.get_yticks())
@@ -240,7 +265,16 @@ def datetick(*args,
   if set_cb:
     _set_cb(dir, axes, kwargs, debug=debug)
 
-  return deltaT
+  return {
+          'delta_t': deltaT,
+          'ticks': ticks,
+          'labels': labels,
+          'major_locator': cfg['major'],
+          'minor_locator': cfg['minor'],
+          'fmt1': cfg['fmt1'],
+          'fmt2': cfg['fmt2'],
+          'trans': cfg['trans']
+          }
 
 def _set_cb(dir, axes, kwargs, debug=False):
   import matplotlib.dates as mpld
@@ -300,7 +334,7 @@ def _adjust_range(dir, fig, axes, datamin, datamax, debug=False):
       axes.set_ylim(first - pad, last + pad)
 
 
-def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=False):
+def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
   from datetime import datetime
   import matplotlib.dates as mpld
 
@@ -380,7 +414,7 @@ def _add_fmt2(fmt2, lim, ticks, deltaT, labels, dir, trans, debug=False):
   return labels
 
 
-def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, debug=False):
+def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, fmt1_shrink_factor=0.9, fmt1_shrink_always=False, debug=False):
   xticklabels = axes.get_xticklabels()
   lastlabel_text = xticklabels[-1].get_text()
   firstlabel_text = xticklabels[0].get_text()
@@ -412,14 +446,14 @@ def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, d
       offset = _numsize(axes, last_fmt1, -1, debug=debug)
       xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
 
-  if adjusted:
+  if adjusted or fmt1_shrink_always:
     # Make all labels without newline slightly smaller than default fontsize 
     # so it is clearer that fmt2 applies to larger number.
     if debug:
       print('Adjusting font size of x-labels without newline')
     for label in xticklabels:
       if '\n' not in label.get_text():
-        label.set_fontsize(label.get_fontsize()*0.85)
+        label.set_fontsize(label.get_fontsize()*fmt1_shrink_factor)
 
 
 def _numsize(ax, num, sign, debug=False):
