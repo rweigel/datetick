@@ -128,13 +128,20 @@ def _savefig(ds1, ds2, dir, files, debug=False):
   dirname = os.path.dirname(file)
   if not os.path.exists(dirname):
     os.makedirs(dirname, exist_ok=True)
+  kwargs = {'bbox_inches': 'tight'}
+
+  rc = {}
   if ext == 'png':
-    plt.savefig(file, bbox_inches='tight', dpi=220)
+    kwargs['dpi'] = 220
+    plt.savefig(file, **kwargs)
   else:
     if ext == 'svg':
       # Don't convert text to paths in SVG to keep it searchable and selectable
-      plt.rcParams['svg.fonttype'] = 'none'
-    plt.savefig(file, bbox_inches='tight')
+      kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
+      rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
+
+  with plt.rc_context(rc):
+    plt.savefig(file, **kwargs)
 
   plt.close()
 
