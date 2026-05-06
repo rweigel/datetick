@@ -1,1 +1,0 @@
-scm-release --pypi-config-file ~/etc/pypirc --increment-version patch
