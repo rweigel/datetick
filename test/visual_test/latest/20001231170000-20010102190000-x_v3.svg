@@ -459,21 +459,21 @@ L 453.6 131.731562
    </g>
    <g id="text_21">
     <g id="patch_7">
-     <path d="M 172.771875 130.635062 
-L 288.028125 130.635062 
-Q 290.728125 130.635062 290.728125 127.935062 
-L 290.728125 98.818375 
-Q 290.728125 96.118375 288.028125 96.118375 
-L 172.771875 96.118375 
-Q 170.071875 96.118375 170.071875 98.818375 
-L 170.071875 127.935062 
-Q 170.071875 130.635062 172.771875 130.635062 
+     <path d="M 159.168516 130.635062 
+L 301.631484 130.635062 
+Q 304.331484 130.635062 304.331484 127.935062 
+L 304.331484 98.818375 
+Q 304.331484 96.118375 301.631484 96.118375 
+L 159.168516 96.118375 
+Q 156.468516 96.118375 156.468516 98.818375 
+L 156.468516 127.935062 
+Q 156.468516 130.635062 159.168516 130.635062 
 z
 " style="fill: #add8e6; opacity: 0.8; stroke: #808080; stroke-linejoin: miter"/>
     </g>
     <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(212.158125 105.406656)">datetick</text>
-    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(174.5775 115.484687)">fmt1_shrink_factor=0.65</text>
-    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(172.771875 125.813031)">fmt1_shrink_always=True</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(160.974141 115.484687)">major_font_shrink_factor=0.65</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(159.168516 125.813031)">major_font_shrink_always=True</text>
    </g>
   </g>
  </g>

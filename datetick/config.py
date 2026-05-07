@@ -12,18 +12,20 @@ def config(deltaT, config=None, debug=False):
 
   total_seconds = deltaT.total_seconds()
   for rule in config:
-    if 'range' in rule:
-      rng = rule['range']
-      lo = _to_seconds(rng.get('min'))
-      hi = _to_seconds(rng.get('max'))
+    rng = rule['range']
+    lo = _to_seconds(rng.get('min'))
+    hi = _to_seconds(rng.get('max'))
     lo = lo if lo is not None else 0
     if lo <= total_seconds and (hi is None or total_seconds < hi):
+      major = rule['major']
+      minor = rule['minor']
       return {
-        'major': _make_locator(rule['major']),
-        'minor': _make_locator(rule['minor']),
-        'fmt1':  _make_formatter(rule['fmt1']),
-        'fmt2':  rule['fmt2'],
-        'trans': rule['trans']
+        'major_locator':    _make_locator(major['locator'] if major else None),
+        'minor_locator':    _make_locator(minor['locator'] if minor else None),
+        'major_formatter':  _make_formatter(major.get('formatter') if major else None),
+        'minor_formatter':  _make_formatter(minor.get('formatter') if minor else None),
+        'major_sub_format': rule.get('major_sub_format', ''),
+        'trans':            rule['trans']
       }
 
   warnings.warn(f"No matching config rule found for deltaT={deltaT}; returning None.")
@@ -33,6 +35,8 @@ def config(deltaT, config=None, debug=False):
 
 def _make_locator(spec):
   import matplotlib.dates as mpld
+  if spec is None:
+    return None
   LOCATOR_MAP = {
     'YearLocator':        lambda c: mpld.YearLocator(c['base']),
     'MonthLocator':       lambda c: mpld.MonthLocator(bymonth=_arange(c, 'bymonth')),
@@ -42,8 +46,6 @@ def _make_locator(spec):
     'SecondLocator':      lambda c: mpld.SecondLocator(bysecond=_arange(c, 'bysecond')),
     'MicrosecondLocator': lambda c: mpld.MicrosecondLocator(interval=c['interval'])
   }
-  if spec is None:
-    return None
   return LOCATOR_MAP[spec['class']](spec)
 
 
@@ -59,11 +61,49 @@ def _make_formatter(spec):
 def _validate_config(config):
   """Validate that config is well-formed."""
   import jsonschema
+
+  locator_spec = {
+    "type": "object",
+    "required": ["class"],
+    "properties": {
+      "class": {"type": "string"}
+    }
+  }
+
+  formatter_spec = {
+    "type": "object",
+    "required": ["class"],
+    "properties": {
+      "class": {"type": "string"},
+      "format": {"type": "string"}
+    }
+  }
+
+  major_spec = {
+    "type": "object",
+    "required": ["locator"],
+    "properties": {
+      "locator":   locator_spec,
+      "formatter": formatter_spec
+    },
+    "additionalProperties": False
+  }
+
+  minor_spec = {
+    "type": "object",
+    "required": ["locator"],
+    "properties": {
+      "locator":   locator_spec,
+      "formatter": formatter_spec
+    },
+    "additionalProperties": False
+  }
+
   schema = {
     "type": "array",
     "items": {
       "type": "object",
-      "required": ["range", "major", "minor", "fmt1", "fmt2", "trans"],
+      "required": ["range", "major", "trans"],
       "properties": {
         "comment": {"type": "string"},
         "range": {
@@ -76,10 +116,9 @@ def _validate_config(config):
           },
           "additionalProperties": False
         },
-        "major": {"type": ["object", "null"]},
-        "minor": {"type": ["object", "null"]},
-        "fmt1": {"type": ["object", "null"]},
-        "fmt2": {"type": ["string", "null"]},
+        "major": {"oneOf": [major_spec, {"type": "null"}]},
+        "minor": {"oneOf": [minor_spec, {"type": "null"}]},
+        "major_sub_format": {"type": ["string", "null"]},
         "trans": {"type": ["string", "null"]}
       }
     }
@@ -143,248 +182,3 @@ def _millis(x, pos):
   label = x.strftime('.%f')
   label = label[0:3]
   return label
-
-
-def config2(deltaT, debug=False):
-  # Old code. Delete eventually.
-  import matplotlib
-  import matplotlib.dates as mpld
-
-  nHours = deltaT.days * 24.0 + deltaT.seconds/3600.0
-  if deltaT.total_seconds() < 0.1:
-    # Locators don't locate at this resolution.
-    # Use default Matplotlib locator and formatter, which will show fractional seconds.
-    return {'major': None, 'minor': None, 'fmt1': None, 'fmt2': None, 'trans': None}
-  elif deltaT.total_seconds() < 1:
-    if debug:
-      print('Using < 1 second locator')
-    major = mpld.MicrosecondLocator(interval=100000)
-    minor = mpld.MicrosecondLocator(interval=50000)
-    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
-    fmt2  = '%H:%M:%S\n%Y-%m-%d'
-    trans = 'second'
-  elif deltaT.total_seconds() < 2:
-    if debug:
-      print('Using < 2 seconds locator')
-    major = mpld.MicrosecondLocator(interval=250000)
-    minor = mpld.MicrosecondLocator(interval=125000)
-    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
-    fmt2  = '%H:%M:%S\n%Y-%m-%d'
-    trans = 'second'
-  elif deltaT.total_seconds() < 5:
-    if debug:
-      print('Using < 5 seconds locator')
-    major = mpld.MicrosecondLocator(interval=500000)
-    minor = mpld.MicrosecondLocator(interval=250000)
-    fmt1 = matplotlib.ticker.FuncFormatter(_millis)
-    fmt2  = '%H:%M:%S\n%Y-%m-%d'
-    trans = 'second'
-  elif deltaT.total_seconds() < 10:
-    # < 10 seconds
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 1)) )
-    minor = mpld.MicrosecondLocator(interval=500000)
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 20:
-    # < 20 seconds
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 2)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 1)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 30:
-    # < 30 seconds
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 5)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 1)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60:
-    # < 1 minute
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 10)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 2)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*2:
-    # < 2 minutes
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 20)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*3:
-    # < 3 minutes
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 20)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*5:
-    # < 5 minutes
-    major = mpld.SecondLocator(bysecond=list(range(0, 60, 30)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 10)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*10:
-    # < 10 minutes
-    major = mpld.MinuteLocator(byminute=list(range(0, 60, 1)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 15)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*20:
-    # < 20 minutes
-    major = mpld.MinuteLocator(byminute=list(range(0, 60, 2)) )
-    minor = mpld.SecondLocator(bysecond=list(range(0, 60, 30)) )
-    fmt1  = mpld.DateFormatter('%M:%S')
-    fmt2  = '%Y-%m-%dT%H'
-    trans = 'hour'
-  elif deltaT.total_seconds() < 60*30:
-    # < 30 minutes
-    major = mpld.MinuteLocator(byminute=list(range(0, 60, 5)) )
-    minor = mpld.MinuteLocator(byminute=list(range(0, 60, 1)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif deltaT.total_seconds() < 60*60:
-    # < 60 minutes
-    major = mpld.MinuteLocator(byminute=list(range(0, 60, 10)) )
-    minor = mpld.MinuteLocator(byminute=list(range(0, 60, 2)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 2:
-    major = mpld.MinuteLocator(byminute=list(range(0, 60, 15)) )
-    minor = mpld.MinuteLocator(byminute=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 4:
-    major = mpld.MinuteLocator(byminute=list(range(0, 60, 20)) )
-    minor = mpld.MinuteLocator(byminute=list(range(0, 60, 5)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 6:
-    major = mpld.HourLocator(byhour=list(range(0,24,1)) )
-    minor = mpld.MinuteLocator(byminute=list(range(0, 60, 10)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 12:
-    major = mpld.HourLocator(byhour=list(range(0,24,2)) )
-    minor = mpld.MinuteLocator(byminute=list(range(0, 60, 30)) )
-    fmt1  = mpld.DateFormatter('%H:%M')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 24:
-    # < 1 day
-    major = mpld.HourLocator(byhour=list(range(0, 24, 3)) )
-    minor = mpld.HourLocator(byhour=list(range(0, 24, 1)) )
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 48:
-    # < 2 days
-    major = mpld.HourLocator(byhour=list(range(0, 24, 4)) )
-    minor = mpld.HourLocator(byhour=list(range(0, 24, 2)) )
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 72:
-    # < 3 days
-    major = mpld.HourLocator(byhour = list(range(0, 24, 6)))
-    minor = mpld.HourLocator(byhour = list(range(0, 24, 3)))
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif nHours < 96:
-    # < 4 days
-    major = mpld.HourLocator(byhour = list(range(0, 24, 12)))
-    minor = mpld.HourLocator(byhour = list(range(0, 24, 3)))
-    fmt1  = mpld.DateFormatter('%H')
-    fmt2  = '%Y-%m-%d'
-    trans = 'day'
-  elif deltaT.days < 8:
-    major = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    minor = mpld.HourLocator(byhour=list(range(0, 24, 4)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 16:
-    major = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    minor = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 32:
-    major = mpld.DayLocator(bymonthday=list(range(1, 32, 4)))
-    minor = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 60:
-    major = mpld.DayLocator(bymonthday=list(range(1, 32, 7)))
-    minor = mpld.DayLocator(bymonthday=list(range(1, 32, 1)))
-    fmt1  = mpld.DateFormatter('%d')
-    fmt2  = '%Y-%m'
-    trans = 'month'
-  elif deltaT.days < 183:
-    major = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    minor = mpld.DayLocator(bymonthday=list(range(1, 32, 7)))
-    fmt1  = mpld.DateFormatter('%m')
-    fmt2  = '%Y'
-    trans = 'month'
-  elif deltaT.days < 367:
-    major = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    minor = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    fmt1  = mpld.DateFormatter('%m')
-    fmt2  = '%Y'
-    trans = 'month'
-  elif deltaT.days < 366*2:
-    major = mpld.MonthLocator(bymonth=list(range(1, 13, 2)))
-    minor = mpld.MonthLocator(bymonth=list(range(1, 13, 1)))
-    fmt1  = mpld.DateFormatter('%m')
-    fmt2  = '%Y'
-    trans = 'month'
-  elif deltaT.days < 366*8:
-    major = mpld.YearLocator(1)
-    minor = mpld.MonthLocator(bymonth=list(range(1, 13, 4)))
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*15:
-    major = mpld.YearLocator(1)
-    minor = mpld.YearLocator(1)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*40:
-    major = mpld.YearLocator(5)
-    minor = mpld.YearLocator(1)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*100:
-    major = mpld.YearLocator(10)
-    minor = mpld.YearLocator(2)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  elif deltaT.days < 366*200:
-    major = mpld.YearLocator(20)
-    minor = mpld.YearLocator(5)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-  else:
-    major = mpld.YearLocator(50)
-    minor = mpld.YearLocator(10)
-    fmt1  = mpld.DateFormatter('%Y')
-    fmt2  = ''
-    trans = None
-
-  return {'major': major, 'minor': minor, 'fmt1': fmt1, 'fmt2': fmt2, 'trans': trans}

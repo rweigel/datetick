@@ -289,12 +289,18 @@ L 0 2
        <use xlink:href="#m7da8c832f9" x="94.892753" y="131.731562" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
+     <g id="text_15">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle" x="94.892753" y="144.73" transform="rotate(-0 94.892753 144.73)">May</text>
+     </g>
     </g>
     <g id="xtick_14">
      <g id="line2d_27">
       <g>
        <use xlink:href="#m7da8c832f9" x="163.364134" y="131.731562" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
+     </g>
+     <g id="text_16">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle" x="163.364134" y="144.73" transform="rotate(-0 163.364134 144.73)">Sep</text>
      </g>
     </g>
     <g id="xtick_15">
@@ -303,12 +309,18 @@ L 0 2
        <use xlink:href="#m7da8c832f9" x="298.080183" y="131.731562" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
+     <g id="text_17">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle" x="298.080183" y="144.73" transform="rotate(-0 298.080183 144.73)">May</text>
+     </g>
     </g>
     <g id="xtick_16">
      <g id="line2d_29">
       <g>
        <use xlink:href="#m7da8c832f9" x="366.551563" y="131.731562" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
+     </g>
+     <g id="text_18">
+      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle" x="366.551563" y="144.73" transform="rotate(-0 366.551563 144.73)">Sep</text>
      </g>
     </g>
    </g>
@@ -323,7 +335,7 @@ L 0 2
 L 454.200497 131.731562 
 " style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
-   <g id="text_15">
+   <g id="text_19">
     <g id="patch_7">
      <path d="M 212.758622 120.306719 
 L 249.242372 120.306719 

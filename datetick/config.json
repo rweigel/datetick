@@ -2,699 +2,978 @@
   {
     "comment": "< 1 seconds: use default matplotlib locator (fractional seconds)",
     "range": {
-      "min": {"seconds": 0},
-      "max": {"seconds": 0.1}
+      "min": {
+        "seconds": 0
+      },
+      "max": {
+        "seconds": 0.1
+      }
     },
     "major": null,
     "minor": null,
-    "fmt1": null,
-    "fmt2": null,
+    "major_sub_format": null,
     "trans": null
   },
   {
     "comment": "delta t calc. precision is relatively large now",
     "range": {
-      "min": {"seconds": 0.1},
-      "max": {"seconds": 1}
+      "min": {
+        "seconds": 0.1
+      },
+      "max": {
+        "seconds": 1
+      }
     },
     "major": {
-      "class": "MicrosecondLocator",
-      "interval": 100000
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 100000
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      }
     },
     "minor": {
-      "class": "MicrosecondLocator",
-      "interval": 50000
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 50000
+      }
     },
-    "fmt1": {
-      "class": "MillisecondFuncFormatter"
-    },
-    "fmt2": "%H:%M:%S\n%Y-%m-%d",
+    "major_sub_format": "%H:%M:%S\n%Y-%m-%d",
     "trans": "second"
   },
   {
     "range": {
-      "min": {"seconds": 1},
-      "max": {"seconds": 5}
+      "min": {
+        "seconds": 1
+      },
+      "max": {
+        "seconds": 5
+      }
     },
     "major": {
-      "class": "MicrosecondLocator",
-      "interval": 500000
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 500000
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      }
     },
     "minor": {
-      "class": "MicrosecondLocator",
-      "interval": 250000
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 250000
+      }
     },
-    "fmt1": {
-      "class": "MillisecondFuncFormatter"
-    },
-    "fmt2": "%H:%M:%S\n%Y-%m-%d",
+    "major_sub_format": "%H:%M:%S\n%Y-%m-%d",
     "trans": "second"
   },
   {
     "range": {
-      "min": {"seconds": 5},
-      "max": {"seconds": 10}
+      "min": {
+        "seconds": 5
+      },
+      "max": {
+        "seconds": 10
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "MicrosecondLocator",
-      "interval": 500000
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 500000
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"seconds": 10},
-      "max": {"seconds": 20}
+      "min": {
+        "seconds": 10
+      },
+      "max": {
+        "seconds": 20
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 2]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 2]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"seconds": 20},
-      "max": {"seconds": 30}
+      "min": {
+        "seconds": 20
+      },
+      "max": {
+        "seconds": 30
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 5]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 5]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"seconds": 30},
-      "max": {"minutes": 1}
+      "min": {
+        "seconds": 30
+      },
+      "max": {
+        "minutes": 1
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 10]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 10]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 2]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 2]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"minutes": 1},
-      "max": {"minutes": 2}
+      "min": {
+        "minutes": 1
+      },
+      "max": {
+        "minutes": 2
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond": [0, 20, 40]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond": [0, 20, 40]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 5]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 5]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"minutes": 2},
-      "max": {"minutes": 3}
+      "min": {
+        "minutes": 2
+      },
+      "max": {
+        "minutes": 3
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond": [0, 20, 40]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond": [0, 20, 40]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 5]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 5]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"minutes": 3},
-      "max": {"minutes": 5}
+      "min": {
+        "minutes": 3
+      },
+      "max": {
+        "minutes": 5
+      }
     },
     "major": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 30]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 30]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 10]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 10]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"minutes": 5},
-      "max": {"minutes": 10}
+      "min": {
+        "minutes": 5
+      },
+      "max": {
+        "minutes": 10
+      }
     },
     "major": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 15]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 15]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"minutes": 10},
-      "max": {"minutes": 20}
+      "min": {
+        "minutes": 10
+      },
+      "max": {
+        "minutes": 20
+      }
     },
     "major": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 2]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 2]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      }
     },
     "minor": {
-      "class": "SecondLocator",
-      "bysecond_arange": [0, 60, 30]
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 30]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%M:%S"
-    },
-    "fmt2": "%Y-%m-%dT%H",
+    "major_sub_format": "%Y-%m-%dT%H",
     "trans": "hour"
   },
   {
     "range": {
-      "min": {"minutes": 20},
-      "max": {"minutes": 30}
+      "min": {
+        "minutes": 20
+      },
+      "max": {
+        "minutes": 30
+      }
     },
     "major": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 5]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 5]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H:%M"
+      }
     },
     "minor": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H:%M"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"minutes": 30},
-      "max": {"hours": 1}
+      "min": {
+        "minutes": 30
+      },
+      "max": {
+        "hours": 1
+      }
     },
     "major": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 10]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 10]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H:%M"
+      }
     },
     "minor": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 2]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 2]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H:%M"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"hours": 1},
-      "max": {"hours": 2}
+      "min": {
+        "hours": 1
+      },
+      "max": {
+        "hours": 2
+      }
     },
     "major": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 15]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 15]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H:%M"
+      }
     },
     "minor": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 5]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 5]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H:%M"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"hours": 2},
-      "max": {"hours": 4}
+      "min": {
+        "hours": 2
+      },
+      "max": {
+        "hours": 4
+      }
     },
     "major": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 20]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 20]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H:%M"
+      }
     },
     "minor": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 5]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 5]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H:%M"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"hours": 4},
-      "max": {"hours": 6}
-     },
+      "min": {
+        "hours": 4
+      },
+      "max": {
+        "hours": 6
+      }
+    },
     "major": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H:%M"
+      }
     },
     "minor": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 10]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 10]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H:%M"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"hours": 6},
-      "max": {"hours": 12}
+      "min": {
+        "hours": 6
+      },
+      "max": {
+        "hours": 12
+      }
     },
     "major": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 2]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 2]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H:%M"
+      }
     },
     "minor": {
-      "class": "MinuteLocator",
-      "byminute_arange": [0, 60, 30]
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 30]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H:%M"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"hours": 12},
-      "max": {"days": 1}
+      "min": {
+        "hours": 12
+      },
+      "max": {
+        "days": 1
+      }
     },
     "major": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 3]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 3]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H"
+      }
     },
     "minor": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"days": 1},
-      "max": {"days": 2}
+      "min": {
+        "days": 1
+      },
+      "max": {
+        "days": 2
+      }
     },
     "major": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 4]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 4]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H"
+      }
     },
     "minor": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 2]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 2]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"days": 2},
-      "max": {"days": 3}
+      "min": {
+        "days": 2
+      },
+      "max": {
+        "days": 3
+      }
     },
     "major": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 6]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 6]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H"
+      }
     },
     "minor": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 3]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 3]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"days": 3},
-      "max": {"days": 4}
+      "min": {
+        "days": 3
+      },
+      "max": {
+        "days": 4
+      }
     },
     "major": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 12]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 12]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H"
+      }
     },
     "minor": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 3]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 3]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%H"
-    },
-    "fmt2": "%Y-%m-%d",
+    "major_sub_format": "%Y-%m-%d",
     "trans": "day"
   },
   {
     "range": {
-      "min": {"days": 4},
-      "max": {"days": 8}
+      "min": {
+        "days": 4
+      },
+      "max": {
+        "days": 8
+      }
     },
     "major": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 32]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 32]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%d"
+      }
     },
     "minor": {
-      "class": "HourLocator",
-      "byhour_arange": [0, 24, 4]
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [0, 24, 4]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%d"
-    },
-    "fmt2": "%Y-%m",
+    "major_sub_format": "%Y-%m",
     "trans": "month"
   },
   {
     "range": {
-      "min": {"days": 8},
-      "max": {"days": 16}
+      "min": {
+        "days": 8
+      },
+      "max": {
+        "days": 16
+      }
     },
     "major": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 32]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 32]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%d"
+      }
     },
     "minor": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 32]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 32]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%d"
-    },
-    "fmt2": "%Y-%m",
+    "major_sub_format": "%Y-%m",
     "trans": "month"
   },
   {
     "range": {
-      "min": {"days": 16},
-      "max": {"days": 32}
+      "min": {
+        "days": 16
+      },
+      "max": {
+        "days": 32
+      }
     },
     "major": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 33, 4]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 33, 4]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%d"
+      }
     },
     "minor": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 32]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 32]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%d"
-    },
-    "fmt2": "%Y-%m",
+    "major_sub_format": "%Y-%m",
     "trans": "month"
   },
   {
     "range": {
-      "min": {"days": 32},
-      "max": {"days": 60}
+      "min": {
+        "days": 32
+      },
+      "max": {
+        "days": 60
+      }
     },
     "major": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 36, 7]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 36, 7]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%d"
+      }
     },
     "minor": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 32]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 32]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%d"
-    },
-    "fmt2": "%Y-%m",
+    "major_sub_format": "%Y-%m",
     "trans": "month"
   },
   {
     "range": {
-      "min": {"days": 60},
-      "max": {"days": 183}
+      "min": {
+        "days": 60
+      },
+      "max": {
+        "days": 183
+      }
     },
     "major": {
-      "class": "MonthLocator",
-      "bymonth_arange": [1, 13]
+      "locator": {
+        "class": "MonthLocator",
+        "bymonth_arange": [1, 13]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%b"
+      }
     },
     "minor": {
-      "class": "DayLocator",
-      "bymonthday_arange": [1, 36, 7]
+      "locator": {
+        "class": "DayLocator",
+        "bymonthday_arange": [1, 36, 7]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%b"
-    },
-    "fmt2": "%Y",
+    "major_sub_format": "%Y",
     "trans": "month"
   },
   {
     "range": {
-      "min": {"days": 183},
-      "max": {"days": 367}
+      "min": {
+        "days": 183
+      },
+      "max": {
+        "days": 367
+      }
     },
     "major": {
-      "class": "MonthLocator",
-      "bymonth_arange": [1, 13]
+      "locator": {
+        "class": "MonthLocator",
+        "bymonth_arange": [1, 13]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%b"
+      }
     },
     "minor": {
-      "class": "MonthLocator",
-      "bymonth_arange": [1, 13]
+      "locator": {
+        "class": "MonthLocator",
+        "bymonth_arange": [1, 13]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%b"
-    },
-    "fmt2": "%Y",
+    "major_sub_format": "%Y",
     "trans": "month"
   },
   {
     "range": {
       "comment": "range ~ [1 year, 2 years)",
-      "min": {"days": 367},
-      "max": {"days": 732}
+      "min": {
+        "days": 367
+      },
+      "max": {
+        "days": 732
+      }
     },
     "major": {
-      "class": "MonthLocator",
-      "bymonth_arange": [1, 13, 2]
+      "locator": {
+        "class": "MonthLocator",
+        "bymonth_arange": [1, 13, 2]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%b"
+      }
     },
     "minor": {
-      "class": "MonthLocator",
-      "bymonth_arange": [1, 13]
+      "locator": {
+        "class": "MonthLocator",
+        "bymonth_arange": [1, 13]
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%b"
-    },
-    "fmt2": "%Y",
+    "major_sub_format": "%Y",
     "trans": "month"
   },
   {
     "range": {
       "comment": "range ~ [2 years, 4 years)",
-      "min": {"days": 732},
-      "max": {"days": 1460}
+      "min": {
+        "days": 732
+      },
+      "max": {
+        "days": 1460
+      }
     },
     "major": {
-      "class": "YearLocator",
-      "base": 1
+      "locator": {
+        "class": "YearLocator",
+        "base": 1
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%Y"
+      }
     },
     "minor": {
-      "class": "MonthLocator",
-      "bymonth_arange": [1, 13, 4]
+      "locator": {
+        "class": "MonthLocator",
+        "bymonth_arange": [1, 13, 4]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%b"
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%Y"
-    },
-    "fmt2": "",
+    "major_sub_format": "",
     "trans": null
   },
   {
     "range": {
       "comment": "range ~ [4 years, 15 years)",
-      "min": {"days": 1460},
-      "max": {"days": 5490}
+      "min": {
+        "days": 1460
+      },
+      "max": {
+        "days": 5490
+      }
     },
     "major": {
-      "class": "YearLocator",
-      "base": 1
+      "locator": {
+        "class": "YearLocator",
+        "base": 1
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%Y"
+      }
     },
     "minor": {
-      "class": "YearLocator",
-      "base": 1
+      "locator": {
+        "class": "YearLocator",
+        "base": 1
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%Y"
-    },
-    "fmt2": "",
+    "major_sub_format": "",
     "trans": null
   },
   {
     "range": {
       "comment": "range ~ [15 years, 40 years)",
-      "min": {"days": 5490},
-      "max": {"days": 14600}
+      "min": {
+        "days": 5490
+      },
+      "max": {
+        "days": 14600
+      }
     },
     "major": {
-      "class": "YearLocator",
-      "base": 5
+      "locator": {
+        "class": "YearLocator",
+        "base": 5
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%Y"
+      }
     },
     "minor": {
-      "class": "YearLocator",
-      "base": 1
+      "locator": {
+        "class": "YearLocator",
+        "base": 1
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%Y"
-    },
-    "fmt2": "",
+    "major_sub_format": "",
     "trans": null
   },
   {
     "range": {
       "comment": "range ~ [40 years, 100 years)",
-      "min": {"days": 14600},
-      "max": {"days": 36600}
-     },
+      "min": {
+        "days": 14600
+      },
+      "max": {
+        "days": 36600
+      }
+    },
     "major": {
-      "class": "YearLocator",
-      "base": 10
+      "locator": {
+        "class": "YearLocator",
+        "base": 10
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%Y"
+      }
     },
     "minor": {
-      "class": "YearLocator",
-      "base": 5
+      "locator": {
+        "class": "YearLocator",
+        "base": 5
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%Y"
-    },
-    "fmt2": "",
+    "major_sub_format": "",
     "trans": null
   },
   {
     "range": {
       "comment": "range ~ [100 years, 250 years)",
-      "min": {"days": 36600},
-      "max": {"days": 91250}
+      "min": {
+        "days": 36600
+      },
+      "max": {
+        "days": 91250
+      }
     },
     "major": {
-      "class": "YearLocator",
-      "base": 20
+      "locator": {
+        "class": "YearLocator",
+        "base": 20
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%Y"
+      }
     },
     "minor": {
-      "class": "YearLocator",
-      "base": 10
+      "locator": {
+        "class": "YearLocator",
+        "base": 10
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%Y"
-    },
-    "fmt2": "",
+    "major_sub_format": "",
     "trans": null
   },
   {
     "range": {
       "comment": "range ~ [250 years, 500 years)",
-      "min": {"days": 91250},
-      "max": {"days": 182500}
+      "min": {
+        "days": 91250
+      },
+      "max": {
+        "days": 182500
+      }
     },
     "major": {
-      "class": "YearLocator",
-      "base": 100
+      "locator": {
+        "class": "YearLocator",
+        "base": 100
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%Y"
+      }
     },
     "minor": {
-      "class": "YearLocator",
-      "base": 50
+      "locator": {
+        "class": "YearLocator",
+        "base": 50
+      }
     },
-    "fmt1": {
-      "class": "DateFormatter",
-      "format": "%Y"
-    },
-    "fmt2": "",
+    "major_sub_format": "",
     "trans": null
   }
 ]

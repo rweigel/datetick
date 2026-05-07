@@ -17,7 +17,6 @@ requires-python = ">=3.7"
 dependencies = [
   "matplotlib",
   "jsonschema",
-  "PyYaml",
   "msvc-runtime; platform_system == 'Windows' and python_version < '3.11'",
 ]
 

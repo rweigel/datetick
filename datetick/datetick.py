@@ -7,10 +7,9 @@ def datetick(*args,
              adjust_first_xlabel=False,
              adjust_xrange=False,
              adjust_yrange=False,
-             fmt1_shrink_factor=0.87,
-             fmt1_shrink_always=False,
+             major_font_shrink_factor=0.87,
+             major_font_shrink_always=False,
              set_cb=True,
-             use_config2=False,
              debug=False):
   """
   datetick() formats the major and minor x-tick labels of the current figure.
@@ -40,13 +39,13 @@ def datetick(*args,
   adjust_xrange: If True, expand x-range so data are always within a major tick.
   adjust_yrange: If True, expand y-range so data are always within a major tick.
 
-  fmt1_shrink_factor: If adjust_first_xlabel or adjust_last_xlabel is True,
+  major_font_shrink_factor: If adjust_first_xlabel or adjust_last_xlabel is True,
                       shrink font size of x-labels without newline by this
                       factor to make it clearer label is attached to tick above
                       it even when not centered.
 
-  fmt1_shrink_always: If True, shrink font size of x-labels without newline by
-                      fmt1_shrink_factor even if adjust_{first,last}_xlabel is False.
+  major_font_shrink_always: If True, shrink font size of x-labels without newline by
+                      major_font_shrink_factor even if adjust_{first,last}_xlabel is False.
 
   debug: If True, print debug information.
   """
@@ -154,9 +153,9 @@ def datetick(*args,
 
   tspan = mpld.num2date((tmin, tmax))
 
-  deltaT = tspan[-1] - tspan[0]
+  delta_t = tspan[-1] - tspan[0]
   if debug:
-    print("Total seconds: %s" % deltaT.total_seconds())
+    print("Total seconds: %s" % delta_t.total_seconds())
 
   if debug:
     print(f'{dir} data min:         {mpld.num2date(datamin)}')
@@ -171,11 +170,9 @@ def datetick(*args,
 
 
   """
-  fmt1 is format of the tick labels
-
-  fmt2 contains additional information that is used for the first tick label
+  major_sub_format contains additional information that is used for the first tick label
   or when there is a major change. For example, if
-    fmt1 = %M:%S and fmt2 = %H,
+    major_format = %M:%S and major_sub_format = %H,
   the labels will have only minute and hour and the first tick will have a
   label of %M:%S\n%H. If there is a change in hour somewhere on the axis,
   that label will include the new hour.
@@ -184,40 +181,53 @@ def datetick(*args,
   It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
   """
 
-  if use_config2:
-    from .config import config2
-    cfg = config2(deltaT, debug=debug)
-  else:
-    cfg = config(deltaT, debug=debug)
+  cfg = config(delta_t, debug=debug)
 
-  if cfg['major'] is None:
+  if debug:
+    print(f'Config for delta_t = {delta_t}:')
+    for key, value in cfg.items():
+      print(f'  {key}: {value}')
+
+  if cfg['major_locator'] is None:
     if debug:
       print('No locator found for this time span. Using default Matplotlib locator and formatter.')
-    ticks, labels, cfg['fmt2'] = _manual_labels(dir, axes)
+    ticks, labels, cfg['major_sub_format'] = _manual_labels(dir, axes)
   else:
     if dir == 'x':
-      axes.xaxis.set_major_locator(cfg['major'])
-      axes.xaxis.set_minor_locator(cfg['minor'])
-      axes.xaxis.set_major_formatter(cfg['fmt1'])
+      axes.xaxis.set_major_locator(cfg['major_locator'])
+      if cfg['major_formatter'] is not None:
+        axes.xaxis.set_major_formatter(cfg['major_formatter'])
+      if cfg['minor_locator'] is not None:
+        axes.xaxis.set_minor_locator(cfg['minor_locator'])
+      if cfg['minor_formatter'] is not None:
+        axes.xaxis.set_minor_formatter(cfg['minor_formatter'])
+
       fig.canvas.draw() # Render new labels so updated for next line
       ticks = axes.get_xticks()
     else:
-      axes.yaxis.set_major_locator(cfg['major'])
-      axes.yaxis.set_minor_locator(cfg['minor'])
-      axes.yaxis.set_major_formatter(cfg['fmt1'])
+      axes.yaxis.set_major_locator(cfg['major_locator'])
+      if cfg['major_formatter'] is not None:
+        axes.yaxis.set_major_formatter(cfg['major_formatter'])
+      if cfg['minor_locator'] is not None:
+        axes.yaxis.set_minor_locator(cfg['minor_locator'])
+      if cfg['minor_formatter'] is not None:
+        axes.yaxis.set_minor_formatter(cfg['minor_formatter'])
+
       fig.canvas.draw() # Render new labels so updated for next line
       ticks = axes.get_yticks()
 
     if debug:
       print(f'{dir}labels and ticks after applying locator:')
+      fig.canvas.draw()
       _print_ticks(dir, axes, ticks, _get_labels(dir, axes))
     if adjust_xrange or adjust_yrange:
       _adjust_range(dir, fig, axes, datamin, datamax, debug=debug)
       if debug:
         print(f'{dir}labels and ticks after adjusting range:')
+        fig.canvas.draw()
         _print_ticks(dir, axes, ticks, _get_labels(dir, axes))
 
-    fig.canvas.draw() # Render new labels so updated for next line
+    fig.canvas.draw()
 
     labels = _get_labels(dir, axes)
 
@@ -227,14 +237,14 @@ def datetick(*args,
     return
 
   if debug:
-    print(f'{dir}labels and ticks after applying fmt1:')
+    print(f'{dir}labels and ticks after applying major_formatter:')
     _print_ticks(dir, axes, ticks, labels)
 
-  if cfg['fmt2'] != '':
-    labels = _add_fmt2(dir, cfg['fmt2'], cfg['trans'], lim, ticks, labels, debug=False)
+  if cfg['major_sub_format'] != '':
+    labels = _add_major_sub_format(dir, cfg['major_sub_format'], cfg['trans'], lim, ticks, labels, debug=False)
 
     if debug:
-      print(f'{dir}labels and ticks after applying fmt2:')
+      print(f'{dir}labels and ticks after applying major_sub_format:')
       _print_ticks(dir, axes, ticks, labels)
 
     if dir == 'x':
@@ -251,8 +261,8 @@ def datetick(*args,
       kwargs = {
         'adjust_first_xlabel': adjust_first_xlabel,
         'adjust_last_xlabel': adjust_last_xlabel,
-        'fmt1_shrink_factor': fmt1_shrink_factor,
-        'fmt1_shrink_always': fmt1_shrink_always,
+        'major_font_shrink_factor': major_font_shrink_factor,
+        'major_font_shrink_always': major_font_shrink_always,
         'debug': debug
       }
       _adjust_xlabels(axes, **kwargs)
@@ -266,13 +276,14 @@ def datetick(*args,
     _set_cb(dir, axes, kwargs, debug=debug)
 
   return {
-          'delta_t': deltaT,
+          'delta_t': delta_t,
           'ticks': ticks,
           'labels': labels,
-          'major_locator': cfg['major'],
-          'minor_locator': cfg['minor'],
-          'fmt1': cfg['fmt1'],
-          'fmt2': cfg['fmt2'],
+          'major_locator': cfg['major_locator'],
+          'minor_locator': cfg['minor_locator'],
+          'major_formatter': cfg['major_formatter'],
+          'minor_formatter': cfg['minor_formatter'],
+          'major_sub_format': cfg['major_sub_format'],
           'trans': cfg['trans']
           }
 
@@ -335,7 +346,7 @@ def _adjust_range(dir, fig, axes, datamin, datamax, debug=False):
       axes.set_ylim(first - pad, last + pad)
 
 
-def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
+def _add_major_sub_format(dir, major_sub_format, trans, lim, ticks, labels, debug=False):
   from datetime import datetime
   import matplotlib.dates as mpld
 
@@ -344,18 +355,18 @@ def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
   first = 0
   if ticks[0] < lim[0]:
     if debug:
-      msg = 'First tick is less than lower axis limit. Applying fmt2 to second tick label.'
+      msg = 'First tick is less than lower axis limit. Applying major_sub_format to second tick label.'
       print(msg)
     # Work-around for bug in Matplotlib where left-most tick is less than
     # lower x-limit. Could more than one tick be less than lower x-limit?
     first = 1
 
-  # Always apply fmt2 to first tick label
+  # Always apply major_sub_format to first tick label
   if debug:
-    print(f'Applying fmt2 to first tick label at {mpld.num2date(ticks[first])}.')
-  labels[first] = '%s\n%s' % (labels[first], datetime.strftime(time[first], fmt2))
+    print(f'Applying major_sub_format to first tick label at {mpld.num2date(ticks[first])}.')
+  labels[first] = '%s\n%s' % (labels[first], datetime.strftime(time[first], major_sub_format))
 
-  fmt2_len = len(datetime.strftime(time[first], fmt2))
+  major_sub_format_len = len(datetime.strftime(time[first], major_sub_format))
 
   if trans is None:
     return labels
@@ -365,7 +376,7 @@ def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
     # Modify labels after first under certain conditions.
     modify = False
     if debug:
-      print(f'Checking if fmt2 should be applied to tick label at {mpld.num2date(ticks[i])}.')
+      print(f'Checking if major_sub_format should be applied to tick label at {mpld.num2date(ticks[i])}.')
       print(f'  trans = {trans}')
       print(f'  time[{i-1}] = {time[i-1]}')
       print(f'  time[{i}] = {time[i]}')
@@ -399,26 +410,26 @@ def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
       continue
 
     if i == first + 1 and dir == 'x':
-      # If first two major tick labels have fmt2 applied, the will
-      # likely run together. This keeps fmt2 label for second major
+      # If first two major tick labels have major_sub_format applied, the will
+      # likely run together. This keeps major_sub_format label for second major
       # tick.
 
-      if fmt2_len > 7 and trans in ['month', 'day', 'hour', 'minute', 'second']:
+      if major_sub_format_len > 7 and trans in ['month', 'day', 'hour', 'minute', 'second']:
         if debug:
-          print(f'Removing fmt2 to first tick label at {mpld.num2date(ticks[first])} to avoid overlap with second label.')
+          print(f'Removing major_sub_format to first tick label at {mpld.num2date(ticks[first])} to avoid overlap with second label.')
         labels[first] = labels[first].split('\n')[0]
       if debug:
-        print(f'Applying fmt2 to tick label at       {mpld.num2date(ticks[i])}.')
-      labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
+        print(f'Applying major_sub_format to tick label at       {mpld.num2date(ticks[i])}.')
+      labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), major_sub_format))
     else:
       if debug:
-        print(f'Applying fmt2 to tick label at       {mpld.num2date(ticks[i])}.')
-      labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), fmt2))
+        print(f'Applying major_sub_format to tick label at       {mpld.num2date(ticks[i])}.')
+      labels[i] = '%s\n%s' % (labels[i], datetime.strftime(mpld.num2date(ticks[i]), major_sub_format))
 
   return labels
 
 
-def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, fmt1_shrink_factor=0.9, fmt1_shrink_always=False, debug=False):
+def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, major_font_shrink_factor=0.9, major_font_shrink_always=False, debug=False):
   xticklabels = axes.get_xticklabels()
   lastlabel_text = xticklabels[-1].get_text()
   firstlabel_text = xticklabels[0].get_text()
@@ -450,14 +461,14 @@ def _adjust_xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, f
       offset = _numsize(axes, last_fmt1, -1, debug=debug)
       xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
 
-  if adjusted or fmt1_shrink_always:
+  if adjusted or major_font_shrink_always:
     # Make all labels without newline slightly smaller than default fontsize 
-    # so it is clearer that fmt2 applies to larger number.
+    # so it is clearer that major_sub_format applies to larger number.
     if debug:
       print('Adjusting font size of x-labels without newline')
     for label in xticklabels:
       if '\n' not in label.get_text():
-        label.set_fontsize(label.get_fontsize()*fmt1_shrink_factor)
+        label.set_fontsize(label.get_fontsize()*major_font_shrink_factor)
 
 
 def _numsize(ax, num, sign, debug=False):
@@ -517,7 +528,7 @@ def _print_ticks(dir, axes, ticks, labels):
 
 def _manual_labels(dir, axes):
 
-  fmt2 = '%Y-%m-%d'
+  major_sub_format = '%Y-%m-%d'
   ticks = axes.get_xticks()
   labels = _get_labels(dir, axes)
   # Make all labels have the same number of decimal places as one
@@ -534,6 +545,4 @@ def _manual_labels(dir, axes):
     if n_places > 0:
       labels[i] += "." + fractional
 
-  return ticks, labels, fmt2
-
-
+  return ticks, labels, major_sub_format

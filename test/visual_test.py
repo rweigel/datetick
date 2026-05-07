@@ -6,11 +6,7 @@ import matplotlib.pyplot as plt
 
 from datetick import datetick
 
-try:
-  import yaml
-except ImportError:
-  print("PyYAML is required to run this test. Please install it with 'pip install pyyaml'")
-  exit()
+import json
 
 try:
   import pytest
@@ -19,29 +15,6 @@ except ImportError:
   exit()
 
 def plot(ds1, ds2, dir, **kwargs):
-
-  def _fmt_delta(td):
-      total = td.total_seconds()
-      days = td.days
-      hours, rem = divmod(total - days * 86400, 3600)
-      minutes, seconds = divmod(rem, 60)
-      hours, minutes = int(hours), int(minutes)
-      secs_int = int(seconds)
-      micros = round((seconds - secs_int) * 1e6)
-
-      parts = []
-      if days:
-        parts.append(f'{days}d')
-      if hours:
-        parts.append(f'{hours}h')
-      if minutes:
-        parts.append(f'{minutes}m')
-      if micros:
-        parts.append(f'{secs_int}.{str(micros).zfill(6).rstrip("0")}s')
-      elif secs_int:
-        parts.append(f'{secs_int}s')
-
-      return ''.join(parts) or '0s'
 
   def _set_title(ax, dir, delta_t):
     if dir == 'x':
@@ -243,17 +216,29 @@ def test_plot_short(debug=False):
 
 
 def test_plot(short=False, debug=False):
-  test_file = os.path.join(_script_dir(), 'visual_test.yaml')
+  test_file = os.path.join(_script_dir(), 'visual_test.json')
   with open(test_file, 'r') as file:
-    tests = yaml.safe_load(file)
+    tests = json.load(file)
+
+  dirty = False
+  for entries in tests.values():
+    for test in entries:
+      delta = dateutil.parser.parse(test['stop']) - dateutil.parser.parse(test['start'])
+      dt_str = _fmt_delta(delta)
+      if test.get('_delta_t') != dt_str:
+        test['_delta_t'] = dt_str
+        dirty = True
+  if dirty:
+    with open(test_file, 'w') as file:
+      json.dump(tests, file, indent=2)
 
   dir = 'x'
   files = []
   for test_cat in ['kwargs', 'main']:
     for test in tests[test_cat]:
-      kwargs = test[2] if len(test) > 2 else {}
-      dt_str_o = test[0]
-      dt_str_f = test[1]
+      dt_str_o = test['start']
+      dt_str_f = test['stop']
+      kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
       if False:
         cfg2 = plot(dt_str_o, dt_str_f, dir=dir, use_config2=True, **kwargs)
         plt.close()
@@ -275,6 +260,31 @@ def _compare_cfgs(ds1, ds2, cfg1, cfg2):
   msg = f"Labels differ for {ds1} - {ds2}"
   msg += f"\n  {cfg1['labels']}\nvs\n  {cfg2['labels']}"
   assert list(cfg1['labels']) == list(cfg2['labels']), msg
+
+
+def _fmt_delta(td):
+    total = td.total_seconds()
+    days = td.days
+    hours, rem = divmod(total - days * 86400, 3600)
+    minutes, seconds = divmod(rem, 60)
+    hours, minutes = int(hours), int(minutes)
+    secs_int = int(seconds)
+    micros = round((seconds - secs_int) * 1e6)
+
+    parts = []
+    if days:
+      parts.append(f'{days}d')
+    if hours:
+      parts.append(f'{hours}h')
+    if minutes:
+      parts.append(f'{minutes}m')
+    if micros:
+      parts.append(f'{secs_int}.{str(micros).zfill(6).rstrip("0")}s')
+    elif secs_int:
+      parts.append(f'{secs_int}s')
+
+    return ''.join(parts) or '0s'
+
 
 if __name__ == '__main__':
   if False:
