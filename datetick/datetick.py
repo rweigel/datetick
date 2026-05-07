@@ -276,6 +276,7 @@ def datetick(*args,
           'trans': cfg['trans']
           }
 
+
 def _set_cb(dir, axes, kwargs, debug=False):
   import matplotlib.dates as mpld
 
@@ -354,6 +355,8 @@ def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
     print(f'Applying fmt2 to first tick label at {mpld.num2date(ticks[first])}.')
   labels[first] = '%s\n%s' % (labels[first], datetime.strftime(time[first], fmt2))
 
+  fmt2_len = len(datetime.strftime(time[first], fmt2))
+
   if trans is None:
     return labels
 
@@ -399,7 +402,8 @@ def _add_fmt2(dir, fmt2, trans, lim, ticks, labels, debug=False):
       # If first two major tick labels have fmt2 applied, the will
       # likely run together. This keeps fmt2 label for second major
       # tick.
-      if trans in ['month', 'day', 'hour', 'minute', 'second']:
+
+      if fmt2_len > 7 and trans in ['month', 'day', 'hour', 'minute', 'second']:
         if debug:
           print(f'Removing fmt2 to first tick label at {mpld.num2date(ticks[first])} to avoid overlap with second label.')
         labels[first] = labels[first].split('\n')[0]

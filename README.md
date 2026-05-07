@@ -53,6 +53,8 @@ plt.show()
 
 ![test/visual_test/latest/20001231170000-20010102190000-x_v3.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231170000-20010102190000-x_v3.svg)
 
+![test/visual_test/latest/20010101000000.0-20010101000000.5-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.5-x.svg)
+
 ![test/visual_test/latest/20010101000000.0-20010101000000.9-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.9-x.svg)
 
 ![test/visual_test/latest/20010101000000-20010101000001-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000-20010101000001-x.svg)
@@ -180,8 +182,6 @@ plt.show()
 ![test/visual_test/latest/20011001000000-20031004000000-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20011001000000-20031004000000-x.svg)
 
 ![test/visual_test/latest/20010101000000-20081231000000-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000-20081231000000-x.svg)
-
-![test/visual_test/latest/20010101000000-20030104000000-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000-20030104000000-x.svg)
 
 ![test/visual_test/latest/20010101000000-20090104000000-x.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000-20090104000000-x.svg)
 

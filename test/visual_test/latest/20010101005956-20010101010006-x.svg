@@ -115,7 +115,7 @@ z
     <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle" x="248.583313" y="41.815" transform="rotate(-0 248.583313 41.815)">matplotlib</text>
    </g>
    <g id="text_4">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Computer Modern Typewriter', 'Andale Mono', 'Nimbus Mono L', 'Courier New', 'Courier', 'Fixed', 'Terminal', monospace; text-anchor: middle" x="248.583318" y="14.851562" transform="rotate(-0 248.583318 14.851562)">2001-01-01T00:59:56Z/2001-01-01T01:00:06Z Δt = 0:00:11</text>
+    <text style="font-size: 10px; font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Computer Modern Typewriter', 'Andale Mono', 'Nimbus Mono L', 'Courier New', 'Courier', 'Fixed', 'Terminal', monospace; text-anchor: middle" x="248.583318" y="14.851562" transform="rotate(-0 248.583318 14.851562)">2001-01-01T00:59:56Z/2001-01-01T01:00:06Z Δt = 11s</text>
    </g>
   </g>
   <g id="axes_2">

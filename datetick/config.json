@@ -3,7 +3,7 @@
     "comment": "< 1 seconds: use default matplotlib locator (fractional seconds)",
     "range": {
       "min": {"seconds": 0},
-      "max": {"seconds": 1}
+      "max": {"seconds": 0.1}
     },
     "major": null,
     "minor": null,
@@ -12,17 +12,18 @@
     "trans": null
   },
   {
+    "comment": "delta t calc. precision is relatively large now",
     "range": {
-      "min": {"seconds": 1},
-      "max": {"seconds": 5}
+      "min": {"seconds": 0.1},
+      "max": {"seconds": 1}
     },
     "major": {
       "class": "MicrosecondLocator",
-      "interval": 200000
+      "interval": 100000
     },
     "minor": {
       "class": "MicrosecondLocator",
-      "interval": 100000
+      "interval": 50000
     },
     "fmt1": {
       "class": "MillisecondFuncFormatter"
@@ -31,7 +32,25 @@
     "trans": "second"
   },
   {
-    "comment": "< 10 seconds",
+    "range": {
+      "min": {"seconds": 1},
+      "max": {"seconds": 5}
+    },
+    "major": {
+      "class": "MicrosecondLocator",
+      "interval": 500000
+    },
+    "minor": {
+      "class": "MicrosecondLocator",
+      "interval": 250000
+    },
+    "fmt1": {
+      "class": "MillisecondFuncFormatter"
+    },
+    "fmt2": "%H:%M:%S\n%Y-%m-%d",
+    "trans": "second"
+  },
+  {
     "range": {
       "min": {"seconds": 5},
       "max": {"seconds": 10}
@@ -192,7 +211,6 @@
     "trans": "hour"
   },
   {
-    "comment": "< 20 minutes (1200 seconds)",
     "range": {
       "min": {"minutes": 10},
       "max": {"minutes": 20}
@@ -273,7 +291,6 @@
     "trans": "day"
   },
   {
-    "comment": "< 4 hours (14400 seconds)",
     "range": {
       "min": {"hours": 2},
       "max": {"hours": 4}
@@ -334,7 +351,6 @@
     "trans": "day"
   },
   {
-    "comment": "< 1 day (86400 seconds)",
     "range": {
       "min": {"hours": 12},
       "max": {"days": 1}
@@ -375,7 +391,6 @@
     "trans": "day"
   },
   {
-    "comment": "< 3 days (259200 seconds)",
     "range": {
       "min": {"days": 2},
       "max": {"days": 3}
@@ -476,7 +491,6 @@
     "trans": "month"
   },
   {
-    "comment": "< 60 days (5184000 seconds)",
     "range": {
       "min": {"days": 32},
       "max": {"days": 60}

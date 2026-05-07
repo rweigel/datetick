@@ -103,6 +103,7 @@ def _validate_ranges(config):
       if lo < 0 or hi <= lo:
         raise ValueError(f"Invalid range: {rng}")
       ranges.append((lo, hi))
+
   ranges.sort()
   for i in range(1, len(ranges)):
     if ranges[i][0] < ranges[i-1][1]:

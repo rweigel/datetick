@@ -220,7 +220,7 @@ z
     <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle" x="232.58956" y="41.815" transform="rotate(-0 232.58956 41.815)">matplotlib</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 10px; font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Computer Modern Typewriter', 'Andale Mono', 'Nimbus Mono L', 'Courier New', 'Courier', 'Fixed', 'Terminal', monospace; text-anchor: middle" x="232.58956" y="14.851562" transform="rotate(-0 232.58956 14.851562)">2001-01-01T00:00:00Z/2001-01-02T23:00:00Z Δt = 2d,3:42:00</text>
+    <text style="font-size: 10px; font-family: 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Computer Modern Typewriter', 'Andale Mono', 'Nimbus Mono L', 'Courier New', 'Courier', 'Fixed', 'Terminal', monospace; text-anchor: middle" x="232.58956" y="14.851562" transform="rotate(-0 232.58956 14.851562)">2001-01-01T00:00:00Z/2001-01-02T23:00:00Z Δt = 2d3h42m</text>
    </g>
   </g>
   <g id="axes_2">

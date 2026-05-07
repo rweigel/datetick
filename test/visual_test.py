@@ -20,6 +20,29 @@ except ImportError:
 
 def plot(ds1, ds2, dir, **kwargs):
 
+  def _fmt_delta(td):
+      total = td.total_seconds()
+      days = td.days
+      hours, rem = divmod(total - days * 86400, 3600)
+      minutes, seconds = divmod(rem, 60)
+      hours, minutes = int(hours), int(minutes)
+      secs_int = int(seconds)
+      micros = round((seconds - secs_int) * 1e6)
+
+      parts = []
+      if days:
+        parts.append(f'{days}d')
+      if hours:
+        parts.append(f'{hours}h')
+      if minutes:
+        parts.append(f'{minutes}m')
+      if micros:
+        parts.append(f'{secs_int}.{str(micros).zfill(6).rstrip("0")}s')
+      elif secs_int:
+        parts.append(f'{secs_int}s')
+
+      return ''.join(parts) or '0s'
+
   def _set_title(ax, dir, delta_t):
     if dir == 'x':
       newline = ''
@@ -28,12 +51,7 @@ def plot(ds1, ds2, dir, **kwargs):
       newline = '\n'
       space = '  '
 
-    delta_t = str(delta_t)
-    delta_t = delta_t.replace(" ", "")
-    repl = {'day': 'd', 'month': 'm', 'year': 'y'}
-    for unit, abbrev in repl.items():
-      delta_t = delta_t.replace(unit + 's', abbrev)
-      delta_t = delta_t.replace(unit, abbrev)
+    delta_t = _fmt_delta(delta_t)
 
     title = f"{ds1}/{newline}{space}{ds2}{newline} Δt = {delta_t}"
     ax.set_title(title, fontsize=10, fontfamily='monospace')
