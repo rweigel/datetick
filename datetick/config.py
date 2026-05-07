@@ -1,7 +1,6 @@
 def config(deltaT, config=None, debug=False):
   import json
-  import matplotlib
-  import matplotlib.dates as mpld
+  import warnings
 
   if config is None:
     import os
@@ -9,21 +8,31 @@ def config(deltaT, config=None, debug=False):
     with open(os.path.join(script_dir, 'config.json')) as f:
       config = json.load(f)
 
-  def _arange(spec, key):
-    """Return list from key or key_arange ([start, stop] or [start, stop, step], stop exclusive).
-    If both exist, warn and use key."""
-    arange_key = key + '_arange'
-    has_key = key in spec
-    has_arange = arange_key in spec
-    if has_key and has_arange:
-      import warnings
-      warnings.warn(f"Both '{key}' and '{arange_key}' specified; using '{key}'.")
-    if has_key:
-      return spec[key]
-    if has_arange:
-      return list(range(*spec[arange_key]))
-    raise KeyError(f"Neither '{key}' nor '{arange_key}' found in locator spec.")
+  _validate_config(config)
 
+  total_seconds = deltaT.total_seconds()
+  for rule in config:
+    if 'range' in rule:
+      rng = rule['range']
+      lo = _to_seconds(rng.get('min'))
+      hi = _to_seconds(rng.get('max'))
+    lo = lo if lo is not None else 0
+    if lo <= total_seconds and (hi is None or total_seconds < hi):
+      return {
+        'major': _make_locator(rule['major']),
+        'minor': _make_locator(rule['minor']),
+        'fmt1':  _make_formatter(rule['fmt1']),
+        'fmt2':  rule['fmt2'],
+        'trans': rule['trans']
+      }
+
+  warnings.warn(f"No matching config rule found for deltaT={deltaT}; returning None.")
+
+  return None
+
+
+def _make_locator(spec):
+  import matplotlib.dates as mpld
   LOCATOR_MAP = {
     'YearLocator':        lambda c: mpld.YearLocator(c['base']),
     'MonthLocator':       lambda c: mpld.MonthLocator(bymonth=_arange(c, 'bymonth')),
@@ -33,30 +42,98 @@ def config(deltaT, config=None, debug=False):
     'SecondLocator':      lambda c: mpld.SecondLocator(bysecond=_arange(c, 'bysecond')),
     'MicrosecondLocator': lambda c: mpld.MicrosecondLocator(interval=c['interval'])
   }
+  if spec is None:
+    return None
+  return LOCATOR_MAP[spec['class']](spec)
 
-  def make_locator(spec):
-    if spec is None:
-      return None
-    return LOCATOR_MAP[spec['class']](spec)
 
-  def make_formatter(spec):
-    if spec is None:
-      return None
-    if spec['class'] == 'MillisecondFuncFormatter':
-      return matplotlib.ticker.FuncFormatter(_millis)
-    return mpld.DateFormatter(spec['format'])
+def _make_formatter(spec):
+  import matplotlib
+  if spec is None:
+    return None
+  if spec['class'] == 'MillisecondFuncFormatter':
+    return matplotlib.ticker.FuncFormatter(_millis)
+  return matplotlib.dates.DateFormatter(spec['format'])
 
-  total_seconds = deltaT.total_seconds()
-  for rule in config:
-    threshold = rule['if_seconds_lt']
-    if threshold is None or total_seconds < threshold:
-        return {
-        'major': make_locator(rule['major']),
-        'minor': make_locator(rule['minor']),
-        'fmt1':  make_formatter(rule['fmt1']),
-        'fmt2':  rule['fmt2'],
-        'trans': rule['trans']
+
+def _validate_config(config):
+  """Validate that config is well-formed."""
+  import jsonschema
+  schema = {
+    "type": "array",
+    "items": {
+      "type": "object",
+      "required": ["range", "major", "minor", "fmt1", "fmt2", "trans"],
+      "properties": {
+        "comment": {"type": "string"},
+        "range": {
+          "type": "object",
+          "required": ["min", "max"],
+          "properties": {
+            "comment": {"type": "string"},
+            "min": {"type": "object"},
+            "max": {"type": "object"}
+          },
+          "additionalProperties": False
+        },
+        "major": {"type": ["object", "null"]},
+        "minor": {"type": ["object", "null"]},
+        "fmt1": {"type": ["object", "null"]},
+        "fmt2": {"type": ["string", "null"]},
+        "trans": {"type": ["string", "null"]}
       }
+    }
+  }
+  try:
+    jsonschema.validate(instance=config, schema=schema)
+  except jsonschema.exceptions.ValidationError as e:
+    raise ValueError(f"Config validation error: {e.message}")
+
+  _validate_ranges(config)
+
+
+def _validate_ranges(config):
+  """Validate that config ranges are non-overlapping and cover all positive deltas."""
+  ranges = []
+  for rule in config:
+    if 'range' in rule:
+      rng = rule['range']
+      lo = _to_seconds(rng.get('min')) if 'min' in rng else 0
+      hi = _to_seconds(rng.get('max')) if 'max' in rng else float('inf')
+      if lo < 0 or hi <= lo:
+        raise ValueError(f"Invalid range: {rng}")
+      ranges.append((lo, hi))
+  ranges.sort()
+  for i in range(1, len(ranges)):
+    if ranges[i][0] < ranges[i-1][1]:
+      raise ValueError(f"Overlapping ranges: {ranges[i-1]} and {ranges[i]}")
+  if ranges[0][0] > 0:
+    raise ValueError(f"Ranges do not cover all positive deltas: first range starts at {ranges[0][0]} seconds")
+
+
+def _arange(spec, key):
+  """Return list from key or key_arange ([start, stop] or [start, stop, step], stop exclusive).
+  If both exist, warn and use key."""
+  arange_key = key + '_arange'
+  has_key = key in spec
+  has_arange = arange_key in spec
+  if has_key and has_arange:
+    import warnings
+    warnings.warn(f"Both '{key}' and '{arange_key}' specified; using '{key}'.")
+  if has_key:
+    return spec[key]
+  if has_arange:
+    return list(range(*spec[arange_key]))
+  raise KeyError(f"Neither '{key}' nor '{arange_key}' found in locator spec.")
+
+
+def _to_seconds(spec):
+  """Convert {'unit': value} to total seconds. Returns None if spec is None."""
+  UNIT_SECONDS = {'seconds': 1, 'minutes': 60, 'hours': 3600, 'days': 86400}
+  if spec is None:
+    return None
+  unit, value = next(iter(spec.items()))
+  return value * UNIT_SECONDS[unit]
 
 
 def _millis(x, pos):

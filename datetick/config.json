@@ -1,7 +1,10 @@
 [
   {
-    "comment": "< 5 seconds: use default matplotlib locator (fractional seconds)",
-    "if_seconds_lt": 5,
+    "comment": "< 1 seconds: use default matplotlib locator (fractional seconds)",
+    "range": {
+      "min": {"seconds": 0},
+      "max": {"seconds": 1}
+    },
     "major": null,
     "minor": null,
     "fmt1": null,
@@ -9,8 +12,10 @@
     "trans": null
   },
   {
-    "comment": "< 5 seconds: use MicrosecondLocator with interval of 200 milliseconds",
-    "if_seconds_lt": 5,
+    "range": {
+      "min": {"seconds": 1},
+      "max": {"seconds": 5}
+    },
     "major": {
       "class": "MicrosecondLocator",
       "interval": 200000
@@ -20,14 +25,17 @@
       "interval": 100000
     },
     "fmt1": {
-      "class": "FuncFormatter"
+      "class": "MillisecondFuncFormatter"
     },
     "fmt2": "%H:%M:%S\n%Y-%m-%d",
     "trans": "second"
   },
   {
     "comment": "< 10 seconds",
-    "if_seconds_lt": 10,
+    "range": {
+      "min": {"seconds": 5},
+      "max": {"seconds": 10}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond_arange": [0, 60]
@@ -44,8 +52,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 20 seconds",
-    "if_seconds_lt": 20,
+    "range": {
+      "min": {"seconds": 10},
+      "max": {"seconds": 20}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond_arange": [0, 60, 2]
@@ -62,8 +72,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 30 seconds",
-    "if_seconds_lt": 30,
+    "range": {
+      "min": {"seconds": 20},
+      "max": {"seconds": 30}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond_arange": [0, 60, 5]
@@ -80,8 +92,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 1 minute (60 seconds)",
-    "if_seconds_lt": 60,
+    "range": {
+      "min": {"seconds": 30},
+      "max": {"minutes": 1}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond_arange": [0, 60, 10]
@@ -98,8 +112,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 2 minutes (120 seconds)",
-    "if_seconds_lt": 120,
+    "range": {
+      "min": {"minutes": 1},
+      "max": {"minutes": 2}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond": [0, 20, 40]
@@ -116,8 +132,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 3 minutes (180 seconds)",
-    "if_seconds_lt": 180,
+    "range": {
+      "min": {"minutes": 2},
+      "max": {"minutes": 3}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond": [0, 20, 40]
@@ -134,8 +152,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 5 minutes (300 seconds)",
-    "if_seconds_lt": 300,
+    "range": {
+      "min": {"minutes": 3},
+      "max": {"minutes": 5}
+    },
     "major": {
       "class": "SecondLocator",
       "bysecond_arange": [0, 60, 30]
@@ -152,8 +172,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 10 minutes (600 seconds)",
-    "if_seconds_lt": 600,
+    "range": {
+      "min": {"minutes": 5},
+      "max": {"minutes": 10}
+    },
     "major": {
       "class": "MinuteLocator",
       "byminute_arange": [0, 60]
@@ -171,7 +193,10 @@
   },
   {
     "comment": "< 20 minutes (1200 seconds)",
-    "if_seconds_lt": 1200,
+    "range": {
+      "min": {"minutes": 10},
+      "max": {"minutes": 20}
+    },
     "major": {
       "class": "MinuteLocator",
       "byminute_arange": [0, 60, 2]
@@ -188,8 +213,10 @@
     "trans": "hour"
   },
   {
-    "comment": "< 30 minutes (1800 seconds)",
-    "if_seconds_lt": 1800,
+    "range": {
+      "min": {"minutes": 20},
+      "max": {"minutes": 30}
+    },
     "major": {
       "class": "MinuteLocator",
       "byminute_arange": [0, 60, 5]
@@ -206,8 +233,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 1 hour (3600 seconds)",
-    "if_seconds_lt": 3600,
+    "range": {
+      "min": {"minutes": 30},
+      "max": {"hours": 1}
+    },
     "major": {
       "class": "MinuteLocator",
       "byminute_arange": [0, 60, 10]
@@ -224,8 +253,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 2 hours (7200 seconds)",
-    "if_seconds_lt": 7200,
+    "range": {
+      "min": {"hours": 1},
+      "max": {"hours": 2}
+    },
     "major": {
       "class": "MinuteLocator",
       "byminute_arange": [0, 60, 15]
@@ -243,7 +274,10 @@
   },
   {
     "comment": "< 4 hours (14400 seconds)",
-    "if_seconds_lt": 14400,
+    "range": {
+      "min": {"hours": 2},
+      "max": {"hours": 4}
+    },
     "major": {
       "class": "MinuteLocator",
       "byminute_arange": [0, 60, 20]
@@ -260,8 +294,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 6 hours (21600 seconds)",
-    "if_seconds_lt": 21600,
+    "range": {
+      "min": {"hours": 4},
+      "max": {"hours": 6}
+     },
     "major": {
       "class": "HourLocator",
       "byhour_arange": [0, 24]
@@ -278,8 +314,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 12 hours (43200 seconds)",
-    "if_seconds_lt": 43200,
+    "range": {
+      "min": {"hours": 6},
+      "max": {"hours": 12}
+    },
     "major": {
       "class": "HourLocator",
       "byhour_arange": [0, 24, 2]
@@ -297,7 +335,10 @@
   },
   {
     "comment": "< 1 day (86400 seconds)",
-    "if_seconds_lt": 86400,
+    "range": {
+      "min": {"hours": 12},
+      "max": {"days": 1}
+    },
     "major": {
       "class": "HourLocator",
       "byhour_arange": [0, 24, 3]
@@ -314,8 +355,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 2 days (172800 seconds)",
-    "if_seconds_lt": 172800,
+    "range": {
+      "min": {"days": 1},
+      "max": {"days": 2}
+    },
     "major": {
       "class": "HourLocator",
       "byhour_arange": [0, 24, 4]
@@ -333,7 +376,10 @@
   },
   {
     "comment": "< 3 days (259200 seconds)",
-    "if_seconds_lt": 259200,
+    "range": {
+      "min": {"days": 2},
+      "max": {"days": 3}
+    },
     "major": {
       "class": "HourLocator",
       "byhour_arange": [0, 24, 6]
@@ -350,8 +396,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 4 days (345600 seconds)",
-    "if_seconds_lt": 345600,
+    "range": {
+      "min": {"days": 3},
+      "max": {"days": 4}
+    },
     "major": {
       "class": "HourLocator",
       "byhour_arange": [0, 24, 12]
@@ -368,8 +416,10 @@
     "trans": "day"
   },
   {
-    "comment": "< 8 days (691200 seconds)",
-    "if_seconds_lt": 691200,
+    "range": {
+      "min": {"days": 4},
+      "max": {"days": 8}
+    },
     "major": {
       "class": "DayLocator",
       "bymonthday_arange": [1, 32]
@@ -386,8 +436,10 @@
     "trans": "month"
   },
   {
-    "comment": "< 16 days (1382400 seconds)",
-    "if_seconds_lt": 1382400,
+    "range": {
+      "min": {"days": 8},
+      "max": {"days": 16}
+    },
     "major": {
       "class": "DayLocator",
       "bymonthday_arange": [1, 32]
@@ -404,8 +456,10 @@
     "trans": "month"
   },
   {
-    "comment": "< 32 days (2764800 seconds)",
-    "if_seconds_lt": 2764800,
+    "range": {
+      "min": {"days": 16},
+      "max": {"days": 32}
+    },
     "major": {
       "class": "DayLocator",
       "bymonthday_arange": [1, 33, 4]
@@ -423,7 +477,10 @@
   },
   {
     "comment": "< 60 days (5184000 seconds)",
-    "if_seconds_lt": 5184000,
+    "range": {
+      "min": {"days": 32},
+      "max": {"days": 60}
+    },
     "major": {
       "class": "DayLocator",
       "bymonthday_arange": [1, 36, 7]
@@ -440,8 +497,10 @@
     "trans": "month"
   },
   {
-    "comment": "< 183 days (~6 months, 15811200 seconds)",
-    "if_seconds_lt": 15811200,
+    "range": {
+      "min": {"days": 60},
+      "max": {"days": 183}
+    },
     "major": {
       "class": "MonthLocator",
       "bymonth_arange": [1, 13]
@@ -458,8 +517,10 @@
     "trans": "month"
   },
   {
-    "comment": "< 367 days (~1 year, 31708800 seconds)",
-    "if_seconds_lt": 31708800,
+    "range": {
+      "min": {"days": 183},
+      "max": {"days": 367}
+    },
     "major": {
       "class": "MonthLocator",
       "bymonth_arange": [1, 13]
@@ -476,8 +537,11 @@
     "trans": "month"
   },
   {
-    "comment": "< 2 years (732 days, 63244800 seconds)",
-    "if_seconds_lt": 63244800,
+    "range": {
+      "comment": "range ~ [1 year, 2 years)",
+      "min": {"days": 367},
+      "max": {"days": 732}
+    },
     "major": {
       "class": "MonthLocator",
       "bymonth_arange": [1, 13, 2]
@@ -494,8 +558,11 @@
     "trans": "month"
   },
   {
-    "comment": "< 8 years (2928 days, 252979200 seconds)",
-    "if_seconds_lt": 252979200,
+    "range": {
+      "comment": "range ~ [2 years, 4 years)",
+      "min": {"days": 732},
+      "max": {"days": 1460}
+    },
     "major": {
       "class": "YearLocator",
       "base": 1
@@ -512,8 +579,11 @@
     "trans": null
   },
   {
-    "comment": "< 15 years (5490 days, 474336000 seconds)",
-    "if_seconds_lt": 474336000,
+    "range": {
+      "comment": "range ~ [4 years, 15 years)",
+      "min": {"days": 1460},
+      "max": {"days": 5490}
+    },
     "major": {
       "class": "YearLocator",
       "base": 1
@@ -530,8 +600,11 @@
     "trans": null
   },
   {
-    "comment": "< 40 years (14640 days, 1264896000 seconds)",
-    "if_seconds_lt": 1264896000,
+    "range": {
+      "comment": "range ~ [15 years, 40 years)",
+      "min": {"days": 5490},
+      "max": {"days": 14600}
+    },
     "major": {
       "class": "YearLocator",
       "base": 5
@@ -548,15 +621,18 @@
     "trans": null
   },
   {
-    "comment": "< 100 years (36600 days, 3162240000 seconds)",
-    "if_seconds_lt": 3162240000,
+    "range": {
+      "comment": "range ~ [40 years, 100 years)",
+      "min": {"days": 14600},
+      "max": {"days": 36600}
+     },
     "major": {
       "class": "YearLocator",
       "base": 10
     },
     "minor": {
       "class": "YearLocator",
-      "base": 2
+      "base": 5
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -566,15 +642,18 @@
     "trans": null
   },
   {
-    "comment": "< 200 years (73200 days, 6324480000 seconds)",
-    "if_seconds_lt": 6324480000,
+    "range": {
+      "comment": "range ~ [100 years, 250 years)",
+      "min": {"days": 36600},
+      "max": {"days": 91250}
+    },
     "major": {
       "class": "YearLocator",
       "base": 20
     },
     "minor": {
       "class": "YearLocator",
-      "base": 5
+      "base": 10
     },
     "fmt1": {
       "class": "DateFormatter",
@@ -584,15 +663,18 @@
     "trans": null
   },
   {
-    "comment": ">= 200 years",
-    "if_seconds_lt": null,
+    "range": {
+      "comment": "range ~ [250 years, 500 years)",
+      "min": {"days": 91250},
+      "max": {"days": 182500}
+    },
     "major": {
       "class": "YearLocator",
-      "base": 50
+      "base": 100
     },
     "minor": {
       "class": "YearLocator",
-      "base": 10
+      "base": 50
     },
     "fmt1": {
       "class": "DateFormatter",
