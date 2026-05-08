@@ -55,8 +55,7 @@ def datetick(*args,
   See also
     https://github.com/JouleCai/geospacelab/blob/master/geospacelab/visualization/mpl/axis_ticks.py
   and demo use at misc/geospacelab/demo.py
-  """
-  """
+
   TODO:
     * Add auto_adjust option that sets adjust_{first,last}_xlabel and
       adjust_{x,y}range as needed.
@@ -258,14 +257,13 @@ def datetick(*args,
       #   https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
       axes.set_xticks(axes.get_xticks())
       axes.set_xticklabels(labels)
-      kwargs = {
-        'adjust_first_xlabel': adjust_first_xlabel,
-        'adjust_last_xlabel': adjust_last_xlabel,
-        'major_font_shrink_factor': major_font_shrink_factor,
-        'major_font_shrink_always': major_font_shrink_always,
-        'debug': debug
-      }
-      _adjust_xlabels(axes, **kwargs)
+      _adjust_xlabels(axes,
+        adjust_first_xlabel=adjust_first_xlabel,
+        adjust_last_xlabel=adjust_last_xlabel,
+        major_font_shrink_factor=major_font_shrink_factor,
+        major_font_shrink_always=major_font_shrink_always,
+        debug=debug
+      )
 
     if dir == 'y':
       axes.set_yticks(axes.get_yticks())
@@ -285,7 +283,7 @@ def datetick(*args,
           'minor_formatter': cfg['minor_formatter'],
           'major_sub_format': cfg['major_sub_format'],
           'trans': cfg['trans']
-          }
+        }
 
 
 def _set_cb(dir, axes, kwargs, debug=False):
@@ -305,16 +303,28 @@ def _set_cb(dir, axes, kwargs, debug=False):
     ax.yaxis.set_major_locator(mpld.AutoDateLocator())
     datetick('y', **{**kwargs, 'set_cb': False})
 
+  def disconect():
+    prev = getattr(axes, f'_datetick_cb_{dir}', None)
+    if prev is not None:
+      """
+      This catches case where user calls datetick('x', axes=ax, use_cb=True)
+      multiple times on same axes. It also allows user to call datetick() with
+      use_cb=False to disable callback after it has been enabled.
+      """
+      axes.callbacks.disconnect(prev)
+
+  if debug:
+    n = len(axes.callbacks.callbacks.get(f'{dir}lim_changed', {}))
+    print(f'{dir}lim_changed callbacks registered: {n}')
+
+  disconect()
+
   if dir == 'x':
-    axes.callbacks.connect('xlim_changed', on_xlims_change)
-    if debug:
-      n = len(axes.callbacks.callbacks.get('xlim_changed', {}))
-      print(f'xlim_changed callbacks registered: {n}')
+    cid = axes.callbacks.connect('xlim_changed', on_xlims_change)
+    axes._datetick_cb_x = cid
   else:
-    axes.callbacks.connect('ylim_changed', on_ylims_change)
-    if debug:
-      n = len(axes.callbacks.callbacks.get('ylim_changed', {}))
-      print(f'ylim_changed callbacks registered: {n}')
+    cid = axes.callbacks.connect('ylim_changed', on_ylims_change)
+    axes._datetick_cb_y = cid
 
 
 def _get_labels(dir, axes):
@@ -336,7 +346,7 @@ def _adjust_range(dir, fig, axes, datamin, datamax, debug=False):
     pad = 0.05 * dt
     first_candidates  = ticks[ticks <= datamin]
     last_candidates = ticks[ticks >= datamax]
-    first  = first_candidates[-1]  if len(first_candidates)  > 0 else ticks[0] - dt
+    first  = first_candidates[-1]  if len(first_candidates) > 0 else ticks[0] - dt
     last = last_candidates[0]  if len(last_candidates) > 0 else ticks[-1] + dt
     if debug:
       print(f'_adjust_range(): Setting lower limit to {mpld.num2date(first-pad)} and upper limit to {mpld.num2date(last+pad)}')
@@ -359,7 +369,12 @@ def _add_major_sub_format(dir, major_sub_format, trans, lim, ticks, labels, debu
       print(msg)
     # Work-around for bug in Matplotlib where left-most tick is less than
     # lower x-limit. Could more than one tick be less than lower x-limit?
-    first = 1
+    while first < len(ticks) and ticks[first] < lim[0]:
+      first += 1
+    if first == len(ticks):
+      if debug:
+        print('All ticks are less than lower axis limit. Applying major_sub_format to last tick label.')
+      first = len(ticks) - 1
 
   # Always apply major_sub_format to first tick label
   if debug:
@@ -372,8 +387,8 @@ def _add_major_sub_format(dir, major_sub_format, trans, lim, ticks, labels, debu
     return labels
 
   for i in range(first+1, len(time)):
-    # First label will always have fmt1 applied.
-    # Modify labels after first under certain conditions.
+    # First major label will always have major_sub_format applied.
+    # Modify major labels after first under certain conditions.
     modify = False
     if debug:
       print(f'Checking if major_sub_format should be applied to tick label at {mpld.num2date(ticks[i])}.')
@@ -529,7 +544,7 @@ def _print_ticks(dir, axes, ticks, labels):
 def _manual_labels(dir, axes):
 
   major_sub_format = '%Y-%m-%d'
-  ticks = axes.get_xticks()
+  ticks = axes.get_xticks() if dir == 'x' else axes.get_yticks()
   labels = _get_labels(dir, axes)
   # Make all labels have the same number of decimal places as one
   # with the most decimal places.

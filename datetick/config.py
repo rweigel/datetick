@@ -138,7 +138,8 @@ def _validate_ranges(config):
     if 'range' in rule:
       rng = rule['range']
       lo = _to_seconds(rng.get('min')) if 'min' in rng else 0
-      hi = _to_seconds(rng.get('max')) if 'max' in rng else float('inf')
+      hi_val = _to_seconds(rng.get('max')) if 'max' in rng else None
+      hi = hi_val if hi_val is not None else float('inf')
       if lo < 0 or hi <= lo:
         raise ValueError(f"Invalid range: {rng}")
       ranges.append((lo, hi))
@@ -147,6 +148,8 @@ def _validate_ranges(config):
   for i in range(1, len(ranges)):
     if ranges[i][0] < ranges[i-1][1]:
       raise ValueError(f"Overlapping ranges: {ranges[i-1]} and {ranges[i]}")
+    if ranges[i][0] > ranges[i-1][1]:
+      raise ValueError(f"Gap in ranges: {ranges[i-1]} and {ranges[i]}")
   if ranges[0][0] > 0:
     raise ValueError(f"Ranges do not cover all positive deltas: first range starts at {ranges[0][0]} seconds")
 
