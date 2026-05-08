@@ -782,7 +782,8 @@
     "major": {
       "locator": {
         "class": "MonthLocator",
-        "bymonth_arange": [1, 13, 2]
+        "bymonth_arange": [1, 13, 2],
+        "bymonth_arange_smaller": [[1, 13, 4], [1, 13, 6]]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -792,7 +793,8 @@
     "minor": {
       "locator": {
         "class": "MonthLocator",
-        "bymonth_arange": [1, 13]
+        "bymonth_arange": [1, 13],
+        "bymonth_arange_smaller": [[1, 13, 2], [1, 13, 3]]
       }
     },
     "major_sub_format": "%Y",
@@ -972,6 +974,22 @@
         "class": "YearLocator",
         "base": 50
       }
+    },
+    "major_sub_format": "",
+    "trans": null
+  },
+  {
+    "comment": "range ~ [500 years, inf)",
+    "range": {
+      "min": {"days": 182500},
+      "max": null
+    },
+    "major": {
+      "locator": {"class": "YearLocator", "base": 500},
+      "formatter": {"class": "DateFormatter", "format": "%Y"}
+    },
+    "minor": {
+      "locator": {"class": "YearLocator", "base": 100}
     },
     "major_sub_format": "",
     "trans": null

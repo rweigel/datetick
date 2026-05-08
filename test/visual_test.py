@@ -1,12 +1,9 @@
 # Create plots with varying time ranges.
 
 import os
-import dateutil.parser
 import matplotlib.pyplot as plt
 
 from datetick import datetick
-
-import json
 
 try:
   import pytest
@@ -14,7 +11,53 @@ except ImportError:
   print("pytest is required to run this test. Please install it with 'pip install pytest'")
   exit()
 
-def plot(ds1, ds2, dir, **kwargs):
+
+@pytest.mark.short
+def test_one(debug=False):
+  _run_all(short=True, debug=debug)
+
+
+def test_all(debug=False):
+  _run_all(dir='x', figwidth=4, debug=debug)
+
+
+def _run_all(short=False, dir='x', figwidth=8, debug=False):
+  import json
+
+  test_file = os.path.join(_script_dir(), 'visual_test.json')
+  with open(test_file, 'r') as file:
+    tests = json.load(file)
+
+  dirty = False
+  for entries in tests.values():
+    for test in entries:
+      delta = _parse_ds(test['stop']) - _parse_ds(test['start'])
+      dt_str = _fmt_delta(delta)
+      if test.get('_delta_t') != dt_str:
+        test['_delta_t'] = dt_str
+        dirty = True
+  if dirty:
+    with open(test_file, 'w') as file:
+      json.dump(tests, file, indent=2)
+
+  files = []
+  for test_cat in ['kwargs', 'main']:
+    for test in tests[test_cat]:
+      dt_str_o = test['start']
+      dt_str_f = test['stop']
+      kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
+      _plot(dt_str_o, dt_str_f, dir=dir, figwidth=figwidth, debug=debug, **kwargs)
+      file = _savefig(dt_str_o, dt_str_f, dir, files, debug=debug)
+      files.append(file)
+      if short:
+        break
+
+  if not short:
+    _append_to_readme(files, dir, debug=debug)
+    _create_subdir_readme(files, dir, debug=debug)
+
+
+def _plot(ds1, ds2, dir='x', figwidth=8, **kwargs): 
 
   def _set_title(ax, dir, delta_t):
     if dir == 'x':
@@ -30,13 +73,13 @@ def plot(ds1, ds2, dir, **kwargs):
     ax.set_title(title, fontsize=10, fontfamily='monospace')
 
 
-  def _axes(dir):
+  def _axes(dir, figwidth):
 
     if dir == 'x':
-      figsize=(8, 2)
+      figsize=(figwidth, 2)
       hspace = 1.0
     else:
-      figsize=(2, 8)
+      figsize=(2, figwidth)
       hspace = 0.1
 
     fig, axes = plt.subplots(2, figsize=figsize)
@@ -77,10 +120,10 @@ def plot(ds1, ds2, dir, **kwargs):
     ax.text(xt, yt, text, ha='center', va='center', bbox=bbox, fontsize=9)
 
 
-  fig, axes = _axes(dir)
+  fig, axes = _axes(dir, figwidth)
 
-  dt1 = dateutil.parser.parse(ds1)
-  dt2 = dateutil.parser.parse(ds2)
+  dt1 = _parse_ds(ds1)
+  dt2 = _parse_ds(ds2)
   if dir == 'x':
     x = [dt1, dt2]
     y = [0.0, 0.0]
@@ -210,58 +253,6 @@ def _script_dir():
   return os.path.dirname(os.path.realpath(__file__))
 
 
-@pytest.mark.short
-def test_plot_short(debug=False):
-  test_plot(short=True, debug=debug)
-
-
-def test_plot(short=False, debug=False):
-  test_file = os.path.join(_script_dir(), 'visual_test.json')
-  with open(test_file, 'r') as file:
-    tests = json.load(file)
-
-  dirty = False
-  for entries in tests.values():
-    for test in entries:
-      delta = dateutil.parser.parse(test['stop']) - dateutil.parser.parse(test['start'])
-      dt_str = _fmt_delta(delta)
-      if test.get('_delta_t') != dt_str:
-        test['_delta_t'] = dt_str
-        dirty = True
-  if dirty:
-    with open(test_file, 'w') as file:
-      json.dump(tests, file, indent=2)
-
-  dir = 'x'
-  files = []
-  for test_cat in ['kwargs', 'main']:
-    for test in tests[test_cat]:
-      dt_str_o = test['start']
-      dt_str_f = test['stop']
-      kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
-      if False:
-        cfg2 = plot(dt_str_o, dt_str_f, dir=dir, use_config2=True, **kwargs)
-        plt.close()
-      cfg = plot(dt_str_o, dt_str_f, dir=dir, **kwargs)
-      if False:
-        _compare_cfgs(dt_str_o, dt_str_f, cfg, cfg2)
-      file = _savefig(dt_str_o, dt_str_f, dir, files)
-      files.append(file)
-      if short:
-        break
-
-  if not short:
-    _append_to_readme(files, dir, debug=debug)
-    _create_subdir_readme(files, dir, debug=debug)
-
-
-def _compare_cfgs(ds1, ds2, cfg1, cfg2):
-  #assert list(cfg1['ticks']) == list(cfg2['ticks']), f"Ticks differ: {cfg1['ticks']} vs {cfg2['ticks']}"
-  msg = f"Labels differ for {ds1} - {ds2}"
-  msg += f"\n  {cfg1['labels']}\nvs\n  {cfg2['labels']}"
-  assert list(cfg1['labels']) == list(cfg2['labels']), msg
-
-
 def _fmt_delta(td):
     total = td.total_seconds()
     days = td.days
@@ -286,15 +277,22 @@ def _fmt_delta(td):
     return ''.join(parts) or '0s'
 
 
+def _parse_ds(ds):
+  import dateutil.parser
+  return dateutil.parser.parse(ds)
+
+
 if __name__ == '__main__':
-  if False:
+  if True:
     dir = 'x'
+    figwidth = 2
     ds1 = '2001-02-12T00:00:00Z'
     ds2 = '2002-01-31T00:00:00Z'
-    file = plot(ds1, ds2, dir, debug=True)
+    file = _plot(ds1, ds2, dir, figwidth, debug=True)
+    print("Writing", 'a.png')
     plt.savefig('a.png', bbox_inches='tight', dpi=300)
     plt.close()
     exit()
 
-  #test_plot(short=True)
-  test_plot(debug=True)
+  #test_one(debug=True)
+  test_all(debug=False)

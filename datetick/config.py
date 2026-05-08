@@ -1,4 +1,4 @@
-def config(deltaT, config=None, debug=False):
+def config(delta_t, rule=None, config=None, debug=False):
   import json
   import warnings
 
@@ -10,7 +10,7 @@ def config(deltaT, config=None, debug=False):
 
   _validate_config(config)
 
-  total_seconds = deltaT.total_seconds()
+  total_seconds = delta_t.total_seconds()
   for rule in config:
     rng = rule['range']
     lo = _to_seconds(rng.get('min'))
@@ -25,10 +25,11 @@ def config(deltaT, config=None, debug=False):
         'major_formatter':  _make_formatter(major.get('formatter') if major else None),
         'minor_formatter':  _make_formatter(minor.get('formatter') if minor else None),
         'major_sub_format': rule.get('major_sub_format', ''),
-        'trans':            rule['trans']
+        'trans':            rule['trans'],
+        'rule':             rule
       }
 
-  warnings.warn(f"No matching config rule found for deltaT={deltaT}; returning None.")
+  warnings.warn(f"No matching config rule found for delta_t={delta_t}; returning None.")
 
   return None
 
@@ -111,8 +112,8 @@ def _validate_config(config):
           "required": ["min", "max"],
           "properties": {
             "comment": {"type": "string"},
-            "min": {"type": "object"},
-            "max": {"type": "object"}
+            "min": {"type": ["object", "null"]},
+            "max": {"type": ["object", "null"]}
           },
           "additionalProperties": False
         },

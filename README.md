@@ -1,10 +1,10 @@
 # datetick
 
-Sensible numeric time and date tick labels for Matplotlib
+Sensible date/time tick labels for Matplotlib
 
 # Motivation
 
-Matplotlib's default time tick labels are often poor, and adjusting them requires using [locators and formatters](https://matplotlib.org/stable/api/ticker_api.html) on an ad-hoc basis. In addition, the interfaces for locators and formatters complex and non-intuitive and require study and experimentation.
+Matplotlib's default date/time tick labels are often poor, and adjusting them requires using [locators and formatters](https://matplotlib.org/stable/api/ticker_api.html) on an ad-hoc basis. In addition, the interfaces for locators and formatters complex and non-intuitive and require study and experimentation.
 
 `datetick()` contains logic for locators and formatters that apply to plots with arbitrary time ranges. One only needs to add the command `datetick()` after the usual Matplotlib `plt.plot(...)` command to have sensible and useable time tick labels.
 

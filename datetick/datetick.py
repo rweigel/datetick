@@ -9,6 +9,7 @@ def datetick(*args,
              adjust_yrange=False,
              major_font_shrink_factor=0.87,
              major_font_shrink_always=False,
+             min_font_size=6,
              set_cb=True,
              debug=False):
   """
@@ -73,7 +74,6 @@ def datetick(*args,
   # Get all kwargs passed using locals
   kwargs = {k: v for k, v in locals().items() if k != 'args'}
 
-  import warnings
   from datetime import datetime
 
   from matplotlib import pyplot as plt
@@ -97,7 +97,7 @@ def datetick(*args,
       raise ValueError(f"Invalid axes argument (axes={axes}) provided. Execution of axes.figure failed.")
   else:
     if plt.get_fignums() == []:
-      warnings.warn("No current figure.")
+      _warn("No current figure.")
       return None
     try:
       fig = plt.gcf()
@@ -108,7 +108,6 @@ def datetick(*args,
     except Exception as e:
       raise ValueError(f"plt.gca() failed: {e}")
 
-
   try:
     fig.canvas.draw()
   except Exception as e:
@@ -118,7 +117,6 @@ def datetick(*args,
     raise ValueError("axes does not have dataLim attribute. Cannot use datetick().")
 
   bbox = axes.dataLim
-
   if dir == 'x':
     datamin = bbox.x0
     datamax = bbox.x1
@@ -130,29 +128,30 @@ def datetick(*args,
     lim = axes.get_ylim()
     ticks = axes.get_yticks()
 
-  try:
-    mpld.num2date(lim[0])
-  except:
-    msg = 'Lower axis limit of %f is not a valid Matplotlib datenum' % lim[0]
-    raise ValueError(msg)
-  try:
-    mpld.num2date(lim[1])
-  except:
-    msg = 'Upper axis limit of %f is not a valid Matplotlib datenum' % lim[1]
-    raise ValueError(msg)
-
   # If all values are NaN, datamin = np.inf and datamax = -np.inf.
-  msg = "is not a valid Matplotlib datenum. Are all data values NaN? Cannot use datetick()"
   try:
     mpld.num2date(datamin)
   except:
-    warnings.warn(f'Minimum value of %f {msg}' % datamin)
+    msg = f"mpld.num2date(axes.dataLim.{dir}x0) failed. Cannot use datetick()."
+    #_warn(msg)
     return
   try:
     mpld.num2date(datamax)
   except:
-    warnings.warn(f'Maximum value of %f {msg}' % datamax)
+    msg = f"mpld.num2date(axes.dataLim.{dir}x1) failed. Cannot use datetick()."
+    #_warn(msg)
     return
+
+  try:
+    mpld.num2date(lim[0])
+  except:
+    msg = f"axes.get_{dir}lim()[0] = {lim[0]} is not a valid Matplotlib datenum."
+    raise ValueError(msg)
+  try:
+    mpld.num2date(lim[1])
+  except:
+    msg = f"axes.get_{dir}lim()[0] = {lim[1]} is not a valid Matplotlib datenum."
+    raise ValueError(msg)
 
   if datamin == datamax:
     if dir == 'x':
@@ -165,7 +164,7 @@ def datetick(*args,
       axes.set_yticklabels([yticklabel])
     return
 
-  # Need to document why this was used originally. If kept, it creates
+  # Need to document why np.{min,max} was used originally. If kept, it creates
   # problems if labels extend beyond the axis limits.
   #tmin = np.min((lim[0], datamin))
   #tmax = np.max((lim[1], datamax))
@@ -203,6 +202,18 @@ def datetick(*args,
   """
 
   cfg = config(delta_t, debug=debug)
+
+  if cfg is None:
+    _warn(f'No config rule matched delta_t={delta_t}. Using default Matplotlib locator and formatter.')
+    ticks, labels, major_sub_format = _manual_labels(dir, axes)
+    return {
+      'delta_t': delta_t,
+      'ticks': ticks,
+      'labels': labels,
+      'major_locator': None, 'minor_locator': None,
+      'major_formatter': None, 'minor_formatter': None,
+      'major_sub_format': major_sub_format, 'trans': None
+    }
 
   if debug:
     print(f'Config for delta_t = {delta_t}:')
@@ -291,6 +302,12 @@ def datetick(*args,
       axes.set_yticks(axes.get_yticks())
       axes.set_yticklabels(labels)
 
+  min_gap = _min_gap(axes, dir, debug=debug)
+  if min_gap < min_font_size:
+    min_gap = _adjust_font_size(fig, axes, dir, min_gap, min_font_size, debug=debug)
+    if min_gap < min_font_size:
+      _warn(f'Minimum gap between labels is {min_gap:.1f} px after reducing font size to min_font_size = {min_font_size} px.')
+
   # Trigger update of ticks when limits change due to user interaction.
   if set_cb:
     _set_cb(dir, axes, kwargs, debug=debug)
@@ -307,6 +324,91 @@ def datetick(*args,
           'trans': cfg['trans']
         }
 
+def _warn(msg):
+  import warnings
+  old_formatwarning = warnings.formatwarning
+  def formatwarning(message, category, filename, lineno, line=None):
+    return f'{filename}:{lineno}: {category.__name__}: {message}\n'
+  warnings.formatwarning = formatwarning
+  warnings.warn(msg)
+  warnings.formatwarning = old_formatwarning
+
+def _adjust_font_size(fig, axes, dir, min_gap, min_font_size, debug=False):
+  # Print axes width in pixels and min_gap in pixels for debugging purposes.
+  from matplotlib import pyplot as plt
+  if debug:
+    fig_width_inch = fig.get_size_inches()[0]
+    dpi = fig.dpi
+    fig_width_pix = fig_width_inch * dpi
+    print(f'Figure width: {fig_width_inch:.2f} inch, {fig_width_pix:.1f} px')
+    print(f'Minimum gap between labels: {min_gap:.1f} px')
+    if debug:
+      print(f'Minimum gap of {min_gap:.1f} px is less than min_font_size of {min_font_size} px. Shrinking font size to avoid overlap.')
+    ticklabels = axes.get_xticklabels() if dir == 'x' else axes.get_yticklabels()
+    font_size = ticklabels[0].get_fontsize() if len(ticklabels) > 0 else plt.rcParams['font.size']
+    if isinstance(font_size, str):
+      from matplotlib.font_manager import FontProperties
+      font_size = FontProperties(size=font_size).get_size_in_points()
+
+    new_font_size = _fit_ticklabel_font_size(axes, dir, min_font_size, min_font_size, font_size, debug=debug)
+    plt.setp(axes.get_xticklabels() if dir == 'x' else axes.get_yticklabels(), fontsize=new_font_size)
+
+    min_gap = _min_gap(axes, dir, debug=debug)
+    if debug:
+      print(f'After shrinking font size, minimum gap between labels is {min_gap:.1f} px.')
+
+  return min_gap
+
+def _min_gap(axes, dir, debug=False):
+  fig = axes.figure
+  fig.canvas.draw()
+  renderer = fig.canvas.get_renderer()
+  ticklabels = axes.get_xticklabels() if dir == 'x' else axes.get_yticklabels()
+  bboxes = [label.get_window_extent(renderer) for label in ticklabels]
+  min_gap = float('inf')
+  for i in range(len(bboxes)-1):
+    separation = bboxes[i+1].x0 - bboxes[i].x1 if dir == 'x' else bboxes[i+1].y0 - bboxes[i].y1
+    min_gap = min(min_gap, separation) if i > 0 else separation
+    if separation <= 0:
+      if debug:
+        this = ticklabels[i].get_text().replace('\n', '\\n')
+        prev = ticklabels[i+1].get_text().replace('\n', '\\n')
+        print(f"Tick labels '{prev}' and '{this}' may overlap (separation={separation:.1f}px).")
+
+  return min_gap
+
+def _fit_ticklabel_font_size(axes, dir, target_gap, min_font_size, font_size, debug=False):
+  """Find a tick-label font size whose rendered minimum gap is near target_gap.
+
+  This does a small binary search over font size in points. At each step it
+  renders the current tick labels, measures the minimum separation between
+  adjacent label bounding boxes with _min_gap(), and keeps the size that gets
+  closest to target_gap in pixels.
+  """
+  from matplotlib import pyplot as plt
+
+  ticklabels = axes.get_xticklabels() if dir == 'x' else axes.get_yticklabels()
+  lo = min_font_size
+  hi = float(font_size)
+  best = hi
+  best_err = abs(_min_gap(axes, dir) - target_gap)
+
+  for _ in range(8):
+    mid = 0.5 * (lo + hi)
+    plt.setp(ticklabels, fontsize=mid)
+    gap = _min_gap(axes, dir)
+    err = abs(gap - target_gap)
+    if err < best_err:
+      best = mid
+      best_err = err
+    if gap < target_gap:
+      hi = mid
+    else:
+      lo = mid
+
+  if debug:
+    print(f'Using font size {best:.2f} to target minimum gap of {target_gap:.1f} px.')
+  return best
 
 def _set_cb(dir, axes, kwargs, debug=False):
   import matplotlib.dates as mpld
