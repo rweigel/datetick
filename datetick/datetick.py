@@ -88,14 +88,36 @@ def datetick(*args,
   else:
     dir = args[0]
 
-  if 'axes' in kwargs:
+  if kwargs.get('axes', None) is not None:
     axes = kwargs['axes']
-    fig = axes.figure
+    if not isinstance(axes, plt.Axes):
+      raise ValueError(f"Invalid axes argument (axes={axes}) provided. Not an instance of matplotlib.pyplot.Axes.")
+    try:
+      fig = axes.figure
+    except:
+      raise ValueError(f"Invalid axes argument (axes={axes}) provided. Execution of axes.figure failed.")
   else:
-    axes = plt.gca()
-    fig = plt.gcf()
+    if plt.get_fignums() == []:
+      warnings.warn("No current figure.")
+      return None
+    try:
+      fig = plt.gcf()
+    except Exception as e:
+      raise ValueError("plt.gcf() failed: {e}")
+    try:
+      axes = plt.gca()
+    except Exception as e:
+      raise ValueError(f"plt.gca() failed: {e}")
 
-  fig.canvas.draw()
+
+  try:
+    fig.canvas.draw()
+  except Exception as e:
+    raise ValueError(f"fig.canvas.draw() failed: {e}")
+
+  if not hasattr(axes, 'dataLim'):
+    raise ValueError("axes does not have dataLim attribute. Cannot use datetick().")
+
   bbox = axes.dataLim
 
   if dir == 'x':
