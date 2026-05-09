@@ -18,7 +18,7 @@ def test_one(debug=False):
 
 
 def test_all(debug=False):
-  _run_all(dir='x', figwidth=4, debug=debug)
+  _run_all(dir='x', figwidth=8, debug=debug)
 
 
 def _run_all(short=False, dir='x', figwidth=8, debug=False):
@@ -283,7 +283,7 @@ def _parse_ds(ds):
 
 
 if __name__ == '__main__':
-  if True:
+  if False:
     dir = 'x'
     figwidth = 2
     ds1 = '2001-02-12T00:00:00Z'

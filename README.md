@@ -1,12 +1,16 @@
 # datetick
 
-Sensible date/time tick labels for Matplotlib
+Sensible date/time tick labels for [Matplotlib](https://matplotlib.org/)
 
 # Motivation
 
-Matplotlib's default date/time tick labels are often poor, and adjusting them requires using [locators and formatters](https://matplotlib.org/stable/api/ticker_api.html) on an ad-hoc basis. In addition, the interfaces for locators and formatters complex and non-intuitive and require study and experimentation.
+`Matplotlib`'s default date/time tick labels are often poor, and adjusting them requires using [locators and formatters](https://matplotlib.org/stable/api/ticker_api.html) on an ad-hoc basis. A method or package for handling arbitrary time ranges does not exist.
 
-`datetick()` contains logic for locators and formatters that apply to plots with arbitrary time ranges. One only needs to add the command `datetick()` after the usual Matplotlib `plt.plot(...)` command to have sensible and useable time tick labels.
+In addition, the interfaces for locators and formatters complex and non-intuitive and require study and experimentation (e.g., [[1]](https://github.com/matplotlib/matplotlib/issues/28158), [[2]](https://github.com/matplotlib/matplotlib/issues/15813]), [[3]](https://github.com/matplotlib/matplotlib/issues/9978), [[4]](https://github.com/matplotlib/matplotlib/issues/9978). Tilting labels is an [often-suggested solution](https://github.com/matplotlib/matplotlib/issues/9978), but this should not be needed.
+
+`datetick()` contains logic for locators and formatters that apply to plots with arbitrary time ranges. One only needs to add the command `datetick()` after the usual `plt.plot(...)` command to have sensible and useable time tick labels. The primary configuration is a set of [rules](datetick/rules.json) that account for the time range and an adjustable minimum gap between tick labels.
+
+To prevent overlap and enforce a minimum gap, the font size is automatically reduced to a chosen minimum value. Then the number of ticks are reduced based on rules in [rules.json](datetick/rules.json).
 
 # Usage
 
@@ -22,7 +26,7 @@ plt.plot([dt1, dt2], [0.0,1.0])
 datetick()
 plt.show()
 # or
-# datetick('x') (use 'y' if y variable is a time)
+# datetick('x') (use 'y' if y variable is datetime-like)
 # or
 # datetick('x', axes=plt.gca())
 # or
@@ -31,7 +35,7 @@ plt.show()
 # datetick('x', axes=axes[0])
 ```
 
-# Comparison to default Matplotlib
+# Comparison to default `Matplotlib`
 
 
 <code>Python-3.13/Matplotlib-3.10.9</code>
