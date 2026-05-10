@@ -6,14 +6,14 @@ import matplotlib
 
 def datetick(*args,
              axes=None,
+             adjust_range=False,
              adjust_last_xlabel=False,
              adjust_first_xlabel=False,
-             adjust_xrange=False,
-             adjust_yrange=False,
              major_font_shrink_factor=0.87,
              major_font_shrink_always=False,
              min_font_size=6,
              warn_on_min_gap=False,
+             rule_idx=None,
              set_cb=True,
              debug=False):
   """
@@ -41,8 +41,7 @@ def datetick(*args,
   adjust_last_xlabel: If True, adjust last x-label to avoid extending past lower axis limit.
   adjust_first_xlabel: If True, adjust first x-label to avoid extending past upper axis limit.
 
-  adjust_xrange: If True, expand x-range so data are always within a major tick.
-  adjust_yrange: If True, expand y-range so data are always within a major tick.
+  adjust_range: If True, expand axis range so data are always within a major tick.
 
   major_font_shrink_factor: If adjust_first_xlabel or adjust_last_xlabel is True,
                       shrink font size of x-labels without newline by this
@@ -80,16 +79,175 @@ def datetick(*args,
 
   from . import adjust, compute, rules, util
 
-  dir = 'x' if len(args) == 0 else args[0]
+  axis = 'x' if len(args) == 0 else args[0]
+
+  _check_plt(kwargs)
+
+  bbox = axes.dataLim
+  if axis == 'x':
+    lim_data = (bbox.x0, bbox.x1)
+    lim_axis = axes.get_xlim()
+    ticks = axes.get_xticks()
+  else:
+    lim_data = (bbox.y0, bbox.y1)
+    lim_axis = axes.get_ylim()
+    ticks = axes.get_yticks()
+
+  _check_bounds(lim_data, lim_axis, ticks, axis, debug=debug)
+
+  if lim_data[0] == lim_data[1]:
+    datamin_date = matplotlib.dates.num2date(lim_data[0])
+    ticklabel = datetime.datetime.strftime(datamin_date,'%Y-%m-%dT%H:%M:%S')
+    if axis == 'x':
+      axes.set_xticks([datamin_date])
+      axes.set_xticklabels([ticklabel])
+    else:
+      axes.set_yticks([datamin_date])
+      axes.set_yticklabels([ticklabel])
+    return
+
+  # Need to document why np.{min,max} was used originally. If kept, it creates
+  # problems if labels extend beyond the axis limits.
+  #tmin = np.min((lim[0], datamin))
+  #tmax = np.max((lim[1], datamax))
+  #tmin = lim[0]
+  #tmax = lim[1]
+  tmin = lim_data[0]
+  tmax = lim_data[1]
+
+  tspan = matplotlib.dates.num2date((tmin, tmax))
+
+  delta_t = tspan[-1] - tspan[0]
+  if debug:
+    print("Total seconds: %s" % delta_t.total_seconds())
+    print(f'{axis} data min:         {matplotlib.dates.num2date(lim_data[0])}')
+    print(f'Default {axis}lim[0]:    {matplotlib.dates.num2date(lim_data[0])}')
+    print(f'Default {axis}ticks[0]:  {matplotlib.dates.num2date(ticks[0])}')
+    print(f'{axis} data max:         {matplotlib.dates.num2date(lim_data[-1])}')
+    print(f'Default {axis}lim[-1]:   {matplotlib.dates.num2date(lim_data[-1])}')
+    print(f'Default {axis}ticks[-1]: {matplotlib.dates.num2date(ticks[-1])}')
+    print(f'Default {axis}labels and ticks:')
+    labels = util.get_ticklabels(axis, axes)
+    util.print_ticks(axis, axes, ticks, labels)
+
+  rule = rules.rule(delta_t, rule_idx=kwargs['rule_idx'], debug=debug)
+
+  delta_t_str = util.format_delta(delta_t)
+  if rule is None:
+    msg = f'No config rule matched delta_t={delta_t_str}. '
+    msg += 'Using default Matplotlib locator and formatter.'
+    util.warn(msg)
+    ticks, labels = _manual_labels(axis, axes)
+    return {
+      'delta_t': delta_t,
+      'ticks': ticks,
+      'labels': labels,
+      'rule': rule
+    }
+
+  if rule['major']['locator'] is None:
+    if debug:
+      msg = 'No major locator found for this time span. '
+      msg += 'Using default Matplotlib locator and formatter.'
+      print(msg)
+    ticks, labels = _manual_labels(axis, axes)
+  else:
+    ticks, labels = _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=debug)
+
+  if len(labels) == 0:
+    if debug:
+      print('No labels. Returning without applying major_sub_format or set_cb.')
+    return
+
+  if rule['major']['sub_format'] != '':
+    args = [
+      axis,
+      rule['major']['sub_format'],
+      rule['major']['sub_transition'],
+      lim_axis,
+      ticks,
+      labels
+    ]
+    labels = _add_major_sub_string(*args, debug=debug)
+
+    if debug:
+      print(f'{axis}labels and ticks after applying major_sub_format:')
+      util.print_ticks(axis, axes, ticks, labels)
+
+    if axis == 'x':
+      """
+        Without the set_xticks(), warning is generated:
+          UserWarning: set_ticklabels() should only be used.
+        Additional discussion:
+          https://github.com/matplotlib/matplotlib/issues/18848
+        The correct way to avoid the warning:
+          https://stackoverflow.com/a/69126185
+        Better: Create custom class:
+          https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
+      """
+      axes.set_xticks(axes.get_xticks())
+      axes.set_xticklabels(labels)
+      adjust.xlabels(axes,
+        adjust_first_xlabel=adjust_first_xlabel,
+        adjust_last_xlabel=adjust_last_xlabel,
+        major_font_shrink_factor=major_font_shrink_factor,
+        major_font_shrink_always=major_font_shrink_always,
+        debug=debug
+      )
+
+    if axis == 'y':
+      axes.set_yticks(axes.get_yticks())
+      axes.set_yticklabels(labels)
+
+  min_gap = compute.min_gap(axis, axes, debug=debug)
+  if min_gap < min_font_size:
+
+    min_gap = adjust.font_size(axis, axes, min_gap, min_font_size, debug=debug)
+
+    if min_gap < min_font_size and warn_on_min_gap:
+      lim_axis_str = [
+                        matplotlib.dates.num2date(lim_axis[0]),
+                        matplotlib.dates.num2date(lim_axis[1])
+                      ]
+      msg = f'Minimum gap between labels is {min_gap:.1f} px after reducing '
+      msg += f'font size to min_font_size = {min_font_size} px. {lim_axis_str}'
+      util.warn(msg)
+
+      if debug:
+        msg = 'Attempting to use datetick with previous rule.'
+        print(msg)
+      if kwargs['rule_idx'] is None:
+        kwargs['rule_idx'] = 0
+      kwargs['rule_idx'] += 1
+      if kwargs['rule_idx'] < 3:
+        kwargs['axes'] = axes
+        return datetick(axis, **kwargs)
+
+  # Trigger update of ticks when limits change due to user interaction.
+  if set_cb and util.backend_is_interactive():
+    _set_cb(axis, axes, kwargs, debug=debug)
+
+  return {
+          'delta_t': delta_t,
+          'ticks': ticks,
+          'labels': labels,
+          'rule': rule
+        }
+
+
+def _check_plt(kwargs):
+  from . import util
 
   if kwargs.get('axes', None) is not None:
     axes = kwargs['axes']
     if not isinstance(axes, matplotlib.pyplot.Axes):
-      raise ValueError(f"Invalid axes argument (axes={axes}) provided. Not an instance of matplotlib.pyplot.Axes.")
+      msg = f"Invalid axes argument axes={axes} is not an instance of matplotlib.pyplot.Axes."
+      raise ValueError(msg)
     try:
       fig = axes.figure
-    except:
-      raise ValueError(f"Invalid axes argument (axes={axes}) provided. Execution of axes.figure failed.")
+    except Exception as e:
+      msg = f"Invalid axes argument axes={axes} - execution of axes.figure failed: {e}"
+      raise ValueError(msg)
   else:
     if matplotlib.pyplot.get_fignums() == []:
       util.warn("No current figure.")
@@ -97,7 +255,7 @@ def datetick(*args,
     try:
       fig = matplotlib.pyplot.gcf()
     except Exception as e:
-      raise ValueError("matplotlib.pyplot.gcf() failed: {e}")
+      raise ValueError(f"matplotlib.pyplot.gcf() failed: {e}")
     try:
       axes = matplotlib.pyplot.gca()
     except Exception as e:
@@ -111,199 +269,36 @@ def datetick(*args,
   if not hasattr(axes, 'dataLim'):
     raise ValueError("axes does not have dataLim attribute. Cannot use datetick().")
 
-  bbox = axes.dataLim
-  if dir == 'x':
-    datamin = bbox.x0
-    datamax = bbox.x1
-    lim = axes.get_xlim()
-    ticks = axes.get_xticks()
-  else:
-    datamin = bbox.y0
-    datamax = bbox.y1
-    lim = axes.get_ylim()
-    ticks = axes.get_yticks()
+
+def _check_bounds(lim_data, lim_axis, ticks, axis, debug=False):
 
   # If all values are NaN, datamin = np.inf and datamax = -np.inf.
   try:
-    matplotlib.dates.num2date(datamin)
+    matplotlib.dates.num2date(lim_data[0])
   except:
-    msg = f"matplotlib.dates.num2date(axes.dataLim.{dir}x0) failed. Cannot use datetick()."
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{axis}x0) failed. Cannot use datetick()."
     #_warn(msg)
     return
   try:
-    matplotlib.dates.num2date(datamax)
+    matplotlib.dates.num2date(lim_data[1])
   except:
-    msg = f"matplotlib.dates.num2date(axes.dataLim.{dir}x1) failed. Cannot use datetick()."
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{axis}x1) failed. Cannot use datetick()."
     #_warn(msg)
     return
 
   try:
-    matplotlib.dates.num2date(lim[0])
+    matplotlib.dates.num2date(lim_axis[0])
   except:
-    msg = f"axes.get_{dir}lim()[0] = {lim[0]} is not a valid Matplotlib datenum."
+    msg = f"axes.get_{axis}lim()[0] = {lim_axis[0]} is not a valid Matplotlib datenum."
     raise ValueError(msg)
   try:
-    matplotlib.dates.num2date(lim[1])
+    matplotlib.dates.num2date(lim_axis[1])
   except:
-    msg = f"axes.get_{dir}lim()[0] = {lim[1]} is not a valid Matplotlib datenum."
+    msg = f"axes.get_{axis}lim()[0] = {lim_axis[1]} is not a valid Matplotlib datenum."
     raise ValueError(msg)
 
-  if datamin == datamax:
-    if dir == 'x':
-      axes.set_xticks([matplotlib.dates.num2date(datamin)])
-      xticklabel = datetime.datetime.strftime(matplotlib.dates.num2date(datamin),'%Y-%m-%dT%H:%M:%S')
-      axes.set_xticklabels([xticklabel])
-    else:
-      axes.set_yticks([matplotlib.dates.num2date(datamin)])
-      yticklabel = datetime.datetime.strftime(matplotlib.dates.num2date(datamin),'%Y-%m-%dT%H:%M:%S')
-      axes.set_yticklabels([yticklabel])
-    return
 
-  # Need to document why np.{min,max} was used originally. If kept, it creates
-  # problems if labels extend beyond the axis limits.
-  #tmin = np.min((lim[0], datamin))
-  #tmax = np.max((lim[1], datamax))
-  tmin = lim[0]
-  tmax = lim[1]
-
-  tspan = matplotlib.dates.num2date((tmin, tmax))
-
-  delta_t = tspan[-1] - tspan[0]
-  if debug:
-    print("Total seconds: %s" % delta_t.total_seconds())
-
-  if debug:
-    print(f'{dir} data min:         {matplotlib.dates.num2date(datamin)}')
-    print(f'Default {dir}lim[0]:    {matplotlib.dates.num2date(lim[0])}')
-    print(f'Default {dir}ticks[0]:  {matplotlib.dates.num2date(ticks[0])}')
-    print(f'{dir} data max:         {matplotlib.dates.num2date(datamax)}')
-    print(f'Default {dir}lim[-1]:   {matplotlib.dates.num2date(lim[-1])}')
-    print(f'Default {dir}ticks[-1]: {matplotlib.dates.num2date(ticks[-1])}')
-    print(f'Default {dir}labels and ticks:')
-    labels = _get_labels(dir, axes)
-    util.print_ticks(dir, axes, ticks, labels)
-
-
-  """
-  major_sub_format contains additional information that is used for the first tick label
-  or when there is a major change. For example, if
-    major_format = %M:%S and major_sub_format = %H,
-  the labels will have only minute and hour and the first tick will have a
-  label of %M:%S\n%H. If there is a change in hour somewhere on the axis,
-  that label will include the new hour.
-
-  Note that interval=... is specified even when it would seem to be redundant.
-  It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
-  """
-
-  rule = rules.rule(delta_t, debug=debug)
-
-  if rule is None:
-    util.warn(f'No config rule matched delta_t={delta_t}. Using default Matplotlib locator and formatter.')
-    ticks, labels, major_sub_format = _manual_labels(dir, axes)
-    return {
-      'delta_t': delta_t,
-      'ticks': ticks,
-      'labels': labels,
-      'rule': rule
-    }
-
-  if debug:
-    print(f'Rule for delta_t = {delta_t}:')
-    for key, value in rule.items():
-      print(f'  {key}: {value}')
-
-  if rule['major']['locator'] is None:
-    if debug:
-      print('No major locator found for this time span. Using default Matplotlib locator and formatter.')
-    ticks, labels, rule['major']['sub_format'] = _manual_labels(dir, axes)
-  else:
-    if dir == 'x':
-      axis = axes.xaxis
-    else:
-      axis = axes.yaxis
-
-    axis.set_major_locator(util.make_locator(rule['major']['locator']))
-    if rule['major']['formatter'] is not None:
-      axis.set_major_formatter(util.make_formatter(rule['major']['formatter']))
-    if rule['minor']['locator'] is not None:
-      axis.set_minor_locator(util.make_locator(rule['minor']['locator']))
-    if rule['minor']['formatter'] is not None:
-      axis.set_minor_formatter(util.make_formatter(rule['minor']['formatter']))
-
-    fig.canvas.draw() # Render new labels so updated for next line
-    ticks = axes.get_xticks() if dir == 'x' else axes.get_yticks()
-
-    if debug:
-      print(f'{dir}labels and ticks after applying locators and formatters:')
-      fig.canvas.draw()
-      util.print_ticks(dir, axes, ticks, _get_labels(dir, axes))
-
-    if adjust_xrange or adjust_yrange:
-      adjust.time_range(dir, fig, axes, datamin, datamax, debug=debug)
-      if debug:
-        print(f'{dir}labels and ticks after adjusting range:')
-        fig.canvas.draw()
-        util.print_ticks(dir, axes, ticks, _get_labels(dir, axes))
-
-    fig.canvas.draw()
-
-    labels = _get_labels(dir, axes)
-
-  if len(labels) == 0:
-    if debug:
-      print('No labels. Returning without applying major_sub_format or set_cb.')
-    return
-
-  if rule['major']['sub_format'] != '':
-    labels = _add_major_sub_string(dir, rule['major']['sub_format'], rule['major']['sub_transition'], lim, ticks, labels, debug=False)
-
-    if debug:
-      print(f'{dir}labels and ticks after applying major_sub_format:')
-      util.print_ticks(dir, axes, ticks, labels)
-
-    if dir == 'x':
-      # Without the set_xticks(), warning is generated:
-      #   UserWarning: set_ticklabels() should only be used.
-      # Additional discussion:
-      #   https://github.com/matplotlib/matplotlib/issues/18848
-      # The correct way to avoid the warning:
-      #   https://stackoverflow.com/a/69126185
-      # Better: Create custom class:
-      #   https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
-      axes.set_xticks(axes.get_xticks())
-      axes.set_xticklabels(labels)
-      adjust.xlabels(axes,
-        adjust_first_xlabel=adjust_first_xlabel,
-        adjust_last_xlabel=adjust_last_xlabel,
-        major_font_shrink_factor=major_font_shrink_factor,
-        major_font_shrink_always=major_font_shrink_always,
-        debug=debug
-      )
-
-    if dir == 'y':
-      axes.set_yticks(axes.get_yticks())
-      axes.set_yticklabels(labels)
-
-  min_gap = compute.min_gap(axes, dir, debug=debug)
-  if min_gap < min_font_size:
-    min_gap = adjust.font_size(fig, axes, dir, min_gap, min_font_size, debug=debug)
-    if min_gap < min_font_size and warn_on_min_gap:
-      util.warn(f'Minimum gap between labels is {min_gap:.1f} px after reducing font size to min_font_size = {min_font_size} px.')
-
-  # Trigger update of ticks when limits change due to user interaction.
-  if set_cb and util.backend_is_interactive():
-    _set_cb(dir, axes, kwargs, debug=debug)
-
-  return {
-          'delta_t': delta_t,
-          'ticks': ticks,
-          'labels': labels,
-          'rule': rule
-        }
-
-
-def _set_cb(dir, axes, kwargs, debug=False):
+def _set_cb(axis, axes, kwargs, debug=False):
   def on_xlims_change(ax):
     if debug:
       print('xlims changed. Updating datetick plot.')
@@ -319,7 +314,7 @@ def _set_cb(dir, axes, kwargs, debug=False):
     datetick('y', **{**kwargs, 'set_cb': False})
 
   def disconect():
-    prev = getattr(axes, f'_datetick_cb_{dir}', None)
+    prev = getattr(axes, f'_datetick_cb_{axis}', None)
     if prev is not None:
       """
       This catches case where user calls datetick('x', axes=ax, use_cb=True)
@@ -329,12 +324,12 @@ def _set_cb(dir, axes, kwargs, debug=False):
       axes.callbacks.disconnect(prev)
 
   if debug:
-    n = len(axes.callbacks.callbacks.get(f'{dir}lim_changed', {}))
-    print(f'{dir}lim_changed callbacks registered: {n}')
+    n = len(axes.callbacks.callbacks.get(f'{axis}lim_changed', {}))
+    print(f'{axis}lim_changed callbacks registered: {n}')
 
   disconect()
 
-  if dir == 'x':
+  if axis == 'x':
     cid = axes.callbacks.connect('xlim_changed', on_xlims_change)
     axes._datetick_cb_x = cid
   else:
@@ -342,25 +337,18 @@ def _set_cb(dir, axes, kwargs, debug=False):
     axes._datetick_cb_y = cid
 
 
-def _get_labels(dir, axes):
-  if dir == 'x':
-    return [item.get_text() for item in axes.get_xticklabels()]
-  else:
-    return [item.get_text() for item in axes.get_yticklabels()]
-
-
-def _add_major_sub_string(dir, major_sub_format, major_sub_transition, lim, ticks, labels, debug=False):
+def _add_major_sub_string(axis, major_sub_format, major_sub_transition, lim_axis, ticks, labels, debug=False):
 
   time = matplotlib.dates.num2date(ticks)
 
   first = 0
-  if ticks[0] < lim[0]:
+  if ticks[0] < lim_axis[0]:
     if debug:
       msg = 'First tick is less than lower axis limit. Applying major_sub_format to second tick label.'
       print(msg)
     # Work-around for bug in Matplotlib where left-most tick is less than
     # lower x-limit. Could more than one tick be less than lower x-limit?
-    while first < len(ticks) and ticks[first] < lim[0]:
+    while first < len(ticks) and ticks[first] < lim_axis[0]:
       first += 1
     if first == len(ticks):
       if debug:
@@ -415,7 +403,7 @@ def _add_major_sub_string(dir, major_sub_format, major_sub_transition, lim, tick
     if not modify:
       continue
 
-    if i == first + 1 and dir == 'x':
+    if i == first + 1 and axis == 'x':
       # If first two major tick labels have major_sub_format applied, the will
       # likely run together. This keeps major_sub_format label for second major
       # tick.
@@ -435,10 +423,12 @@ def _add_major_sub_string(dir, major_sub_format, major_sub_transition, lim, tick
   return labels
 
 
-def _manual_labels(dir, axes):
+def _manual_labels(axis, axes):
 
-  ticks = axes.get_xticks() if dir == 'x' else axes.get_yticks()
-  labels = _get_labels(dir, axes)
+  from . import util
+
+  ticks = util.get_ticks(axis, axes, strings=False)
+  labels = util.get_ticklabels(axis, axes)
   # Make all labels have the same number of decimal places as one
   # with the most decimal places.
   n_places = 0
@@ -452,5 +442,45 @@ def _manual_labels(dir, axes):
       fractional = parts[1][0:n_places]
     if n_places > 0:
       labels[i] += "." + fractional
+
+  return ticks, labels
+
+
+def _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=False):
+  from . import adjust, util
+  if axis == 'x':
+    axis_obj = axes.xaxis
+  else:
+    axis_obj = axes.yaxis
+
+  axis_obj.set_major_locator(util.make_locator(rule['major']['locator']))
+  if rule['major']['formatter'] is not None:
+    axis_obj.set_major_formatter(util.make_formatter(rule['major']['formatter']))
+  if rule['minor']['locator'] is not None:
+    axis_obj.set_minor_locator(util.make_locator(rule['minor']['locator']))
+  if rule['minor']['formatter'] is not None:
+    axis_obj.set_minor_formatter(util.make_formatter(rule['minor']['formatter']))
+
+  fig = axes.figure
+
+  fig.canvas.draw() # Render new labels so updated for next line
+  ticks = util.get_ticks(axis, axes)
+
+  labels = util.get_ticklabels(axis, axes)
+  if debug:
+    print(f'{axis}labels and ticks after applying locators and formatters:')
+    fig.canvas.draw()
+    util.print_ticks(axis, axes, ticks, labels)
+
+  if adjust_range:
+    adjust.time_range(axis, axes, lim_data, debug=debug)
+    if debug:
+      print(f'{axis}labels and ticks after adjusting range:')
+      fig.canvas.draw()
+      util.print_ticks(axis, axes, ticks, labels)
+
+  fig.canvas.draw()
+  ticks = util.get_ticks(axis, axes)
+  labels = util.get_ticklabels(axis, axes)
 
   return ticks, labels

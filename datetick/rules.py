@@ -1,8 +1,21 @@
-def rule(delta_t, rule=None, rules_file=None, debug=False):
+def rule(delta_t, rule_idx=None, rules_file=None, debug=False):
+  import os
   import json
 
+
+  """
+  major_sub_format contains additional information that is used for the first
+   tick label or when there is a major change. For example, if
+    major_format = %M:%S and major_sub_format = %H,
+  the labels will have only minute and hour and the first tick will have a
+  label of %M:%S\n%H. If there is a change in hour somewhere on the axis,
+  that label will include the new hour.
+
+  Note that interval=... is specified even when it would seem to be redundant.
+  It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
+  """
+
   if rules_file is None:
-    import os
     script_dir = os.path.dirname(os.path.abspath(__file__))
     rules_file = os.path.join(script_dir, 'rules.json')
 
@@ -19,15 +32,28 @@ def rule(delta_t, rule=None, rules_file=None, debug=False):
   rules = _validate_rules(rules)
 
   total_seconds = delta_t.total_seconds()
-  for rule in rules:
-    rng = rule['range']
+  for matched_index, matched_rule in enumerate(rules):
+    rng = matched_rule['range']
     lo = _to_seconds(rng.get('min'))
     hi = _to_seconds(rng.get('max'))
     lo = lo if lo is not None else 0
     if lo <= total_seconds and (hi is None or total_seconds < hi):
-      return rule
+      if isinstance(rule_idx, int):
+        target_index = matched_index + rule_idx
+        if target_index < 0:
+          return rules[0]
+        if target_index >= len(rules):
+          return rules[-1]
+        return rules[target_index]
+      return matched_rule
 
   #warnings.warn(f"No matching config rule found for delta_t={delta_t}; returning None.")
+
+  if debug:
+    delta_t_str = util.format_delta(delta_t)
+    print(f'Rule for delta_t = {delta_t_str}:')
+    for key, value in rule.items():
+      print(f'  {key}: {value}')
 
   return None
 
@@ -137,6 +163,7 @@ def _validate_rules(rules):
   _validate_ranges(rules)
 
   return rules
+
 
 def _validate_ranges(rules):
   """Validate that config ranges are non-overlapping and cover all positive deltas."""

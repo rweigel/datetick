@@ -57,8 +57,54 @@ def warn(msg):
   warnings.formatwarning = old_formatwarning
 
 
-def print_ticks(dir, axes, ticks, labels):
-  lim = axes.get_xlim() if dir == 'x' else axes.get_ylim()
+def get_ticks(axis, axes):
+  if axis == 'x':
+    return axes.get_xticks()
+  else:
+    return axes.get_yticks()
+
+def get_ticklabels(axis, axes, strings=True):
+  if axis == 'x':
+    if strings:
+      return [item.get_text() for item in axes.get_xticklabels()]
+    return axes.get_xticklabels()
+  else:
+    if strings:
+      return [item.get_text() for item in axes.get_yticklabels()]
+    return axes.get_yticklabels()
+
+
+def format_delta(delta, include_years=True):
+
+  total = delta.total_seconds()
+  days = delta.days
+  hours, rem = divmod(total - days * 86400, 3600)
+  minutes, seconds = divmod(rem, 60)
+  hours, minutes = int(hours), int(minutes)
+  secs_int = int(seconds)
+  micros = round((seconds - secs_int) * 1e6)
+
+  parts = []
+  if include_years and days >= 366:
+    years = days // 365.2425
+    parts.append(f'{years:.1f}y')
+  else:
+    if days:
+      parts.append(f'{days}d')
+    if hours:
+      parts.append(f'{hours}h')
+    if minutes:
+      parts.append(f'{minutes}m')
+    if micros:
+      parts.append(f'{secs_int}.{str(micros).zfill(6).rstrip("0")}s')
+    elif secs_int:
+      parts.append(f'{secs_int}s')
+
+  return ''.join(parts) or '0s'
+
+
+def print_ticks(axis, axes, ticks, labels):
+  lim = axes.get_xlim() if axis == 'x' else axes.get_ylim()
   for i in range(0, len(ticks)):
     note = ''
     if ticks[i] < lim[0] or ticks[i] > lim[1]:

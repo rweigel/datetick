@@ -3,49 +3,42 @@
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-02T23:00:00Z",
-      "_delta_t": "1d23h",
-      "_comment": null
+      "_delta_t": "1d23h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-02T23:00:00Z",
       "_delta_t": "1d23h",
-      "_comment": null,
       "adjust_first_xlabel": true
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-02T23:00:00Z",
       "_delta_t": "1d23h",
-      "_comment": null,
       "adjust_last_xlabel": true
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-02T23:00:00Z",
       "_delta_t": "1d23h",
-      "_comment": null,
       "adjust_first_xlabel": true,
       "adjust_last_xlabel": true
     },
     {
       "start": "2000-12-31T17:00:00Z",
       "stop": "2001-01-02T19:00:00Z",
-      "_delta_t": "2d2h",
-      "_comment": null
+      "_delta_t": "2d2h"
     },
     {
       "start": "2000-12-31T17:00:00Z",
       "stop": "2001-01-02T19:00:00Z",
       "_delta_t": "2d2h",
-      "_comment": null,
-      "adjust_xrange": true
+      "adjust_range": true
     },
     {
       "start": "2000-12-31T17:00:00Z",
       "stop": "2001-01-02T19:00:00Z",
       "_delta_t": "2d2h",
-      "_comment": null,
       "major_font_shrink_factor": 0.65,
       "major_font_shrink_always": true
     }
@@ -54,38 +47,32 @@
     {
       "start": "2001-01-01T00:00:00.0Z",
       "stop": "2001-01-01T00:00:00.5Z",
-      "_delta_t": "0.5s",
-      "_comment": "0.1 <= dt < 1 second"
+      "_delta_t": "0.5s"
     },
     {
       "start": "2001-01-01T00:00:00.0Z",
       "stop": "2001-01-01T00:00:00.9Z",
-      "_delta_t": "0.9s",
-      "_comment": null
+      "_delta_t": "0.9s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:01Z",
-      "_delta_t": "1s",
-      "_comment": "1 <= dt < 5 second"
+      "_delta_t": "1s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:02Z",
-      "_delta_t": "2s",
-      "_comment": null
+      "_delta_t": "2s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:03Z",
-      "_delta_t": "3s",
-      "_comment": null
+      "_delta_t": "3s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:04Z",
-      "_delta_t": "4s",
-      "_comment": null
+      "_delta_t": "4s"
     },
     {
       "start": "2001-01-01T23:59:58Z",
@@ -96,26 +83,22 @@
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:05Z",
-      "_delta_t": "5s",
-      "_comment": "5 <= dt < 10 second"
+      "_delta_t": "5s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:06Z",
-      "_delta_t": "6s",
-      "_comment": null
+      "_delta_t": "6s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:07Z",
-      "_delta_t": "7s",
-      "_comment": null
+      "_delta_t": "7s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:09Z",
-      "_delta_t": "9s",
-      "_comment": null
+      "_delta_t": "9s"
     },
     {
       "start": "2001-01-01T23:59:58Z",
@@ -180,32 +163,27 @@
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T00:00:21Z",
-      "_delta_t": "21s",
-      "_comment": "20 <= dt < 30 second"
+      "_delta_t": "21s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T06:00:00Z",
-      "_delta_t": "6h",
-      "_comment": "6 <= dt < 12 hours"
+      "_delta_t": "6h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T09:00:00Z",
-      "_delta_t": "9h",
-      "_comment": null
+      "_delta_t": "9h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T11:00:00Z",
-      "_delta_t": "11h",
-      "_comment": null
+      "_delta_t": "11h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T11:00:00Z",
-      "_delta_t": "11h",
-      "_comment": null
+      "_delta_t": "11h"
     },
     {
       "start": "2001-01-01T00:59:58Z",
@@ -221,75 +199,64 @@
     },
     {
       "start": "2001-01-01T00:00:00Z",
-      "stop": "2001-01-01T18:00:00Z",
-      "_delta_t": "18h",
-      "_comment": "12 <= dt < 24 hours"
+      "stop": "2001-01-01T12:00:00Z",
+      "_delta_t": "12h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
-      "stop": "2001-01-01T12:00:00Z",
-      "_delta_t": "12h",
-      "_comment": null
+      "stop": "2001-01-01T18:00:00Z",
+      "_delta_t": "18h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-01T23:00:00Z",
-      "_delta_t": "23h",
-      "_comment": null
+      "_delta_t": "23h"
     },
     {
       "start": "2001-01-01T02:00:00Z",
       "stop": "2001-01-02T01:00:00Z",
       "_delta_t": "23h",
-      "_comment": null
+      "_comment": "Cross day boundary"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-02T01:00:00Z",
-      "_delta_t": "1d1h",
-      "_comment": "24 <= dt < 48 hours"
+      "_delta_t": "1d1h"
     },
     {
       "start": "2001-01-01T06:00:00Z",
       "stop": "2001-01-02T07:00:00Z",
-      "_delta_t": "1d1h",
-      "_comment": null
+      "_delta_t": "1d1h"
     },
     {
       "start": "2001-01-01T00:30:00Z",
       "stop": "2001-01-02T01:00:00Z",
-      "_delta_t": "1d30m",
-      "_comment": null
+      "_delta_t": "1d30m"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-03T00:00:00Z",
-      "_delta_t": "2d",
-      "_comment": "48 <= dt < 72 hours"
+      "_delta_t": "2d"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-03T12:30:00Z",
-      "_delta_t": "2d12h30m",
-      "_comment": null
+      "_delta_t": "2d12h30m"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-03T23:59:59Z",
-      "_delta_t": "2d23h59m59s",
-      "_comment": null
+      "_delta_t": "2d23h59m59s"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-05T00:00:00Z",
-      "_delta_t": "4d",
-      "_comment": "4 <= dt < 8 days"
+      "_delta_t": "4d"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-05T00:00:00Z",
-      "_delta_t": "4d",
-      "_comment": null
+      "_delta_t": "4d"
     },
     {
       "start": "2001-01-30T00:00:00Z",
@@ -306,14 +273,12 @@
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-09T00:00:00Z",
-      "_delta_t": "8d",
-      "_comment": "8 <= dt < 16 days"
+      "_delta_t": "8d"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-01-16T23:00:00Z",
-      "_delta_t": "15d23h",
-      "_comment": null
+      "_delta_t": "15d23h"
     },
     {
       "start": "2001-01-30T00:00:00Z",
@@ -329,15 +294,13 @@
     },
     {
       "start": "2001-01-01T00:00:00Z",
-      "stop": "2001-01-31T00:00:00Z",
-      "_delta_t": "30d",
-      "_comment": "16 <= dt < 32 days"
+      "stop": "2001-01-16T23:00:00Z",
+      "_delta_t": "15d23h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
-      "stop": "2001-01-16T23:00:00Z",
-      "_delta_t": "15d23h",
-      "_comment": null
+      "stop": "2001-01-31T00:00:00Z",
+      "_delta_t": "30d"
     },
     {
       "start": "2001-01-30T00:00:00Z",
@@ -347,147 +310,118 @@
     },
     {
       "start": "2001-12-30T00:00:00Z",
-      "stop": "2001-01-15T23:00:00Z",
-      "_delta_t": "-349d23h",
-      "_comment": "Span year boundary"
+      "stop": "2002-01-15T23:00:00Z",
+      "_delta_t": "16d23h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-02-02T00:00:00Z",
-      "_delta_t": "32d",
-      "_comment": "32 <= dt < 60 days"
+      "_delta_t": "32d"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-02-27T23:00:00Z",
-      "_delta_t": "57d23h",
-      "_comment": null
+      "_delta_t": "57d23h"
     },
     {
       "start": "2001-01-15T00:00:00Z",
       "stop": "2001-02-16T23:00:00Z",
-      "_delta_t": "32d23h",
-      "_comment": null
+      "_delta_t": "32d23h"
     },
     {
       "start": "2001-12-31T00:00:00Z",
       "stop": "2002-02-26T23:00:00Z",
-      "_delta_t": "57d23h",
-      "_comment": "Span year boundary"
+      "_delta_t": "57d23h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-05-02T00:00:00Z",
-      "_delta_t": "121d",
-      "_comment": "60 <= dt < 183 days"
+      "_delta_t": "121d"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-02-27T23:00:00Z",
-      "_delta_t": "57d23h",
-      "_comment": null
+      "_delta_t": "57d23h"
     },
     {
       "start": "2001-12-31T00:00:00Z",
       "stop": "2002-02-26T23:00:00Z",
-      "_delta_t": "57d23h",
-      "_comment": null
+      "_delta_t": "57d23h"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2001-07-02T00:00:00Z",
-      "_delta_t": "182d",
-      "_comment": "183 <= dt < 367 days"
-    },
-    {
-      "start": "2001-01-01T00:00:00Z",
-      "stop": "2001-12-31T00:00:00Z",
-      "_delta_t": "364d",
-      "_comment": null
+      "_delta_t": "182d"
     },
     {
       "start": "2001-02-12T00:00:00Z",
       "stop": "2002-01-31T00:00:00Z",
-      "_delta_t": "353d",
-      "_comment": null
+      "_delta_t": "353d"
+    },
+    {
+      "start": "2001-01-01T00:00:00Z",
+      "stop": "2001-12-31T00:00:00Z",
+      "_delta_t": "364d"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2002-01-03T00:00:00Z",
-      "_delta_t": "367d",
-      "_comment": "367 <= dt < 366*2 days"
+      "_delta_t": "1.0y"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2002-12-31T00:00:00Z",
-      "_delta_t": "729d",
-      "_comment": null
+      "_delta_t": "1.0y"
     },
     {
       "start": "2001-04-01T00:00:00Z",
       "stop": "2002-04-30T00:00:00Z",
-      "_delta_t": "394d",
-      "_comment": null
+      "_delta_t": "1.0y"
     },
     {
       "start": "2001-10-01T00:00:00Z",
       "stop": "2003-10-04T00:00:00Z",
-      "_delta_t": "733d",
-      "_comment": null
+      "_delta_t": "2.0y"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2008-12-31T00:00:00Z",
-      "_delta_t": "2921d",
-      "_comment": "366*2 days <= dt < 366*8 days"
+      "_delta_t": "7.0y"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2009-01-04T00:00:00Z",
-      "_delta_t": "2925d",
-      "_comment": "366*8 days <= dt < 366*15 days"
+      "_delta_t": "8.0y"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2012-01-04T00:00:00Z",
-      "_delta_t": "4020d",
-      "_comment": null
+      "_delta_t": "11.0y"
     },
     {
       "start": "2000-01-01T00:00:00Z",
       "stop": "2017-01-04T00:00:00Z",
-      "_delta_t": "6213d",
-      "_comment": "366*15 days <= dt < 366*40 days"
+      "_delta_t": "17.0y"
     },
     {
       "start": "2001-01-01T00:00:00Z",
       "stop": "2018-01-04T00:00:00Z",
-      "_delta_t": "6212d",
-      "_comment": null
-    },
-    {
-      "start": "2002-01-01T00:00:00Z",
-      "stop": "2019-01-04T00:00:00Z",
-      "_delta_t": "6212d",
-      "_comment": null
+      "_delta_t": "17.0y"
     },
     {
       "start": "2003-01-01T00:00:00Z",
       "stop": "2020-01-04T00:00:00Z",
-      "_delta_t": "6212d",
-      "_comment": null
+      "_delta_t": "17.0y"
     },
     {
       "start": "2004-01-01T00:00:00Z",
       "stop": "2030-01-04T00:00:00Z",
-      "_delta_t": "9500d",
-      "_comment": null
+      "_delta_t": "26.0y"
     },
     {
       "start": "1950-01-01T00:00:00Z",
       "stop": "2012-01-04T00:00:00Z",
-      "_delta_t": "22648d",
-      "_comment": "> 50 years"
+      "_delta_t": "62.0y"
     }
   ]
 }
