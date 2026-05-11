@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 import datetick
 
+# Import ./util.py test functions for generating test cases
+import util
+
 DIRS = ['x']
 #FIGWIDTHS = [6.5, 3.25]
 #FIGWIDTHS = [1.25]
@@ -43,36 +46,19 @@ def _run_all(short=False, axis='x', figwidth=8, debug=False):
   import json
 
   test_file = os.path.join(_script_dir(), 'visual_test.json')
-  rules_file = os.path.join(_script_dir(), '..', 'datetick', 'rules.json')
 
   with open(test_file, 'r') as file:
-    tests = json.load(file)
-  with open(rules_file, 'r') as file:
-    rules = json.load(file)
+    tests_manual = json.load(file)
 
-  generated_main = _generate_main_tests(rules)
-
-  dirty_main = tests.get('main') != generated_main
-  if dirty_main:
-    tests['main'] = generated_main
-
-  dirty_tests = False
-  for test in tests.get('kwargs', []):
-    delta = _parse_ds(test['stop']) - _parse_ds(test['start'])
-    dt_str = datetick.util.format_delta(delta)
-    if test.get('_delta_t') != dt_str:
-      test['_delta_t'] = dt_str
-      dirty_tests = True
-
-  if dirty_main or dirty_tests:
-    with open(test_file, 'w') as file:
-      json.dump(tests, file, indent=2)
+  tests_generated = util.generate_main_tests()
 
   files = []
-  for entries in [tests.get('kwargs', []), tests.get('main', [])]:
+  for entries in [tests_manual, tests_generated]:
     for test in entries:
       dt_str_o = test['start']
       dt_str_f = test['stop']
+
+      # Keep only 
       kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
 
       if debug_script:
@@ -155,14 +141,22 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
 
   fig, axes = _axes(axis, figwidth)
 
-  dt1 = _parse_ds(ds1)
-  dt2 = _parse_ds(ds2)
+  dt1 = util.parse_ds(ds1)
+  dt2 = util.parse_ds(ds2)
   if axis == 'x':
     x = [dt1, dt2]
     y = [0.0, 0.0]
   else:
     x = [0.0, 1.0]
     y = [dt1, dt2]
+
+  from matplotlib import dates as mdates
+
+  if False:
+    locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+    formatter = mdates.ConciseDateFormatter(locator)
+    axes[0].xaxis.set_major_locator(locator)
+    axes[0].xaxis.set_major_formatter(formatter)
 
   axes[0].plot(x, y, '*')
   _set_label(axes[0], axis, x, y, 'matplotlib')
@@ -175,258 +169,6 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
   _set_title(axes[0], axis, cfg['delta_t'])
 
   return cfg
-
-
-def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
-  ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
-  ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
-
-  ext = 'svg'
-  base = f'{_out_dir(axis)}/{ds1}-{ds2}-{figwidth}in'
-  file = f'{base}.{ext}'
-  if file in files:
-    v = 2
-    while file in files:
-      file = f'{base}_v{v}.{ext}'
-      v += 1
-
-  if debug_script:
-    print("  Writing", file)
-  dirname = os.path.dirname(file)
-  if not os.path.exists(dirname):
-    os.makedirs(dirname, exist_ok=True)
-  kwargs = {'bbox_inches': 'tight'}
-
-  rc = {}
-  if ext == 'png':
-    kwargs['dpi'] = 220
-    plt.savefig(file, **kwargs)
-  else:
-    if ext == 'svg':
-      # Don't convert text to paths in SVG to keep it searchable and selectable
-      kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
-      rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
-
-  with plt.rc_context(rc):
-    plt.savefig(file, **kwargs)
-
-  plt.close()
-
-  return file
-
-
-def _generate_main_tests(rules_content):
-  import datetime
-
-  base_start = datetime.datetime(2001, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
-  generated = []
-  seen = set()
-
-  for rule in rules_content:
-    major = rule.get('major')
-    locator_spec = None if major is None else major.get('locator')
-    if locator_spec is None:
-      continue
-
-    ticks = _major_tick_datetimes(locator_spec, rule['range'], base_start)
-    deltas = _rule_deltas_from_ticks(ticks, rule['range'])
-
-    for delta_t in deltas:
-      for test in _transition_tests(base_start, delta_t):
-        key = (test['start'], test['stop'], test.get('_comment'))
-        if key in seen:
-          continue
-        seen.add(key)
-        generated.append(test)
-
-  generated.sort(key=lambda test: (_parse_ds(test['stop']) - _parse_ds(test['start']), test['start'], test['stop'], test.get('_comment', '')))
-  return generated
-
-
-def _major_tick_datetimes(locator_spec, range_spec, base_start):
-  import datetime
-  import matplotlib.dates
-
-  locator = datetick.util.make_locator(locator_spec)
-  window_stop = _tick_window_stop(base_start, range_spec, locator_spec)
-  tick_values = locator.tick_values(base_start, window_stop)
-
-  ticks = []
-  for value in tick_values:
-    tick = matplotlib.dates.num2date(value)
-    tick = tick.astimezone(datetime.timezone.utc).replace(tzinfo=datetime.timezone.utc)
-    ticks.append(tick)
-
-  return sorted(set(ticks))
-
-
-def _rule_deltas_from_ticks(ticks, range_spec):
-  min_seconds = _range_seconds(range_spec.get('min'))
-  max_seconds = _range_seconds(range_spec.get('max'))
-  deltas = {}
-
-  for i, tick_start in enumerate(ticks):
-    for tick_stop in ticks[i+1:]:
-      delta_t = tick_stop - tick_start
-      seconds = delta_t.total_seconds()
-      if seconds < min_seconds:
-        continue
-      if max_seconds is not None and seconds >= max_seconds:
-        break
-      deltas[round(seconds, 6)] = delta_t
-
-  return [deltas[key] for key in sorted(deltas)]
-
-
-def _transition_tests(base_start, delta_t):
-  import datetime
-
-  tests = []
-
-  def add_test(start, stop, comment=None):
-    test = {
-      'start': _format_ds(start),
-      'stop': _format_ds(stop),
-      '_delta_t': datetick.util.format_delta(stop - start)
-    }
-    if comment is not None:
-      test['_comment'] = comment
-    tests.append(test)
-
-  add_test(base_start, base_start + delta_t)
-
-  boundaries = [
-    ('second', datetime.timedelta(seconds=1), datetime.datetime(2001, 1, 1, 0, 0, 1, tzinfo=datetime.timezone.utc)),
-    ('minute', datetime.timedelta(minutes=1), datetime.datetime(2001, 1, 1, 0, 1, 0, tzinfo=datetime.timezone.utc)),
-    ('hour', datetime.timedelta(hours=1), datetime.datetime(2001, 1, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)),
-    ('day', datetime.timedelta(days=1), datetime.datetime(2001, 1, 2, 0, 0, 0, tzinfo=datetime.timezone.utc)),
-    ('month', datetime.timedelta(days=32), datetime.datetime(2001, 2, 1, 0, 0, 0, tzinfo=datetime.timezone.utc))
-  ]
-
-  for unit, threshold, boundary in boundaries:
-    if delta_t >= threshold:
-      continue
-
-    offset = min(delta_t / 10, threshold / 10)
-    start = boundary - delta_t + offset
-    stop = boundary + offset
-    add_test(start, stop, f'Cross {unit} boundary')
-
-  return tests
-
-
-def _tick_window_stop(base_start, range_spec, locator_spec):
-  import datetime
-
-  max_seconds = _range_seconds(range_spec.get('max'))
-  unit, value = _locator_step(locator_spec)
-
-  if max_seconds is not None:
-    if unit in ('months', 'years'):
-      min_stop = _locator_stop_for_steps(base_start, unit, value, 4)
-      max_stop = base_start + datetime.timedelta(seconds=max_seconds)
-      return max(min_stop, max_stop)
-
-    step_seconds = max(value, 1e-6)
-    window_seconds = max(max_seconds, step_seconds * 4) + step_seconds
-    return base_start + datetime.timedelta(seconds=window_seconds)
-
-  return _locator_stop_for_steps(base_start, unit, value, 6)
-
-
-def _locator_stop_for_steps(base_start, unit, value, steps):
-  import datetime
-
-  if unit == 'years':
-    return _add_years(base_start, value * steps)
-  if unit == 'months':
-    return _add_months(base_start, value * steps)
-  return base_start + datetime.timedelta(seconds=value * steps)
-
-
-def _locator_step(locator_spec):
-  locator_class = locator_spec['class']
-
-  if locator_class == 'MicrosecondLocator':
-    return 'seconds', locator_spec['interval'] / 1_000_000
-  if locator_class == 'SecondLocator':
-    return 'seconds', _sequence_step(locator_spec, 'bysecond')
-  if locator_class == 'MinuteLocator':
-    return 'seconds', 60 * _sequence_step(locator_spec, 'byminute')
-  if locator_class == 'HourLocator':
-    return 'seconds', 3600 * _sequence_step(locator_spec, 'byhour')
-  if locator_class == 'DayLocator':
-    return 'seconds', 86400 * _sequence_step(locator_spec, 'bymonthday')
-  if locator_class == 'MonthLocator':
-    return 'months', _sequence_step(locator_spec, 'bymonth')
-  if locator_class == 'YearLocator':
-    return 'years', locator_spec['base']
-
-  raise ValueError(f'Unsupported locator class: {locator_class}')
-
-
-def _sequence_step(spec, key):
-  arange_key = key + '_arange'
-  if key in spec:
-    values = spec[key]
-  elif arange_key in spec:
-    values = list(range(*spec[arange_key]))
-  else:
-    raise KeyError(f"Neither '{key}' nor '{arange_key}' found in locator spec.")
-
-  if len(values) <= 1:
-    return 1
-
-  steps = sorted({values[i+1] - values[i] for i in range(len(values)-1) if values[i+1] > values[i]})
-  if not steps:
-    return 1
-  return steps[0]
-
-
-def _range_seconds(spec):
-  if spec is None:
-    return None
-
-  unit, value = next(iter(spec.items()))
-  unit_seconds = {
-    'seconds': 1,
-    'minutes': 60,
-    'hours': 3600,
-    'days': 86400
-  }
-
-  if unit not in unit_seconds:
-    raise ValueError(f'Unsupported range unit: {unit}')
-
-  return value * unit_seconds[unit]
-
-
-def _add_months(dt, months):
-  import calendar
-
-  month_index = dt.month - 1 + months
-  year = dt.year + month_index // 12
-  month = month_index % 12 + 1
-  day = min(dt.day, calendar.monthrange(year, month)[1])
-  return dt.replace(year=year, month=month, day=day)
-
-
-def _add_years(dt, years):
-  import calendar
-
-  year = dt.year + years
-  day = min(dt.day, calendar.monthrange(year, dt.month)[1])
-  return dt.replace(year=year, day=day)
-
-
-def _format_ds(dt):
-  dt = dt.astimezone(dt.tzinfo)
-  text = dt.isoformat(timespec='microseconds').replace('+00:00', 'Z')
-  base, frac = text.split('.')
-  frac = frac[:-1].rstrip('0')
-  if frac == '':
-    frac = '0'
-  return f'{base}.{frac}Z'
 
 
 def _readmes(files, debug=False):
@@ -496,6 +238,44 @@ def _readmes(files, debug=False):
     file.writelines("\n" + "\n\n".join(image_lines))
 
 
+def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
+  ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
+  ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
+
+  ext = 'svg'
+  base = f'{_out_dir(axis)}/{ds1}-{ds2}-{figwidth}in'
+  file = f'{base}.{ext}'
+  if file in files:
+    v = 2
+    while file in files:
+      file = f'{base}_v{v}.{ext}'
+      v += 1
+
+  if debug_script:
+    print("  Writing", file)
+  dirname = os.path.dirname(file)
+  if not os.path.exists(dirname):
+    os.makedirs(dirname, exist_ok=True)
+  kwargs = {'bbox_inches': 'tight'}
+
+  rc = {}
+  if ext == 'png':
+    kwargs['dpi'] = 220
+    plt.savefig(file, **kwargs)
+  else:
+    if ext == 'svg':
+      # Don't convert text to paths in SVG to keep it searchable and selectable
+      kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
+      rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
+
+  with plt.rc_context(rc):
+    plt.savefig(file, **kwargs)
+
+  plt.close()
+
+  return file
+
+
 def _out_dir(axis):
   mpl = f"mpl-{plt.matplotlib.__version__}"
   py = f"python-{os.sys.version_info.major}.{os.sys.version_info.minor}"
@@ -504,11 +284,6 @@ def _out_dir(axis):
 
 def _script_dir():
   return os.path.dirname(os.path.realpath(__file__))
-
-
-def _parse_ds(ds):
-  import dateutil.parser
-  return dateutil.parser.parse(ds)
 
 
 if __name__ == '__main__':

@@ -77,7 +77,7 @@ def datetick(*args,
   # Get all kwargs passed using locals
   kwargs = {k: v for k, v in locals().items() if k != 'args'}
 
-  from . import adjust, compute, rules, util
+  from . import adjust, compute, util, rules
 
   axis = 'x' if len(args) == 0 else args[0]
 

@@ -1,7 +1,8 @@
 from .datetick import datetick
+from . import rules
 from . import util
 
-__all__ = ['datetick', 'util', '__version__']
+__all__ = ['datetick', 'util', 'rules', '__version__']
 
 from importlib.metadata import version, PackageNotFoundError
 try:
