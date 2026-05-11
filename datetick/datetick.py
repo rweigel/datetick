@@ -199,20 +199,21 @@ def datetick(*args,
       axes.set_yticks(axes.get_yticks())
       axes.set_yticklabels(labels)
 
+  min_gap_warning = None
+
   min_gap = compute.min_gap(axis, axes, debug=debug)
   if min_gap < min_font_size:
-
     min_gap = adjust.font_size(axis, axes, min_gap, min_font_size, debug=debug)
 
     if min_gap < min_font_size and warn_on_min_gap:
-      lim_axis_str = [
-                        matplotlib.dates.num2date(lim_axis[0]),
-                        matplotlib.dates.num2date(lim_axis[1])
-                      ]
-      msg = f'Minimum gap between labels is {min_gap:.1f} px after reducing '
-      msg += f'font size to min_font_size = {min_font_size} px. {lim_axis_str}'
-      util.warn(msg)
+      lim_axis_str = f"{matplotlib.dates.num2date(lim_axis[0])}/"
+      lim_axis_str += f"{matplotlib.dates.num2date(lim_axis[1])}"
 
+      min_gap_warning = None
+      min_gap_warning = f'for axis limits {lim_axis_str}, minimum gap between labels is '
+      min_gap_warning += f'{min_gap:.1f} px after reducing font size from {font_size_orig} to '
+      min_gap_warning += f'min_font_size = {min_font_size} px.'
+      util.warn(min_gap_warning)
       if debug:
         msg = 'Attempting to use datetick with previous rule.'
         print(msg)
@@ -231,7 +232,8 @@ def datetick(*args,
           'delta_t': delta_t,
           'ticks': ticks,
           'labels': labels,
-          'rule': rule
+          'rule': rule,
+          'warning': min_gap_warning
         }
 
 
@@ -342,7 +344,7 @@ def _add_major_sub_string(axis, major_sub_format, major_sub_transition, lim_axis
   time = matplotlib.dates.num2date(ticks)
 
   first = 0
-  if ticks[0] < lim_axis[0]:
+  if False and ticks[0] < lim_axis[0]:
     if debug:
       msg = 'First tick is less than lower axis limit. Applying major_sub_format to second tick label.'
       print(msg)
@@ -419,6 +421,19 @@ def _add_major_sub_string(axis, major_sub_format, major_sub_transition, lim_axis
       if debug:
         print(f'Applying major_sub_format to tick label at       {matplotlib.dates.num2date(ticks[i])}.')
       labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
+
+  # Look for labels with two newlines. If third row is same for all labels,
+  # remove them except for first label.
+  third_row = None
+  for idx, label in enumerate(labels):
+    parts = label.split('\n')
+    if len(parts) != 3:
+      continue
+    if third_row is None:
+      third_row = parts[2]
+      continue
+    if parts[2] == third_row:
+      labels[idx] = '\n'.join(parts[0:2])
 
   return labels
 

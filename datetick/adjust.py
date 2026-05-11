@@ -3,41 +3,40 @@ import matplotlib
 from . import util
 from . import compute
 
-def font_size(axis, axes, min_gap, min_font_size, debug=False):
+def font_size(axis, axes, min_gap, font_size_min, debug=False):
 
   ticklabels = util.get_ticklabels(axis, axes, strings=False)
 
+  font_size_orig = ticklabels[0].get_fontsize() if len(ticklabels) > 0 else matplotlib.rcParams['xtick.labelsize']
+
   if debug:
-    msg = f'Minimum gap of {min_gap:.1f} px is less than min_font_size of '
-    msg += f'{min_font_size} px. Shrinking font size to avoid overlap.'
+    msg = f'  Minimum gap of {min_gap:.1f} px bewteen labels is less than font size of '
+    msg += f'{font_size_orig} px. Shrinking font size to avoid overlap.'
     print(msg)
 
   if debug:
     # Print axes width in pixels and min_gap in pixels for debugging purposes.
     inch = axes.figure.get_size_inches()[0]
     px = inch * axes.figure.dpi
-    print(f'Figure width: {inch:.2f} inch, {px:.1f} px')
+    print(f'  Figure width: {inch:.2f} inch, {px:.1f} px')
 
-  if len(ticklabels) > 0:
-    font_size = ticklabels[0].get_fontsize()
-  else:
-    font_size = matplotlib.pyplot.rcParams['font.size']
+  font_size = ticklabels[0].get_fontsize() if len(ticklabels) > 0 else matplotlib.rcParams['xtick.labelsize']
 
   if isinstance(font_size, str):
     font_size = matplotlib.font_manager.FontProperties(size=font_size).get_size_in_points()
 
-  new_font_size = _fit_font_size(axis, axes, min_font_size, min_font_size, font_size, debug=debug)
+  new_font_size = _fit_font_size(axis, axes, font_size_orig, font_size_min, font_size, debug=debug)
   matplotlib.pyplot.setp(ticklabels, fontsize=new_font_size)
 
   min_gap = compute.min_gap(axis, axes, debug=debug)
 
   if debug:
-    print(f'After shrinking font size, minimum gap between labels is {min_gap:.1f} px.')
+    print(f'  After shrinking font size, minimum gap between labels is {min_gap:.1f} px.')
 
   return min_gap
 
 
-def _fit_font_size(axis, axes, target_gap, min_font_size, font_size, debug=False):
+def _fit_font_size(axis, axes, target_gap, font_size_min, font_size, debug=False):
   """Find a tick-label font size with rendered minimum gap is near target_gap.
 
   Search over font size in points. At each step it
@@ -48,7 +47,7 @@ def _fit_font_size(axis, axes, target_gap, min_font_size, font_size, debug=False
 
   ticklabels = util.get_ticklabels(axis, axes, strings=False)
 
-  lo = min_font_size
+  lo = font_size_min
   hi = float(font_size)
   best = hi
   best_err = abs(compute.min_gap(axis, axes) - target_gap)
@@ -67,7 +66,7 @@ def _fit_font_size(axis, axes, target_gap, min_font_size, font_size, debug=False
       lo = mid
 
   if debug:
-    print(f'Using font size {best:.2f} to target minimum gap of {target_gap:.1f} px.')
+    print(f'  Using font size {best:.2f} to target minimum gap of {target_gap:.1f} px.')
 
   return best
 

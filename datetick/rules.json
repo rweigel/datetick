@@ -1,6 +1,5 @@
 [
   {
-    "comment": "< 0.1 seconds: use default matplotlib locator (fractional seconds)",
     "range": {
       "min": {
         "seconds": 0
@@ -15,10 +14,36 @@
     "major_sub_transition": null
   },
   {
-    "comment": "delta t calc. precision is relatively large now",
     "range": {
       "min": {
         "seconds": 0.1
+      },
+      "max": {
+        "seconds": 0.5
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 50000
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      },
+      "sub_format": "%H:%M:%S\n%Y-%m-%d",
+      "sub_transition": "second"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 10000
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 0.5
       },
       "max": {
         "seconds": 1
@@ -163,7 +188,10 @@
     "minor": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond_arange": [0, 60]
+        "bysecond_arange": [
+          0,
+          60
+        ]
       }
     }
   },
@@ -179,7 +207,11 @@
     "major": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond_arange": [0, 60, 10]
+        "bysecond_arange": [
+          0,
+          60,
+          10
+        ]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -191,7 +223,11 @@
     "minor": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond_arange": [0, 60, 2]
+        "bysecond_arange": [
+          0,
+          60,
+          2
+        ]
       }
     }
   },
@@ -207,7 +243,11 @@
     "major": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond": [0, 20, 40]
+        "bysecond": [
+          0,
+          20,
+          40
+        ]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -219,7 +259,11 @@
     "minor": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond_arange": [0, 60, 5]
+        "bysecond_arange": [
+          0,
+          60,
+          5
+        ]
       }
     }
   },
@@ -235,7 +279,11 @@
     "major": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond": [0, 20, 40]
+        "bysecond": [
+          0,
+          20,
+          40
+        ]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -247,7 +295,11 @@
     "minor": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond_arange": [0, 60, 5]
+        "bysecond_arange": [
+          0,
+          60,
+          5
+        ]
       }
     }
   },
@@ -263,7 +315,11 @@
     "major": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond_arange": [0, 60, 30]
+        "bysecond_arange": [
+          0,
+          60,
+          30
+        ]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -401,7 +457,11 @@
     "major": {
       "locator": {
         "class": "MinuteLocator",
-        "byminute_arange": [0, 60, 10]
+        "byminute_arange": [
+          0,
+          60,
+          10
+        ]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -413,7 +473,11 @@
     "minor": {
       "locator": {
         "class": "MinuteLocator",
-        "byminute_arange": [0, 60, 2]
+        "byminute_arange": [
+          0,
+          60,
+          2
+        ]
       }
     }
   },
@@ -952,7 +1016,10 @@
     "minor": {
       "locator": {
         "class": "MonthLocator",
-        "bymonth_arange": [1, 13]
+        "bymonth_arange": [
+          1,
+          13
+        ]
       }
     }
   },

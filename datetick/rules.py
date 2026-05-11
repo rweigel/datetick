@@ -50,10 +50,10 @@ def rule(delta_t, rule_idx=None, rules_file=None, debug=False):
   #warnings.warn(f"No matching config rule found for delta_t={delta_t}; returning None.")
 
   if debug:
+    from . import util
+
     delta_t_str = util.format_delta(delta_t)
-    print(f'Rule for delta_t = {delta_t_str}:')
-    for key, value in rule.items():
-      print(f'  {key}: {value}')
+    print(f'No rule found for delta_t = {delta_t_str}')
 
   return None
 
@@ -63,6 +63,18 @@ def _validate_rules(rules):
 
   import copy
   import jsonschema
+
+  test_spec = {
+    "type": "object",
+    "required": ["start", "stop"],
+    "properties": {
+      "start": {"type": "string"},
+      "stop": {"type": "string"},
+      "_delta_t": {"type": ["string", "null"]},
+      "_comment": {"type": ["string", "null"]}
+    },
+    "additionalProperties": True
+  }
 
   locator_spec = {
     "type": "object",
@@ -121,18 +133,26 @@ def _validate_rules(rules):
           "additionalProperties": False
         },
         "major": {"oneOf": [major_spec, {"type": "null"}]},
-        "minor": {"oneOf": [minor_spec, {"type": "null"}]}
+        "minor": {"oneOf": [minor_spec, {"type": "null"}]},
+        "tests": {
+          "type": "array",
+          "items": test_spec
+        }
       }
     }
   }
+
+  rules = copy.deepcopy(rules)
+
+  for rule in rules:
+    if isinstance(rule.get('minor'), dict) and 'tests' in rule['minor']:
+      tests = rule['minor'].pop('tests')
+      rule.setdefault('tests', []).extend(tests)
 
   try:
     jsonschema.validate(instance=rules, schema=schema)
   except jsonschema.exceptions.ValidationError as e:
     raise ValueError(f"Config validation error: {e.message}")
-
-  rules = copy.deepcopy(rules)
-
   # Set defaults for optional fields
   for rule in rules:
 
@@ -150,6 +170,8 @@ def _validate_rules(rules):
       rule['major']['sub_format'] = None
     if 'sub_transition' not in rule['major']:
       rule['major']['sub_transition'] = None
+    if 'tests' not in rule:
+      rule['tests'] = []
 
     if 'major_sub_format' in rule and rule['major']['sub_format'] is None:
       rule['major']['sub_format'] = rule.pop('major_sub_format')

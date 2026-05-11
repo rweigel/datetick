@@ -63,6 +63,7 @@ def get_ticks(axis, axes):
   else:
     return axes.get_yticks()
 
+
 def get_ticklabels(axis, axes, strings=True):
   if axis == 'x':
     if strings:
