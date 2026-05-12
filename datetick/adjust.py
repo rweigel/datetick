@@ -7,25 +7,28 @@ def font_size(axis, axes, min_gap, font_size_min, debug=False):
 
   ticklabels = util.get_ticklabels(axis, axes, strings=False)
 
-  font_size_orig = ticklabels[0].get_fontsize() if len(ticklabels) > 0 else matplotlib.rcParams['xtick.labelsize']
+  font_size_orig = util.get_font_size(axis, axes)
 
   if debug:
-    msg = f'  Minimum gap of {min_gap:.1f} px bewteen labels is less than font size of '
-    msg += f'{font_size_orig} px. Shrinking font size to avoid overlap.'
+    msg = f'Minimum gap of {min_gap:.1f} px bewteen labels is less than font size of '
+    msg += f'{font_size_orig} pt. Shrinking font size to avoid overlap.'
     print(msg)
 
   if debug:
-    # Print axes width in pixels and min_gap in pixels for debugging purposes.
+    # Print size info in pixels for debugging purposes.
     inch = axes.figure.get_size_inches()[0]
     px = inch * axes.figure.dpi
     print(f'  Figure width: {inch:.2f} inch, {px:.1f} px')
+    print(f'  axes.figure.dpi: {axes.figure.dpi} dpi')
 
   font_size = ticklabels[0].get_fontsize() if len(ticklabels) > 0 else matplotlib.rcParams['xtick.labelsize']
 
   if isinstance(font_size, str):
     font_size = matplotlib.font_manager.FontProperties(size=font_size).get_size_in_points()
 
-  new_font_size = _fit_font_size(axis, axes, font_size_orig, font_size_min, font_size, debug=debug)
+  new_font_size = _fit_font_size(axis, axes, font_size, font_size_min, font_size, debug=debug)
+  if debug:
+    print(f'  Trying font size {new_font_size:.2f} pt.')
   matplotlib.pyplot.setp(ticklabels, fontsize=new_font_size)
 
   min_gap = compute.min_gap(axis, axes, debug=debug)
@@ -33,7 +36,17 @@ def font_size(axis, axes, min_gap, font_size_min, debug=False):
   if debug:
     print(f'  After shrinking font size, minimum gap between labels is {min_gap:.1f} px.')
 
-  return min_gap
+  min_gap_warning = None
+  if min_gap < font_size_min:
+    lim_axis = axes.get_xlim() if axis == 'x' else axes.get_ylim()
+    lim_axis_str = f"{matplotlib.dates.num2date(lim_axis[0])}/"
+    lim_axis_str += f"{matplotlib.dates.num2date(lim_axis[1])}"
+
+    min_gap_warning = f'for axis limits {lim_axis_str}, minimum gap between labels is '
+    min_gap_warning += f'{min_gap:.1f} px after reducing font size from {font_size_orig} pt to '
+    min_gap_warning += f'min_font_size = {font_size_min} pt.'
+
+  return min_gap_warning
 
 
 def _fit_font_size(axis, axes, target_gap, font_size_min, font_size, debug=False):

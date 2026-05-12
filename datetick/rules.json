@@ -532,7 +532,7 @@
         "byminute_arange": [
           0,
           60,
-          20
+          30
         ]
       },
       "formatter": {
@@ -710,7 +710,7 @@
         "byhour_arange": [
           0,
           24,
-          6
+          8
         ]
       },
       "formatter": {
@@ -947,7 +947,7 @@
         "days": 183
       },
       "max": {
-        "days": 367
+        "days": 275
       }
     },
     "major": {
@@ -979,7 +979,7 @@
     "range": {
       "comment": "range ~ [1 year, 2 years)",
       "min": {
-        "days": 367
+        "days": 275
       },
       "max": {
         "days": 732
@@ -991,19 +991,7 @@
         "bymonth_arange": [
           1,
           13,
-          2
-        ],
-        "bymonth_arange_smaller": [
-          [
-            1,
-            13,
-            4
-          ],
-          [
-            1,
-            13,
-            6
-          ]
+          3
         ]
       },
       "formatter": {
@@ -1062,12 +1050,12 @@
   },
   {
     "range": {
-      "comment": "range ~ [4 years, 15 years)",
+      "comment": "range ~ [4 years, 10 years)",
       "min": {
         "days": 1460
       },
       "max": {
-        "days": 5490
+        "days": 3652
       }
     },
     "major": {
@@ -1084,16 +1072,20 @@
     },
     "minor": {
       "locator": {
-        "class": "YearLocator",
-        "base": 1
+        "class": "MonthLocator",
+        "bymonth_arange": [
+          1,
+          13,
+          4
+        ]
       }
     }
   },
   {
     "range": {
-      "comment": "range ~ [15 years, 40 years)",
+      "comment": "range ~ [10 years, 40 years)",
       "min": {
-        "days": 5490
+        "days": 3652
       },
       "max": {
         "days": 14600
@@ -1160,7 +1152,7 @@
     "major": {
       "locator": {
         "class": "YearLocator",
-        "base": 20
+        "base": 50
       },
       "formatter": {
         "class": "DateFormatter",
@@ -1201,7 +1193,7 @@
     "minor": {
       "locator": {
         "class": "YearLocator",
-        "base": 50
+        "base": 25
       }
     }
   },
@@ -1216,7 +1208,7 @@
     "major": {
       "locator": {
         "class": "YearLocator",
-        "base": 500
+        "base": 250
       },
       "formatter": {
         "class": "DateFormatter",
@@ -1228,7 +1220,7 @@
     "minor": {
       "locator": {
         "class": "YearLocator",
-        "base": 100
+        "base": 50
       }
     }
   }

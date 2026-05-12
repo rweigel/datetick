@@ -20,7 +20,7 @@ def rules(rules_file=None, debug=False):
 
   return rules
 
-def select(delta_t, rule_idx=None, rules_file=None, debug=False):
+def rule(delta_t, rule_idx=None, rules_file=None, debug=False):
   """
   major_sub_format contains additional information that is used for the first
    tick label or when there is a major change. For example, if
@@ -60,9 +60,6 @@ def select(delta_t, rule_idx=None, rules_file=None, debug=False):
     print(f'No rule found for delta_t = {delta_t_str}')
 
   return None
-
-
-rule = select
 
 
 def _validate_rules(rules):

@@ -37,7 +37,7 @@ def min_gap(axis, axes, debug=False):
         if debug:
           prev = ticklabels[i].get_text().replace('\n', '\\n')
           next_ = ticklabels[i+1].get_text().replace('\n', '\\n')
-          print(f"Tick labels '{next_}' and '{prev}' may overlap (separation={separation:.1f}px).")
+          print(f"  Tick labels '{next_}' and '{prev}' may overlap (separation={separation:.1f}px).")
 
     return min_
 

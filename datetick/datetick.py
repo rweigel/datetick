@@ -12,7 +12,7 @@ def datetick(*args,
              major_font_shrink_factor=0.87,
              major_font_shrink_always=False,
              min_font_size=6,
-             warn_on_min_gap=False,
+             min_gap_warn=False,
              rule_idx=None,
              set_cb=True,
              debug=False):
@@ -77,7 +77,8 @@ def datetick(*args,
   # Get all kwargs passed using locals
   kwargs = {k: v for k, v in locals().items() if k != 'args'}
 
-  from . import adjust, compute, util, rules
+  from . import adjust, compute, util
+  from .rules import rule as select_rule
 
   axis = 'x' if len(args) == 0 else args[0]
 
@@ -130,10 +131,10 @@ def datetick(*args,
     labels = util.get_ticklabels(axis, axes)
     util.print_ticks(axis, axes, ticks, labels)
 
-  rule = rules.rule(delta_t, rule_idx=kwargs['rule_idx'], debug=debug)
+  rule = select_rule(delta_t, rule_idx=kwargs['rule_idx'], debug=debug)
 
-  delta_t_str = util.format_delta(delta_t)
   if rule is None:
+    delta_t_str = util.format_delta(delta_t)
     msg = f'No config rule matched delta_t={delta_t_str}. '
     msg += 'Using default Matplotlib locator and formatter.'
     util.warn(msg)
@@ -144,6 +145,7 @@ def datetick(*args,
       'labels': labels,
       'rule': rule
     }
+
 
   if rule['major']['locator'] is None:
     if debug:
@@ -159,14 +161,15 @@ def datetick(*args,
       print('No labels. Returning without applying major_sub_format or set_cb.')
     return
 
+
   if rule['major']['sub_format'] != '':
     args = [
       axis,
-      rule['major']['sub_format'],
-      rule['major']['sub_transition'],
       lim_axis,
       ticks,
-      labels
+      labels,
+      rule['major']['sub_format'],
+      rule['major']['sub_transition']
     ]
     labels = _add_major_sub_string(*args, debug=debug)
 
@@ -174,55 +177,50 @@ def datetick(*args,
       print(f'{axis}labels and ticks after applying major_sub_format:')
       util.print_ticks(axis, axes, ticks, labels)
 
-    if axis == 'x':
-      """
-        Without the set_xticks(), warning is generated:
-          UserWarning: set_ticklabels() should only be used.
-        Additional discussion:
-          https://github.com/matplotlib/matplotlib/issues/18848
-        The correct way to avoid the warning:
-          https://stackoverflow.com/a/69126185
-        Better: Create custom class:
-          https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
-      """
-      axes.set_xticks(axes.get_xticks())
-      axes.set_xticklabels(labels)
-      adjust.xlabels(axes,
-        adjust_first_xlabel=adjust_first_xlabel,
-        adjust_last_xlabel=adjust_last_xlabel,
-        major_font_shrink_factor=major_font_shrink_factor,
-        major_font_shrink_always=major_font_shrink_always,
-        debug=debug
-      )
+    args = [axis,
+            axes,
+            labels,
+            adjust_first_xlabel,
+            adjust_last_xlabel,
+            major_font_shrink_factor,
+            major_font_shrink_always
+    ]
+    _apply_major_sub_string(*args, debug=debug)
 
-    if axis == 'y':
-      axes.set_yticks(axes.get_yticks())
-      axes.set_yticklabels(labels)
 
-  min_gap_warning = None
-
+  # Adjust font size if overlap in labels.
   min_gap = compute.min_gap(axis, axes, debug=debug)
+  adjust_warning = None
+  font_size = util.get_font_size(axis, axes)
+  font_size_change = 0
   if min_gap < min_font_size:
-    min_gap = adjust.font_size(axis, axes, min_gap, min_font_size, debug=debug)
+    adjust_warning = adjust.font_size(axis, axes, min_gap, min_font_size, debug=debug)
+    if adjust_warning is not None and min_gap_warn:
+      util.warn(adjust_warning)
+    font_size_change = util.get_font_size(axis, axes) - font_size
 
-    if min_gap < min_font_size and warn_on_min_gap:
-      lim_axis_str = f"{matplotlib.dates.num2date(lim_axis[0])}/"
-      lim_axis_str += f"{matplotlib.dates.num2date(lim_axis[1])}"
+  if adjust_warning is not None:
+    # Adjust rule if overlap in labels after shrinking font size.
+    # Try to use next rule so fewer labels are used.
+    max_attempts = 3
+    if kwargs['rule_idx'] is None:
+      kwargs['rule_idx'] = 0
 
-      min_gap_warning = None
-      min_gap_warning = f'for axis limits {lim_axis_str}, minimum gap between labels is '
-      min_gap_warning += f'{min_gap:.1f} px after reducing font size from {font_size_orig} to '
-      min_gap_warning += f'min_font_size = {min_font_size} px.'
-      util.warn(min_gap_warning)
-      if debug:
-        msg = 'Attempting to use datetick with previous rule.'
-        print(msg)
-      if kwargs['rule_idx'] is None:
-        kwargs['rule_idx'] = 0
+    if debug:
+      msg = '\nAttempting to use datetick with previous rule. '
+      msg += f'Attempt {kwargs["rule_idx"] + 1} of {max_attempts}.\n'
+      print(msg)
+
+    if False:
       kwargs['rule_idx'] += 1
-      if kwargs['rule_idx'] < 3:
+
+      if kwargs['rule_idx'] < max_attempts:
         kwargs['axes'] = axes
         return datetick(axis, **kwargs)
+      else:
+        adjust_warning += f' Tried to use {max_attempts} rules but minimum gap is '
+        adjust_warning += f'still less than min_font_size = {min_font_size} px.'
+
 
   # Trigger update of ticks when limits change due to user interaction.
   if set_cb and util.backend_is_interactive():
@@ -233,7 +231,9 @@ def datetick(*args,
           'ticks': ticks,
           'labels': labels,
           'rule': rule,
-          'warning': min_gap_warning
+          'rule_idx': kwargs['rule_idx'],
+          'font_size_change': font_size_change,
+          'warning': adjust_warning
         }
 
 
@@ -339,7 +339,7 @@ def _set_cb(axis, axes, kwargs, debug=False):
     axes._datetick_cb_y = cid
 
 
-def _add_major_sub_string(axis, major_sub_format, major_sub_transition, lim_axis, ticks, labels, debug=False):
+def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major_sub_transition, debug=False):
 
   time = matplotlib.dates.num2date(ticks)
 
@@ -415,15 +415,15 @@ def _add_major_sub_string(axis, major_sub_format, major_sub_transition, lim_axis
           print(f'Removing major_sub_format to first tick label at {matplotlib.dates.num2date(ticks[first])} to avoid overlap with second label.')
         labels[first] = labels[first].split('\n')[0]
       if debug:
-        print(f'Applying major_sub_format to tick label at       {matplotlib.dates.num2date(ticks[i])}.')
+        print(f'Applying major_sub_format to tick label at {matplotlib.dates.num2date(ticks[i])}.')
       labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
     else:
       if debug:
-        print(f'Applying major_sub_format to tick label at       {matplotlib.dates.num2date(ticks[i])}.')
+        print(f'Applying major_sub_format to tick label at {matplotlib.dates.num2date(ticks[i])}.')
       labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
 
-  # Look for labels with two newlines. If third row is same for all labels,
-  # remove them except for first label.
+
+  # Look for labels with two newlines. If third row has been seen before, remove.
   third_row = None
   for idx, label in enumerate(labels):
     parts = label.split('\n')
@@ -434,8 +434,38 @@ def _add_major_sub_string(axis, major_sub_format, major_sub_transition, lim_axis
       continue
     if parts[2] == third_row:
       labels[idx] = '\n'.join(parts[0:2])
+    else:
+      third_row = parts[2]
 
   return labels
+
+
+def _apply_major_sub_string(axis, axes, labels, adjust_first_xlabel, adjust_last_xlabel, major_font_shrink_factor, major_font_shrink_always, debug=False):
+  from . import adjust
+  if axis == 'x':
+    """
+      Without the set_xticks(), warning is generated:
+        UserWarning: set_ticklabels() should only be used.
+      Additional discussion:
+        https://github.com/matplotlib/matplotlib/issues/18848
+      The correct way to avoid the warning:
+        https://stackoverflow.com/a/69126185
+      Better: Create custom class:
+        https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
+    """
+    axes.set_xticks(axes.get_xticks())
+    axes.set_xticklabels(labels)
+    adjust.xlabels(axes,
+      adjust_first_xlabel=adjust_first_xlabel,
+      adjust_last_xlabel=adjust_last_xlabel,
+      major_font_shrink_factor=major_font_shrink_factor,
+      major_font_shrink_always=major_font_shrink_always,
+      debug=debug
+    )
+
+  if axis == 'y':
+    axes.set_yticks(axes.get_yticks())
+    axes.set_yticklabels(labels)
 
 
 def _manual_labels(axis, axes):

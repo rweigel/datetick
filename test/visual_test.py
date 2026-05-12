@@ -1,7 +1,10 @@
 # Create plots with varying time ranges.
 
 import os
-import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot
 
 import datetick
 
@@ -9,10 +12,9 @@ import datetick
 import util
 
 DIRS = ['x']
-#FIGWIDTHS = [6.5, 3.25]
-#FIGWIDTHS = [1.25]
-FIGWIDTHS = [6.5]
-
+#FIGWIDTHS = [6.4, 3.2]
+#FIGWIDTHS = [1.6]
+FIGWIDTHS = [6.4]
 # Print debug info for this script.
 debug_script = True
 
@@ -25,36 +27,46 @@ except ImportError:
 
 @pytest.mark.short
 def test_one(debug=False):
-  _run_all(short=True, axis=DIRS[0], figwidth=FIGWIDTHS[0], debug=debug)
+  test_all(debug=False, idx=1)
 
 
-def test_all(debug=False):
+def test_all(debug=False, idx=None):
 
+  info = {}
   for axis in DIRS:
-    files = {axis: []}
+    info[axis] = {'files': [], 'results': []}
     for figwidth in FIGWIDTHS:
       if debug_script:
         print(f"Running visual test with axis='{axis}' and figwidth={figwidth}in")
-      files[axis] += _run_all(axis=axis, figwidth=figwidth, debug=debug)
+
+      files, results = _run_all(axis=axis, figwidth=figwidth, idx=idx, debug=debug)
+      info[axis]['files'] += files
+      info[axis]['results'] += results
 
     #files[axis] = sorted(files[axis])
 
-  _readmes(files, debug=debug)
+  if idx is None:
+    _readmes(info, debug=debug)
 
 
-def _run_all(short=False, axis='x', figwidth=8, debug=False):
+def _run_all(axis='x', figwidth=6.4, idx=None, short=False, debug=False):
+
   import json
-
   test_file = os.path.join(_script_dir(), 'visual_test.json')
-
   with open(test_file, 'r') as file:
     tests_manual = json.load(file)
 
   tests_generated = util.generate_main_tests()
 
   files = []
+  results = []
+  tidx = 1
   for entries in [tests_manual, tests_generated]:
     for test in entries:
+      if idx is not None and idx != tidx:
+        tidx += 1
+        continue
+
       dt_str_o = test['start']
       dt_str_f = test['stop']
 
@@ -62,9 +74,10 @@ def _run_all(short=False, axis='x', figwidth=8, debug=False):
       kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
 
       if debug_script:
-        print(f"delta_t={test['_delta_t']} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
+        print(f"{tidx}. delta_t={test['_delta_t']} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
 
-      _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, warn_on_min_gap=True, debug=debug, **kwargs)
+      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_gap_warn=True, debug=debug, **kwargs)
+      results.append(result)
 
       file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files, debug=debug)
       files.append(file)
@@ -72,7 +85,9 @@ def _run_all(short=False, axis='x', figwidth=8, debug=False):
       if short:
         break
 
-  return files
+      tidx += 1
+
+  return files, results
 
 
 def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
@@ -94,21 +109,23 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
   def _axes(axis, figwidth):
 
     if axis == 'x':
-      figsize=(figwidth, 2)
+      figsize=(figwidth, 3)
       hspace = 1.0
     else:
-      figsize=(2, figwidth)
+      figsize=(3, figwidth)
       hspace = 0.1
 
-    fig, axes = plt.subplots(2, figsize=figsize)
-    plt.subplots_adjust(hspace=hspace)
+    fig, axes = matplotlib.pyplot.subplots(3, figsize=figsize)
+    matplotlib.pyplot.subplots_adjust(hspace=hspace)
     for ax in axes:
       ax.grid()
-      if axis == 'x':
-        ax.spines[['top', 'right', 'left']].set_visible(False)
-        ax.yaxis.set_visible(False)
-      else:
-        ax.spines[['top', 'right']].set_visible(False)
+      ax.set_ylabel('y') if axis == 'x' else ax.set_xlabel('x')
+      if False:
+        if axis == 'x':
+          ax.spines[['top', 'right', 'left']].set_visible(False)
+          ax.yaxis.set_visible(False)
+        else:
+          ax.spines[['top', 'right']].set_visible(False)
 
     return fig, axes
 
@@ -119,7 +136,7 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
       yt = 0.0
       xt = axis_lims[0] + (axis_lims[1] - axis_lims[0])/2
     if axis == 'y':
-      xt = 0.5
+      xt = 0.0
       yt = axis_lims[0] + (axis_lims[1] - axis_lims[0])/2
 
     bbox = {
@@ -132,7 +149,7 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
     if datetick_kwargs:
       bbox['facecolor'] = 'lightblue'
       for key, value in kwargs.items():
-        if key in ('debug', 'warn_on_min_gap'):
+        if key in ('debug', 'min_gap_warn'):
           continue
         text += f'\n{key}={value}'
 
@@ -145,37 +162,53 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
   dt2 = util.parse_ds(ds2)
   if axis == 'x':
     x = [dt1, dt2]
-    y = [0.0, 0.0]
+    y = [-1, 1]
   else:
-    x = [0.0, 1.0]
+    x = [-1, 1]
     y = [dt1, dt2]
 
   from matplotlib import dates as mdates
 
-  if False:
-    locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
-    formatter = mdates.ConciseDateFormatter(locator)
-    axes[0].xaxis.set_major_locator(locator)
-    axes[0].xaxis.set_major_formatter(formatter)
-
   axes[0].plot(x, y, '*')
   _set_label(axes[0], axis, x, y, 'matplotlib')
 
+
+  locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+  # https://matplotlib.org/stable/api/dates_api.html#matplotlib.dates.ConciseDateFormatter
+  formatter = mdates.ConciseDateFormatter(locator)
+  axes[1].xaxis.set_major_locator(locator)
+  axes[1].xaxis.set_major_formatter(formatter)
   axes[1].plot(x, y, '*')
-  _set_label(axes[1], axis, x, y, 'datetick', datetick_kwargs=kwargs)
-
-  cfg = datetick.datetick(axis, axes=axes[1], **kwargs)
-
-  _set_title(axes[0], axis, cfg['delta_t'])
-
-  return cfg
+  _set_label(axes[1], axis, x, y, 'matplotlib+AutoDateLocator/ConciseDateFormatter')
 
 
-def _readmes(files, debug=False):
+  axes[2].plot(x, y, '*')
+  _set_label(axes[2], axis, x, y, 'datetick', datetick_kwargs=kwargs)
 
-  def _image_subsection(files, latest_dir, base, axis):
+  result = datetick.datetick(axis, axes=axes[2], **kwargs)
+
+  _set_title(axes[0], axis, result['delta_t'])
+
+  return result
+
+
+def _readmes(results, debug=False):
+
+  def _image_subsection(results, latest_dir, base, axis):
     image_links = []
-    for file in files:
+
+    files = results['files']
+    results = results['results']
+
+    for idx, file in enumerate(files):
+      note = ""
+      if results[idx]['font_size_change'] != 0:
+        note += f" (font size change: {results[idx]['font_size_change']:.1f} pt)"
+      if results[idx]['rule_idx'] is not None:
+        note += f" (rule change: {results[idx]['rule_idx']})"
+      if len(note) > 0:
+        note = f"\n{note}\n"
+
       # Copy file to test/visual_tests/latest for linking in README
       latest_file = os.path.join(latest_dir, os.path.basename(file))
       with open(file, 'rb') as src, open(latest_file, 'wb') as dst:
@@ -183,7 +216,7 @@ def _readmes(files, debug=False):
 
       # Make path relative to README dir
       file = os.path.relpath(latest_file, os.path.dirname(readme))
-      image_links.append(f'![{file}]({base}{file})')
+      image_links.append(f'{note}![{file}]({base}{file})')
 
     #size_axis = 'w' if axis == 'x' else 'h'
     #size_str = f"<code>{size_axis} = {size}in</code>"
@@ -206,7 +239,7 @@ def _readmes(files, debug=False):
   del lines[index+1:]
 
   # Add python/mpl version
-  mpl = f"Matplotlib-{plt.matplotlib.__version__}"
+  mpl = f"Matplotlib-{matplotlib.pyplot.matplotlib.__version__}"
   py = f"Python-{os.sys.version_info.major}.{os.sys.version_info.minor}"
   image_lines = []
   lines.append(f"\n\n<code>{py}/{mpl}</code>\n\n")
@@ -215,12 +248,14 @@ def _readmes(files, debug=False):
   latest_dir = os.path.join(_script_dir(), 'visual_test', 'latest')
   os.makedirs(latest_dir, exist_ok=True)
 
-  for axis in files.keys():
-    image_lines.append(_image_subsection(files[axis], latest_dir, base, axis))
+  for axis in results.keys():
+    image_lines.append(_image_subsection(results[axis], latest_dir, base, axis))
+
+  n_images = sum(len(results[axis]) for axis in results.keys())
 
   combined_lines = lines + image_lines
   if debug_script:
-    print(f"\nUpdating {readme} with {len(files[axis])} images")
+    print(f"\nUpdating {readme} with {n_images} images")
   with open(readme, 'w') as file:
     file.writelines(combined_lines)
 
@@ -233,7 +268,7 @@ def _readmes(files, debug=False):
 
   readme = os.path.join(_out_dir(axis), 'README.md')
   if debug_script:
-    print(f"Writing {readme} with {len(files[axis])} images")
+    print(f"Writing {readme} in image subdirectory.")
   with open(readme, 'w') as file:
     file.writelines("\n" + "\n\n".join(image_lines))
 
@@ -244,7 +279,7 @@ def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
 
   ext = 'svg'
   base = f'{_out_dir(axis)}/{ds1}-{ds2}-{figwidth}in'
-  file = f'{base}.{ext}'
+  file = f'{base}_v1.{ext}'
   if file in files:
     v = 2
     while file in files:
@@ -261,23 +296,23 @@ def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
   rc = {}
   if ext == 'png':
     kwargs['dpi'] = 220
-    plt.savefig(file, **kwargs)
+    matplotlib.pyplot.savefig(file, **kwargs)
   else:
     if ext == 'svg':
       # Don't convert text to paths in SVG to keep it searchable and selectable
       kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
       rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
 
-  with plt.rc_context(rc):
-    plt.savefig(file, **kwargs)
+  with matplotlib.pyplot.rc_context(rc):
+    matplotlib.pyplot.savefig(file, **kwargs)
 
-  plt.close()
+  matplotlib.pyplot.close()
 
   return file
 
 
 def _out_dir(axis):
-  mpl = f"mpl-{plt.matplotlib.__version__}"
+  mpl = f"mpl-{matplotlib.pyplot.matplotlib.__version__}"
   py = f"python-{os.sys.version_info.major}.{os.sys.version_info.minor}"
   return os.path.join(_script_dir(), 'visual_test', py, mpl, axis)
 
@@ -288,17 +323,20 @@ def _script_dir():
 
 if __name__ == '__main__':
   def unit():
-    ds1 = '2001-01-29T12:36:00.0Z'
-    ds2 = '2001-02-01T06:36:00.0Z'
+    ds1 = '2001-01-01T23:59:56.85Z'
+    ds2 = '2001-01-02T00:00:00.35Z'
     _plot(ds1, ds2, axis='x', figwidth=6.5, adjust_range=False, debug=True)
-    print("Writing", 'a.png')
-    plt.savefig('a.png', bbox_inches='tight', dpi=300)
-    plt.close()
+    print("Writing", 'unit.png')
+    matplotlib.pyplot.savefig('unit.png', bbox_inches='tight', dpi=300)
+    matplotlib.pyplot.close()
 
   import sys
-  if sys.argv[-1] == 'short':
+  argv = sys.argv[-1]  # Exclude script name
+  if argv == 'short':
     test_one(debug=True)
-  elif sys.argv[-1] == 'unit':
+  elif argv == 'unit':
     unit()
+  elif argv.isdigit():
+    test_all(debug=True, idx=int(argv))
   else:
     test_all(debug=False)

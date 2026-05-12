@@ -57,6 +57,25 @@ def warn(msg):
   warnings.formatwarning = old_formatwarning
 
 
+def get_font_size(axis, axes, pt=True):
+  """Get font size in pixels"""
+  ticklabels = get_ticklabels(axis, axes, strings=False)
+
+  if len(ticklabels) > 0:
+    font_size = ticklabels[0].get_fontsize()
+  else:
+    key = 'xtick.labelsize' if axis == 'x' else 'ytick.labelsize'
+    font_size = matplotlib.rcParams[key]
+
+  if isinstance(font_size, str):
+    font_size = matplotlib.font_manager.FontProperties(size=font_size).get_size_in_points()
+
+  if pt:
+    return float(font_size)
+
+  return float(font_size) * axes.figure.dpi / 72.0
+
+
 def get_ticks(axis, axes):
   if axis == 'x':
     return axes.get_xticks()
@@ -87,7 +106,7 @@ def format_delta(delta, include_years=True):
 
   parts = []
   if include_years and days >= 366:
-    years = days // 365.2425
+    years = days / 365.2425
     parts.append(f'{years:.1f}y')
   else:
     if days:
