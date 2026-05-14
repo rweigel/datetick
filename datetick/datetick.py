@@ -3,6 +3,9 @@
 """
 import datetime
 import matplotlib
+# In case lazy import is implemented:
+import matplotlib.dates
+import matplotlib.pyplot
 
 def datetick(*args,
              axes=None,
@@ -83,6 +86,8 @@ def datetick(*args,
   axis = 'x' if len(args) == 0 else args[0]
 
   axes = _check_axes(kwargs)
+  if axes is None:
+    return None
 
   bbox = axes.dataLim
   if axis == 'x':
