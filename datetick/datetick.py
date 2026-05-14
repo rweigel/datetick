@@ -83,7 +83,7 @@ def datetick(*args,
   axis = 'x' if len(args) == 0 else args[0]
 
   axes = _check_axes(kwargs)
-  
+
   bbox = axes.dataLim
   if axis == 'x':
     lim_data = (bbox.x0, bbox.x1)
@@ -300,7 +300,7 @@ def _check_axes(kwargs):
   if not hasattr(axes, 'dataLim'):
     raise ValueError("axes does not have dataLim attribute. Cannot use datetick().")
 
- return axes
+  return axes
 
 def _check_bounds(lim_data, lim_axis, ticks, axis, debug=False):
 

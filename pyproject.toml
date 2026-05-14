@@ -26,6 +26,9 @@ Homepage = "https://github.com/rweigel/datetick/"
 [tool.setuptools.packages.find]
 where = ["."]
 
+[tool.setuptools.package-data]
+datetick = ["rules.json"]
+
 [tool.pytest.ini_options]
 markers = [
   "short: quick smoke test (run with -m short)",
