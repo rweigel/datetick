@@ -37,7 +37,7 @@ def make_formatter(spec):
   def _millis(x, pos):
     x = matplotlib.dates.num2date(x)
     label = x.strftime('.%f')
-    label = label[0:3]
+    label = label[0:4]
     return label
 
   if spec is None:

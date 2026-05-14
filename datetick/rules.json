@@ -19,7 +19,34 @@
         "seconds": 0.1
       },
       "max": {
-        "seconds": 0.5
+        "seconds": 0.2
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 25000
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      },
+      "sub_format": "%H:%M:%S\n%Y-%m-%d",
+      "sub_transition": "second"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 12500
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 0.2
+      },
+      "max": {
+        "seconds": 0.4
       }
     },
     "major": {
@@ -36,17 +63,17 @@
     "minor": {
       "locator": {
         "class": "MicrosecondLocator",
-        "interval": 10000
+        "interval": 25000
       }
     }
   },
   {
     "range": {
       "min": {
-        "seconds": 0.5
+        "seconds": 0.4
       },
       "max": {
-        "seconds": 1
+        "seconds": 0.8
       }
     },
     "major": {
@@ -70,10 +97,37 @@
   {
     "range": {
       "min": {
-        "seconds": 1
+        "seconds": 0.8
       },
       "max": {
-        "seconds": 5
+        "seconds": 1.6
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 250000
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      },
+      "sub_format": "%H:%M:%S\n%Y-%m-%d",
+      "sub_transition": "second"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 125000
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 1.6
+      },
+      "max": {
+        "seconds": 3.2
       }
     },
     "major": {
@@ -97,10 +151,10 @@
   {
     "range": {
       "min": {
-        "seconds": 5
+        "seconds": 3.2
       },
       "max": {
-        "seconds": 10
+        "seconds": 6.4
       }
     },
     "major": {
@@ -108,7 +162,8 @@
         "class": "SecondLocator",
         "bysecond_arange": [
           0,
-          60
+          60,
+          1
         ]
       },
       "formatter": {
@@ -128,7 +183,39 @@
   {
     "range": {
       "min": {
-        "seconds": 10
+        "seconds": 6.4
+      },
+      "max": {
+        "seconds": 15
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [
+          0,
+          60,
+          2
+        ]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      },
+      "sub_format": "%Y-%m-%dT%H",
+      "sub_transition": "hour"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 500000
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 15
       },
       "max": {
         "seconds": 20
@@ -155,7 +242,8 @@
         "class": "SecondLocator",
         "bysecond_arange": [
           0,
-          60
+          60,
+          1
         ]
       }
     }
@@ -190,7 +278,8 @@
         "class": "SecondLocator",
         "bysecond_arange": [
           0,
-          60
+          60,
+          1
         ]
       }
     }
@@ -201,7 +290,7 @@
         "seconds": 30
       },
       "max": {
-        "minutes": 1
+        "seconds": 80
       }
     },
     "major": {
@@ -234,7 +323,7 @@
   {
     "range": {
       "min": {
-        "minutes": 1
+        "seconds": 80
       },
       "max": {
         "minutes": 2
@@ -243,7 +332,7 @@
     "major": {
       "locator": {
         "class": "SecondLocator",
-        "bysecond": [
+        "bysecond_arange": [
           0,
           20,
           40
@@ -262,7 +351,7 @@
         "bysecond_arange": [
           0,
           60,
-          5
+          10
         ]
       }
     }
@@ -273,43 +362,7 @@
         "minutes": 2
       },
       "max": {
-        "minutes": 3
-      }
-    },
-    "major": {
-      "locator": {
-        "class": "SecondLocator",
-        "bysecond": [
-          0,
-          20,
-          40
-        ]
-      },
-      "formatter": {
-        "class": "DateFormatter",
-        "format": "%M:%S"
-      },
-      "sub_format": "%Y-%m-%dT%H",
-      "sub_transition": "hour"
-    },
-    "minor": {
-      "locator": {
-        "class": "SecondLocator",
-        "bysecond_arange": [
-          0,
-          60,
-          5
-        ]
-      }
-    }
-  },
-  {
-    "range": {
-      "min": {
-        "minutes": 3
-      },
-      "max": {
-        "minutes": 5
+        "minutes": 4
       }
     },
     "major": {
@@ -319,41 +372,6 @@
           0,
           60,
           30
-        ]
-      },
-      "formatter": {
-        "class": "DateFormatter",
-        "format": "%M:%S"
-      },
-      "sub_format": "%Y-%m-%dT%H",
-      "sub_transition": "hour"
-    },
-    "minor": {
-      "locator": {
-        "class": "SecondLocator",
-        "bysecond_arange": [
-          0,
-          60,
-          10
-        ]
-      }
-    }
-  },
-  {
-    "range": {
-      "min": {
-        "minutes": 5
-      },
-      "max": {
-        "minutes": 10
-      }
-    },
-    "major": {
-      "locator": {
-        "class": "MinuteLocator",
-        "byminute_arange": [
-          0,
-          60
         ]
       },
       "formatter": {
@@ -377,10 +395,46 @@
   {
     "range": {
       "min": {
-        "minutes": 10
+        "minutes": 4
       },
       "max": {
-        "minutes": 20
+        "minutes": 8
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [
+          0,
+          60,
+          1
+        ]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      },
+      "sub_format": "%Y-%m-%dT%H",
+      "sub_transition": "hour"
+    },
+    "minor": {
+      "locator": {
+        "class": "SecondLocator",
+        "bysecond_arange": [
+          0,
+          60,
+          30
+        ]
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "minutes": 8
+      },
+      "max": {
+        "minutes": 14
       }
     },
     "major": {
@@ -402,10 +456,42 @@
     "minor": {
       "locator": {
         "class": "SecondLocator",
+        "bysecond_arange": [0, 60, 1]
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "minutes": 14
+      },
+      "max": {
+        "minutes": 20
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MinuteLocator",
+        "byminute_arange": [
+          0,
+          60,
+          5
+        ]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%M:%S"
+      },
+      "sub_format": "%Y-%m-%dT%H",
+      "sub_transition": "hour"
+    },
+    "minor": {
+      "locator": {
+        "class": "SecondLocator",
         "bysecond_arange": [
           0,
           60,
-          30
+          1
         ]
       }
     }
@@ -438,10 +524,7 @@
     "minor": {
       "locator": {
         "class": "MinuteLocator",
-        "byminute_arange": [
-          0,
-          60
-        ]
+        "byminute_arange": [0, 60, 1]
       }
     }
   },
@@ -565,10 +648,7 @@
     "major": {
       "locator": {
         "class": "HourLocator",
-        "byhour_arange": [
-          0,
-          24
-        ]
+        "byhour": 1
       },
       "formatter": {
         "class": "DateFormatter",
@@ -630,7 +710,7 @@
         "hours": 12
       },
       "max": {
-        "days": 1
+        "hours": 24
       }
     },
     "major": {
@@ -652,20 +732,17 @@
     "minor": {
       "locator": {
         "class": "HourLocator",
-        "byhour_arange": [
-          0,
-          24
-        ]
+        "byhour": 1
       }
     }
   },
   {
     "range": {
       "min": {
-        "days": 1
+        "hours": 24
       },
       "max": {
-        "days": 2
+        "hours": 36
       }
     },
     "major": {
@@ -691,6 +768,42 @@
           0,
           24,
           2
+        ]
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "hours": 36
+      },
+      "max": {
+        "days": 2
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [
+          0,
+          24,
+          6
+        ]
+      },
+      "formatter": {
+        "class": "DateFormatter",
+        "format": "%H"
+      },
+      "sub_format": "%Y-%m-%d",
+      "sub_transition": "day"
+    },
+    "minor": {
+      "locator": {
+        "class": "HourLocator",
+        "byhour_arange": [
+          0,
+          24,
+          3
         ]
       }
     }
@@ -762,7 +875,7 @@
         "byhour_arange": [
           0,
           24,
-          3
+          6
         ]
       }
     }
@@ -779,10 +892,7 @@
     "major": {
       "locator": {
         "class": "DayLocator",
-        "bymonthday_arange": [
-          1,
-          32
-        ]
+        "bymonthday_arange": [1, 32, 1]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -797,7 +907,7 @@
         "byhour_arange": [
           0,
           24,
-          4
+          12
         ]
       }
     }
@@ -816,7 +926,8 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          32
+          32,
+          2
         ]
       },
       "formatter": {
@@ -831,7 +942,8 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          32
+          32,
+          1
         ]
       }
     }
@@ -850,8 +962,8 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          33,
-          4
+          32,
+          7
         ]
       },
       "formatter": {
@@ -866,7 +978,8 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          32
+          32,
+          1
         ]
       }
     }
@@ -885,7 +998,7 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          36,
+          32,
           7
         ]
       },
@@ -901,7 +1014,8 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          32
+          32,
+          1
         ]
       }
     }
@@ -920,7 +1034,8 @@
         "class": "MonthLocator",
         "bymonth_arange": [
           1,
-          13
+          13,
+          1
         ]
       },
       "formatter": {
@@ -935,7 +1050,7 @@
         "class": "DayLocator",
         "bymonthday_arange": [
           1,
-          36,
+          32,
           7
         ]
       }
@@ -955,7 +1070,8 @@
         "class": "MonthLocator",
         "bymonth_arange": [
           1,
-          13
+          13,
+          2
         ]
       },
       "formatter": {
@@ -970,7 +1086,8 @@
         "class": "MonthLocator",
         "bymonth_arange": [
           1,
-          13
+          13,
+          1
         ]
       }
     }
@@ -1006,7 +1123,8 @@
         "class": "MonthLocator",
         "bymonth_arange": [
           1,
-          13
+          13,
+          1
         ]
       }
     }
@@ -1076,7 +1194,7 @@
         "bymonth_arange": [
           1,
           13,
-          4
+          6
         ]
       }
     }

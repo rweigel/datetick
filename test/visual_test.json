@@ -8,6 +8,12 @@
     "start": "2001-01-01T00:00:00Z",
     "stop": "2001-01-02T23:00:00Z",
     "_delta_t": "1d23h",
+    "major_font_shrink_always": true
+  },
+  {
+    "start": "2001-01-01T00:00:00Z",
+    "stop": "2001-01-02T23:00:00Z",
+    "_delta_t": "1d23h",
     "adjust_first_xlabel": true
   },
   {
@@ -24,20 +30,17 @@
     "adjust_last_xlabel": true
   },
   {
-    "start": "2000-12-31T17:00:00Z",
-    "stop": "2001-01-02T19:00:00Z",
-    "_delta_t": "2d2h"
+    "start": "2001-01-01T00:00:00Z",
+    "stop": "2001-01-02T23:00:00Z",
+    "_delta_t": "1d23h",
+    "adjust_range": true,
+    "adjust_first_xlabel": true,
+    "adjust_last_xlabel": true
   },
   {
-    "start": "2000-12-31T17:00:00Z",
-    "stop": "2001-01-02T19:00:00Z",
-    "_delta_t": "2d2h",
-    "adjust_range": true
-  },
-  {
-    "start": "2000-12-31T17:00:00Z",
-    "stop": "2001-01-02T19:00:00Z",
-    "_delta_t": "2d2h",
+    "start": "2001-01-01T00:00:00Z",
+    "stop": "2001-01-02T23:00:00Z",
+    "_delta_t": "1d23h",
     "major_font_shrink_factor": 0.65,
     "major_font_shrink_always": true
   }

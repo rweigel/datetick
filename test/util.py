@@ -176,6 +176,9 @@ def _sequence_step(spec, key):
   else:
     raise KeyError(f"Neither '{key}' nor '{arange_key}' found in locator spec.")
 
+  if not isinstance(values, (list, tuple, range)):
+    values = [values]
+
   if len(values) <= 1:
     return 1
 

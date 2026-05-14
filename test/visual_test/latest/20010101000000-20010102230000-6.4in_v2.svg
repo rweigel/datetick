@@ -497,8 +497,8 @@ L 58.85304 153.898188
       </g>
      </g>
      <g id="text_27">
-      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(52.60304 201.760625)">00</text>
-      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(52.60304 212.958438)">2001-01-01</text>
+      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(52.49054 201.760625)">00</text>
+      <text style="font-size: 10px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(29.795227 212.958438)">2001-01-01</text>
      </g>
     </g>
     <g id="xtick_16">
@@ -858,20 +858,20 @@ L 399.740312 153.898188
    </g>
    <g id="text_44">
     <g id="patch_19">
-     <path d="M 167.189453 182.749516 
-L 275.171172 182.749516 
-Q 277.871172 182.749516 277.871172 180.049516 
-L 277.871172 161.261172 
-Q 277.871172 158.561172 275.171172 158.561172 
-L 167.189453 158.561172 
-Q 164.489453 158.561172 164.489453 161.261172 
-L 164.489453 180.049516 
-Q 164.489453 182.749516 167.189453 182.749516 
+     <path d="M 149.948828 182.749516 
+L 292.411797 182.749516 
+Q 295.111797 182.749516 295.111797 180.049516 
+L 295.111797 161.261172 
+Q 295.111797 158.561172 292.411797 158.561172 
+L 149.948828 158.561172 
+Q 147.248828 158.561172 147.248828 161.261172 
+L 147.248828 180.049516 
+Q 147.248828 182.749516 149.948828 182.749516 
 z
 " style="fill: #add8e6; opacity: 0.8; stroke: #808080; stroke-linejoin: miter"/>
     </g>
     <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(202.938438 167.849453)">datetick</text>
-    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(167.189453 177.927484)">adjust_first_xlabel=True</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif" transform="translate(149.948828 177.927484)">major_font_shrink_always=True</text>
    </g>
   </g>
  </g>

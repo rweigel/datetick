@@ -11,12 +11,20 @@ import datetick
 # Import ./util.py test functions for generating test cases
 import util
 
-DIRS = ['x']
-#FIGWIDTHS = [6.4, 3.2]
-#FIGWIDTHS = [1.6]
-FIGWIDTHS = [6.4]
 # Print debug info for this script.
-debug_script = True
+DEBUG_SCRIPT = False
+
+# Maximum number of test cases to run.
+N_MAX = float('inf')
+
+#DIRS = ['x, y']
+DIRS = ['x']
+#FIGWIDTHS = [9.6, 6.4, 3.2, 1.6]
+#FIGWIDTHS = [1.6]
+#FIGWIDTHS = [3.2]
+FIGWIDTHS = [6.4]
+#FIGWIDTHS = [9.6]
+
 
 try:
   import pytest
@@ -36,7 +44,7 @@ def test_all(debug=False, idx=None):
   for axis in DIRS:
     info[axis] = {'files': [], 'results': []}
     for figwidth in FIGWIDTHS:
-      if debug_script:
+      if DEBUG_SCRIPT:
         print(f"Running visual test with axis='{axis}' and figwidth={figwidth}in")
 
       files, results = _run_all(axis=axis, figwidth=figwidth, idx=idx, debug=debug)
@@ -73,16 +81,16 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False, debug=False):
       # Keep only 
       kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
 
-      if debug_script:
+      if DEBUG_SCRIPT:
         print(f"{tidx}. delta_t={test['_delta_t']} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
 
-      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_gap_warn=True, debug=debug, **kwargs)
+      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_font_size=None, min_gap_warn=True, debug=debug, **kwargs)
       results.append(result)
 
       file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files, debug=debug)
       files.append(file)
 
-      if short:
+      if short or tidx >= N_MAX:
         break
 
       tidx += 1
@@ -149,7 +157,7 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
     if datetick_kwargs:
       bbox['facecolor'] = 'lightblue'
       for key, value in kwargs.items():
-        if key in ('debug', 'min_gap_warn'):
+        if key in ('debug', 'min_gap_warn', 'min_font_size'):
           continue
         text += f'\n{key}={value}'
 
@@ -186,7 +194,6 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
   _set_label(axes[2], axis, x, y, 'datetick', datetick_kwargs=kwargs)
 
   result = datetick.datetick(axis, axes=axes[2], **kwargs)
-
   _set_title(axes[0], axis, result['delta_t'])
 
   return result
@@ -201,13 +208,13 @@ def _readmes(results, debug=False):
     results = results['results']
 
     for idx, file in enumerate(files):
-      note = ""
+      note = f"{idx+1}\\."
       if results[idx]['font_size_change'] != 0:
         note += f" (font size change: {results[idx]['font_size_change']:.1f} pt)"
       if results[idx]['rule_idx'] is not None:
         note += f" (rule change: {results[idx]['rule_idx']})"
       if len(note) > 0:
-        note = f"\n{note}\n"
+        note = f"\n{note}\n\n"
 
       # Copy file to test/visual_tests/latest for linking in README
       latest_file = os.path.join(latest_dir, os.path.basename(file))
@@ -251,23 +258,23 @@ def _readmes(results, debug=False):
   for axis in results.keys():
     image_lines.append(_image_subsection(results[axis], latest_dir, base, axis))
 
-  n_images = sum(len(results[axis]) for axis in results.keys())
+  n_images = sum(len(results[axis]['files']) for axis in results.keys())
 
   combined_lines = lines + image_lines
-  if debug_script:
+  if DEBUG_SCRIPT:
     print(f"\nUpdating {readme} with {n_images} images")
   with open(readme, 'w') as file:
     file.writelines(combined_lines)
 
   # Create README.rel.md with base replaced with relative path for local viewing
   readme_rel = os.path.join(os.path.dirname(readme), 'README.rel.md')
-  if debug_script:
+  if DEBUG_SCRIPT:
     print(f"Writing {readme_rel} with URL replaced by relative path")
   with open(readme_rel, 'w') as file:
     file.writelines(line.replace(base, "") for line in combined_lines)
 
   readme = os.path.join(_out_dir(axis), 'README.md')
-  if debug_script:
+  if DEBUG_SCRIPT:
     print(f"Writing {readme} in image subdirectory.")
   with open(readme, 'w') as file:
     file.writelines("\n" + "\n\n".join(image_lines))
@@ -277,7 +284,7 @@ def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
-  ext = 'svg'
+  ext = 'png'
   base = f'{_out_dir(axis)}/{ds1}-{ds2}-{figwidth}in'
   file = f'{base}_v1.{ext}'
   if file in files:
@@ -286,7 +293,7 @@ def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
       file = f'{base}_v{v}.{ext}'
       v += 1
 
-  if debug_script:
+  if DEBUG_SCRIPT:
     print("  Writing", file)
   dirname = os.path.dirname(file)
   if not os.path.exists(dirname):
@@ -306,6 +313,7 @@ def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
   with matplotlib.pyplot.rc_context(rc):
     matplotlib.pyplot.savefig(file, **kwargs)
 
+  #matplotlib.pyplot.show()
   matplotlib.pyplot.close()
 
   return file
@@ -321,22 +329,177 @@ def _script_dir():
   return os.path.dirname(os.path.realpath(__file__))
 
 
-if __name__ == '__main__':
-  def unit():
-    ds1 = '2001-01-01T23:59:56.85Z'
-    ds2 = '2001-01-02T00:00:00.35Z'
-    _plot(ds1, ds2, axis='x', figwidth=6.5, adjust_range=False, debug=True)
-    print("Writing", 'unit.png')
-    matplotlib.pyplot.savefig('unit.png', bbox_inches='tight', dpi=300)
-    matplotlib.pyplot.close()
+def cli():
+  import ast
+  import argparse
+  global DIRS, FIGWIDTHS, DEBUG_SCRIPT, N_MAX
 
-  import sys
-  argv = sys.argv[-1]  # Exclude script name
-  if argv == 'short':
-    test_one(debug=True)
-  elif argv == 'unit':
-    unit()
-  elif argv.isdigit():
-    test_all(debug=True, idx=int(argv))
+  def parse_figwidths(value):
+    return [float(part) for part in value.split(',') if part]
+
+  def parse_dirs(value):
+    dirs = [part for part in value.split(',') if part]
+    if not all(part in ('x', 'y') for part in dirs):
+      raise argparse.ArgumentTypeError("dirs must be a comma-separated list containing only 'x' and/or 'y'")
+    return dirs
+
+  def parse_plot_kwargs(unknown_args):
+    kwargs = {}
+    idx = 0
+    while idx < len(unknown_args):
+      arg = unknown_args[idx]
+      if not arg.startswith('--'):
+        raise argparse.ArgumentTypeError(f'unrecognized argument: {arg}')
+
+      key = arg[2:].replace('-', '_')
+      if idx + 1 >= len(unknown_args) or unknown_args[idx + 1].startswith('--'):
+        kwargs[key] = True
+        idx += 1
+        continue
+
+      raw_value = unknown_args[idx + 1]
+      lowered = raw_value.lower()
+      if lowered == 'true':
+        value = True
+      elif lowered == 'false':
+        value = False
+      elif lowered == 'none':
+        value = None
+      else:
+        try:
+          value = ast.literal_eval(raw_value)
+        except (ValueError, SyntaxError):
+          value = raw_value
+
+      kwargs[key] = value
+      idx += 2
+
+    return kwargs
+
+  parser = argparse.ArgumentParser(
+    usage=(
+      'visual_test.py [--idx IDX] [--n-max N] [--debug] [--debug-script {0,1}] '
+      '[--figwidths W1,W2] [--dirs x[,y]]\n\n'
+      '       visual_test.py short [--debug] [--debug-script {0,1}]\n\n'
+      '       visual_test.py unit [--start START] [--stop STOP] [--axis {x,y}] '
+      '[--figwidth W] [--debug] [--debug-script {0,1}] [--PLOT-KWARGS ...]'
+    ),
+    description=(
+      'Run datetick visual tests.\n\n'
+      'Modes:\n'
+      '  default  Run the full visual test driver.\n'
+      '  short    Run only the short smoke-test path.\n'
+      '  unit     Run a single unit-style plot with explicit start/stop values.'
+    ),
+    formatter_class=argparse.RawTextHelpFormatter,
+    epilog=(
+      'Mode-specific arguments:\n'
+      '  default:\n'
+      '    --idx IDX\n'
+      '    --n-max N\n'
+      '    --debug\n'
+      '    --debug-script {0,1}\n'
+      '    --figwidths W1,W2\n'
+      '    --dirs x[,y]\n\n'
+      '  short:\n'
+      '    --debug\n'
+      '    --debug-script {0,1}\n\n'
+      '  unit:\n'
+      '    --start START\n'
+      '    --stop STOP\n'
+      '    --axis {x,y}\n'
+      '    --figwidth W\n'
+      '    --debug\n'
+      '    --debug-script {0,1}\n'
+      '    extra datetick() kwargs as --name value pairs, for example: --adjust-range False --rule-idx 2'
+    ),
+  )
+  parser.add_argument('command', nargs='?', choices=('short', 'unit'), help='Optional command mode: short or unit.')
+  parser.add_argument('--idx', type=int, help='Run only the test case with the given index (1-based).')
+  parser.add_argument('--n-max', type=int, help='Maximum number of cases to run.')
+  parser.add_argument('--debug', action='store_true', help='Enable datetick debug output.')
+  parser.add_argument('--debug-script', action='store_true', help='Enable or disable script debug output.')
+  parser.add_argument('--figwidths', type=parse_figwidths, help='Comma-separated figure widths in inches.')
+  parser.add_argument('--dirs', type=parse_dirs, help="Comma-separated plot axes, e.g. 'x' or 'x,y'.")
+  parser.add_argument('--start', help='Unit mode start datetime string.')
+  parser.add_argument('--stop', help='Unit mode stop datetime string.')
+  parser.add_argument('--axis', choices=('x', 'y'), help='Unit mode plot axis.')
+  parser.add_argument('--figwidth', type=float, help='Unit mode figure width in inches.')
+
+  args, unknown_args = parser.parse_known_args()
+  legacy_commands = [arg for arg in unknown_args if arg in ('--short', '--unit')]
+  if legacy_commands:
+    parser.error(f"use positional command names instead of flags: {', '.join(legacy_commands)}")
+  plot_kwargs = parse_plot_kwargs(unknown_args)
+
+  if args.n_max is not None:
+    N_MAX = args.n_max
+  if args.debug_script is not None:
+    DEBUG_SCRIPT = bool(args.debug_script)
+  if args.figwidths is not None:
+    FIGWIDTHS = args.figwidths
+  if args.dirs is not None:
+    DIRS = args.dirs
+
+  command = args.command
+
+  if command == 'short':
+    invalid_short_args = []
+    if args.idx is not None:
+      invalid_short_args.append('--idx')
+    if args.n_max is not None:
+      invalid_short_args.append('--n-max')
+    if args.figwidths is not None:
+      invalid_short_args.append('--figwidths')
+    if args.dirs is not None:
+      invalid_short_args.append('--dirs')
+    if args.start is not None:
+      invalid_short_args.append('--start')
+    if args.stop is not None:
+      invalid_short_args.append('--stop')
+    if args.axis is not None:
+      invalid_short_args.append('--axis')
+    if args.figwidth is not None:
+      invalid_short_args.append('--figwidth')
+    if plot_kwargs:
+      invalid_short_args.extend(f'--{key.replace("_", "-")}' for key in sorted(plot_kwargs))
+    if invalid_short_args:
+      parser.error(f"short command only accepts --debug and --debug-script; invalid: {', '.join(invalid_short_args)}")
+    test_one(debug=args.debug)
+  elif command == 'unit':
+    invalid_unit_args = []
+    if args.idx is not None:
+      invalid_unit_args.append('--idx')
+    if args.n_max is not None:
+      invalid_unit_args.append('--n-max')
+    if args.figwidths is not None:
+      invalid_unit_args.append('--figwidths')
+    if args.dirs is not None:
+      invalid_unit_args.append('--dirs')
+    if invalid_unit_args:
+      parser.error(f"unit command only accepts unit-mode options; invalid: {', '.join(invalid_unit_args)}")
+    _unit(
+      start=args.start,
+      stop=args.stop,
+      axis=args.axis,
+      figwidth=args.figwidth,
+      debug=args.debug,
+      **plot_kwargs,
+    )
+  elif args.idx is not None:
+    test_all(debug=args.debug, idx=args.idx)
   else:
-    test_all(debug=False)
+    test_all(debug=args.debug)
+
+def _unit(start=None, stop=None, axis='x', figwidth=22.5, debug=True, **kwargs):
+  ds1 = '2001-01-01T23:59:56.85Z' if start is None else start
+  ds2 = '2001-01-02T00:00:00.35Z' if stop is None else stop
+  axis = 'x' if axis is None else axis
+  figwidth = 22.5 if figwidth is None else figwidth
+  _plot(ds1, ds2, axis=axis, figwidth=figwidth, debug=debug, **kwargs)
+  print("Writing", 'unit.png')
+  matplotlib.pyplot.savefig('unit.png', bbox_inches='tight', dpi=300)
+  matplotlib.pyplot.close()
+
+if __name__ == '__main__':
+  cli()

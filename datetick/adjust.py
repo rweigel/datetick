@@ -133,7 +133,7 @@ def xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, major_fon
         _last = lastlabel_text.replace("\n", "\\n")
         print(f'Adjusting last x-label: "{_last}"')
       adjusted = True
-      # If fmt1 iin last label longer than YYYY-MM, set justification to right.
+      # If fmt1 in last label longer than YYYY-MM, set justification to right.
       xticklabels[-1].set_ha('right')
       # Shift to left by 1/2 width of fmt1 in last label.
       last_fmt1 = lastlabel_text.split('\n')[0]

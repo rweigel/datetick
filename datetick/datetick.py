@@ -177,49 +177,78 @@ def datetick(*args,
       print(f'{axis}labels and ticks after applying major_sub_format:')
       util.print_ticks(axis, axes, ticks, labels)
 
-    args = [axis,
-            axes,
-            labels,
-            adjust_first_xlabel,
-            adjust_last_xlabel,
-            major_font_shrink_factor,
-            major_font_shrink_always
-    ]
-    _apply_major_sub_string(*args, debug=debug)
+    labels = _truncate_millis(labels)
 
+    if debug:
+      print(f'{axis}labels and ticks after applying _truncate_millis:')
+      util.print_ticks(axis, axes, ticks, labels)
+
+    _update_labels(axis, axes, labels)
+    if debug:
+      print(f'{axis}labels and ticks after updating plot:')
+      util.print_ticks(axis, axes, ticks, labels)
+
+    adjust.xlabels(axes,
+      adjust_first_xlabel=adjust_first_xlabel,
+      adjust_last_xlabel=adjust_last_xlabel,
+      major_font_shrink_factor=major_font_shrink_factor,
+      major_font_shrink_always=major_font_shrink_always,
+      debug=debug
+    )
 
   # Adjust font size if overlap in labels.
+  font_size = util.get_font_size(axis, axes)
   min_gap = compute.min_gap(axis, axes, debug=debug)
+  if debug:
+    print(f'Minimum gap between {axis}-tick labels: {min_gap:.1f} px.')
+
   adjust_warning = None
   font_size = util.get_font_size(axis, axes)
   font_size_change = 0
-  if min_gap < min_font_size:
-    adjust_warning = adjust.font_size(axis, axes, min_gap, min_font_size, debug=debug)
-    if adjust_warning is not None and min_gap_warn:
-      util.warn(adjust_warning)
-    font_size_change = util.get_font_size(axis, axes) - font_size
+  if min_gap < font_size and kwargs['rule_idx'] is None:
+    if font_size is not None:
+      adjust_warning = adjust.font_size(axis, axes, min_gap, font_size, debug=debug)
+      if adjust_warning is not None and min_gap_warn:
+        util.warn(adjust_warning)
+      font_size_change = util.get_font_size(axis, axes) - font_size
 
-  if adjust_warning is not None:
-    # Adjust rule if overlap in labels after shrinking font size.
-    # Try to use next rule so fewer labels are used.
-    max_attempts = 3
-    if kwargs['rule_idx'] is None:
-      kwargs['rule_idx'] = 0
+  if False:
+    a = min_gap < font_size
+    b = min_gap > 10*font_size
+    c = adjust_warning is not None
+    d = kwargs['rule_idx'] is None
+    if (a or b or c) and d:
+      # Adjust rule if overlap in labels after shrinking font size.
+      # Try to use next rule so fewer labels are used.
+      max_attempts = 1
+      if kwargs['rule_idx'] is None:
+        kwargs['rule_idx'] = 0
 
-    if debug:
-      msg = '\nAttempting to use datetick with previous rule. '
-      msg += f'Attempt {kwargs["rule_idx"] + 1} of {max_attempts}.\n'
-      print(msg)
+      if True:
+        if a:
+          delta = 1
+        else:
+          delta = -1
 
-    if False:
-      kwargs['rule_idx'] += 1
+        kwargs['rule_idx'] += delta
 
-      if kwargs['rule_idx'] < max_attempts:
-        kwargs['axes'] = axes
-        return datetick(axis, **kwargs)
-      else:
-        adjust_warning += f' Tried to use {max_attempts} rules but minimum gap is '
-        adjust_warning += f'still less than min_font_size = {min_font_size} px.'
+      if debug:
+        msg = f"\nAttempting to use datetick with rule {kwargs['rule_idx']}. "
+        msg += f'Attempt {abs(kwargs["rule_idx"])} of {max_attempts}.\n'
+        print(msg)
+        breakpoint()
+
+        if abs(kwargs['rule_idx']) < max_attempts + 1:
+          kwargs['axes'] = axes
+          return datetick(axis, **kwargs)
+        else:
+          adjust_warning = adjust_warning or ''
+          if a:
+            adjust_warning += f' Tried to use {max_attempts} rules but minimum gap is '
+            adjust_warning += f'still less than font_size = {font_size} px.'
+          else:
+            adjust_warning += f' Tried to use {max_attempts} rules but minimum gap is '
+            adjust_warning += f'still greater than 10*font_size = {10*font_size} px.'
 
 
   # Trigger update of ticks when limits change due to user interaction.
@@ -301,19 +330,31 @@ def _check_bounds(lim_data, lim_axis, ticks, axis, debug=False):
 
 
 def _set_cb(axis, axes, kwargs, debug=False):
+
+  def refresh(axis_name):
+    if axis_name == 'x':
+      axes.xaxis.set_minor_locator(matplotlib.dates.AutoDateLocator())
+      axes.xaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
+    else:
+      axes.yaxis.set_minor_locator(matplotlib.dates.AutoDateLocator())
+      axes.yaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
+    datetick(axis_name, **{**kwargs, 'set_cb': False})
+
+
   def on_xlims_change(ax):
     if debug:
       print('xlims changed. Updating datetick plot.')
-    ax.xaxis.set_minor_locator(matplotlib.dates.AutoDateLocator())
-    ax.xaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
-    datetick('x', **{**kwargs, 'set_cb': False})
+    refresh('x')
 
   def on_ylims_change(ax):
     if debug:
-      print('xlims changed. Updating datetick plot.')
-    ax.yaxis.set_minor_locator(matplotlib.dates.AutoDateLocator())
-    ax.yaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
-    datetick('y', **{**kwargs, 'set_cb': False})
+      print('ylims changed. Updating datetick plot.')
+    refresh('y')
+
+  def on_resize(event):
+    if debug:
+      print('figure size changed. Updating datetick plot.')
+    refresh(axis)
 
   def disconect():
     prev = getattr(axes, f'_datetick_cb_{axis}', None)
@@ -324,6 +365,9 @@ def _set_cb(axis, axes, kwargs, debug=False):
       use_cb=False to disable callback after it has been enabled.
       """
       axes.callbacks.disconnect(prev)
+    prev_resize = getattr(axes, f'_datetick_resize_cb_{axis}', None)
+    if prev_resize is not None:
+      axes.figure.canvas.mpl_disconnect(prev_resize)
 
   if debug:
     n = len(axes.callbacks.callbacks.get(f'{axis}lim_changed', {}))
@@ -337,6 +381,9 @@ def _set_cb(axis, axes, kwargs, debug=False):
   else:
     cid = axes.callbacks.connect('ylim_changed', on_ylims_change)
     axes._datetick_cb_y = cid
+
+  resize_cid = axes.figure.canvas.mpl_connect('resize_event', on_resize)
+  setattr(axes, f'_datetick_resize_cb_{axis}', resize_cid)
 
 
 def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major_sub_transition, debug=False):
@@ -440,8 +487,7 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
   return labels
 
 
-def _apply_major_sub_string(axis, axes, labels, adjust_first_xlabel, adjust_last_xlabel, major_font_shrink_factor, major_font_shrink_always, debug=False):
-  from . import adjust
+def _update_labels(axis, axes, labels):
   if axis == 'x':
     """
       Without the set_xticks(), warning is generated:
@@ -455,17 +501,30 @@ def _apply_major_sub_string(axis, axes, labels, adjust_first_xlabel, adjust_last
     """
     axes.set_xticks(axes.get_xticks())
     axes.set_xticklabels(labels)
-    adjust.xlabels(axes,
-      adjust_first_xlabel=adjust_first_xlabel,
-      adjust_last_xlabel=adjust_last_xlabel,
-      major_font_shrink_factor=major_font_shrink_factor,
-      major_font_shrink_always=major_font_shrink_always,
-      debug=debug
-    )
 
   if axis == 'y':
     axes.set_yticks(axes.get_yticks())
     axes.set_yticklabels(labels)
+
+
+def _truncate_millis(labels):
+  # If all values are fractions, determine if all labels can be represented with
+  # two decimal places. If so, format labels with two decimal places.
+  truncate = True
+  for i in range(0, len(labels)):
+    if "." not in labels[i]:
+      truncate = False
+      break
+    digits = labels[i].split(".")[1]
+    if len(digits) == 3 and digits[2] != "0":
+      truncate = False
+      break
+  if truncate:
+    for i in range(0, len(labels)):
+      labels_split = labels[i].split(".")
+      millis = labels_split[1]
+      labels[i] = f".{millis[0:2]}{millis[3:]}"
+  return labels
 
 
 def _manual_labels(axis, axes):
@@ -512,6 +571,7 @@ def _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=False):
   ticks = util.get_ticks(axis, axes)
 
   labels = util.get_ticklabels(axis, axes)
+
   if debug:
     print(f'{axis}labels and ticks after applying locators and formatters:')
     fig.canvas.draw()
