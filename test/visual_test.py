@@ -24,16 +24,25 @@ DIRS = ['x']
 #FIGWIDTHS = [3.2]
 FIGWIDTHS = [6.4]
 #FIGWIDTHS = [9.6]
+FIGFMT = 'png'
+OPEN_FIG = False
+SHOW_FIG = False
 
 
 try:
   import pytest
 except ImportError:
-  print("pytest is required to run this test. Please install it with 'pip install pytest'")
-  exit()
+  pytest = None
 
 
-@pytest.mark.short
+if pytest is None:
+  def _short_mark(func):
+    return func
+else:
+  _short_mark = pytest.mark.short
+
+
+@_short_mark
 def test_one(debug=False):
   test_all(debug=False, idx=1)
 
@@ -280,17 +289,20 @@ def _readmes(results, debug=False):
     file.writelines("\n" + "\n\n".join(image_lines))
 
 
+def _supported_figfmts():
+  from matplotlib.backend_bases import FigureCanvasBase
+  return tuple(sorted(FigureCanvasBase.get_supported_filetypes().keys()))
+
 def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
-  ext = 'png'
   base = f'{_out_dir(axis)}/{ds1}-{ds2}-{figwidth}in'
-  file = f'{base}_v1.{ext}'
+  file = f'{base}_v1.{FIGFMT}'
   if file in files:
     v = 2
     while file in files:
-      file = f'{base}_v{v}.{ext}'
+      file = f'{base}_v{v}.{FIGFMT}'
       v += 1
 
   if DEBUG_SCRIPT:
@@ -301,20 +313,22 @@ def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
   kwargs = {'bbox_inches': 'tight'}
 
   rc = {}
-  if ext == 'png':
+  if FIGFMT == 'png':
     kwargs['dpi'] = 220
-    matplotlib.pyplot.savefig(file, **kwargs)
-  else:
-    if ext == 'svg':
-      # Don't convert text to paths in SVG to keep it searchable and selectable
-      kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
-      rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
+  elif FIGFMT == 'svg':
+    # Don't convert text to paths in SVG to keep it searchable and selectable
+    kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
+    rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
 
   with matplotlib.pyplot.rc_context(rc):
     matplotlib.pyplot.savefig(file, **kwargs)
 
-  #matplotlib.pyplot.show()
+  if SHOW_FIG:
+    matplotlib.pyplot.show()
   matplotlib.pyplot.close()
+
+  if OPEN_FIG:
+    _open_figure(file)
 
   return file
 
@@ -329,10 +343,40 @@ def _script_dir():
   return os.path.dirname(os.path.realpath(__file__))
 
 
+def _open_figure(path):
+  import subprocess
+  from PIL import Image, UnidentifiedImageError
+
+  try:
+    image = Image.open(path)
+    image.load()
+    image.show()
+    image.close()
+    return
+  except (UnidentifiedImageError, OSError):
+    pass
+
+  if os.sys.platform == 'darwin':
+    command = ['open', path]
+  elif os.name == 'nt':
+    os.startfile(path)
+    return
+  else:
+    command = ['xdg-open', path]
+  subprocess.run(command, check=False)
+
+
+def _use_default_interactive_backend():
+  try:
+    matplotlib.pyplot.switch_backend(matplotlib.rcParamsOrig.get('backend'))
+  except Exception as exc:
+    raise RuntimeError(f"Could not switch to the default interactive backend: {exc}") from exc
+
+
 def cli():
   import ast
   import argparse
-  global DIRS, FIGWIDTHS, DEBUG_SCRIPT, N_MAX
+  global DIRS, FIGWIDTHS, FIGFMT, OPEN_FIG, SHOW_FIG, DEBUG_SCRIPT, N_MAX
 
   def parse_figwidths(value):
     return [float(part) for part in value.split(',') if part]
@@ -342,6 +386,13 @@ def cli():
     if not all(part in ('x', 'y') for part in dirs):
       raise argparse.ArgumentTypeError("dirs must be a comma-separated list containing only 'x' and/or 'y'")
     return dirs
+
+  def parse_figfmt(value):
+    figfmt = value.lower()
+    if figfmt not in _supported_figfmts():
+      supported = ', '.join(_supported_figfmts())
+      raise argparse.ArgumentTypeError(f"unsupported figfmt {value!r}; choose from: {supported}")
+    return figfmt
 
   def parse_plot_kwargs(unknown_args):
     kwargs = {}
@@ -379,10 +430,10 @@ def cli():
   parser = argparse.ArgumentParser(
     usage=(
       'visual_test.py [--idx IDX] [--n-max N] [--debug] [--debug-script {0,1}] '
-      '[--figwidths W1,W2] [--dirs x[,y]]\n\n'
+      '[--figwidths W1,W2] [--dirs x[,y]] [--figfmt FORMAT] [--open] [--show]\n\n'
       '       visual_test.py short [--debug] [--debug-script {0,1}]\n\n'
       '       visual_test.py unit [--start START] [--stop STOP] [--axis {x,y}] '
-      '[--figwidth W] [--debug] [--debug-script {0,1}] [--PLOT-KWARGS ...]'
+      '[--figwidth W] [--figfmt FORMAT] [--open] [--show] [--debug] [--debug-script {0,1}] [--PLOT-KWARGS ...]'
     ),
     description=(
       'Run datetick visual tests.\n\n'
@@ -400,7 +451,9 @@ def cli():
       '    --debug\n'
       '    --debug-script {0,1}\n'
       '    --figwidths W1,W2\n'
-      '    --dirs x[,y]\n\n'
+      '    --dirs x[,y]\n'
+      '    --figfmt FORMAT\n'
+      '    --open\n\n'
       '  short:\n'
       '    --debug\n'
       '    --debug-script {0,1}\n\n'
@@ -409,8 +462,12 @@ def cli():
       '    --stop STOP\n'
       '    --axis {x,y}\n'
       '    --figwidth W\n'
+      '    --figfmt FORMAT\n'
+      '    --open\n'
+      '    --show\n'
       '    --debug\n'
       '    --debug-script {0,1}\n'
+      f'    supported formats: {", ".join(_supported_figfmts())}\n'
       '    extra datetick() kwargs as --name value pairs, for example: --adjust-range False --rule-idx 2'
     ),
   )
@@ -420,6 +477,9 @@ def cli():
   parser.add_argument('--debug', action='store_true', help='Enable datetick debug output.')
   parser.add_argument('--debug-script', action='store_true', help='Enable or disable script debug output.')
   parser.add_argument('--figwidths', type=parse_figwidths, help='Comma-separated figure widths in inches.')
+  parser.add_argument('--figfmt', type=parse_figfmt, help='Image format for saved output.')
+  parser.add_argument('--open', action='store_true', help='Open each saved figure after writing it.')
+  parser.add_argument('--show', action='store_true', help='Use the default interactive backend and show each plot window.')
   parser.add_argument('--dirs', type=parse_dirs, help="Comma-separated plot axes, e.g. 'x' or 'x,y'.")
   parser.add_argument('--start', help='Unit mode start datetime string.')
   parser.add_argument('--stop', help='Unit mode stop datetime string.')
@@ -438,8 +498,17 @@ def cli():
     DEBUG_SCRIPT = bool(args.debug_script)
   if args.figwidths is not None:
     FIGWIDTHS = args.figwidths
+  if args.figfmt is not None:
+    FIGFMT = args.figfmt
+  OPEN_FIG = args.open
+  SHOW_FIG = args.show
   if args.dirs is not None:
     DIRS = args.dirs
+
+  if OPEN_FIG and SHOW_FIG:
+    parser.error("--open and --show cannot be used together")
+  if SHOW_FIG:
+    _use_default_interactive_backend()
 
   command = args.command
 
@@ -453,6 +522,12 @@ def cli():
       invalid_short_args.append('--figwidths')
     if args.dirs is not None:
       invalid_short_args.append('--dirs')
+    if args.figfmt is not None:
+      invalid_short_args.append('--figfmt')
+    if args.open:
+      invalid_short_args.append('--open')
+    if args.show:
+      invalid_short_args.append('--show')
     if args.start is not None:
       invalid_short_args.append('--start')
     if args.stop is not None:
@@ -491,15 +566,27 @@ def cli():
   else:
     test_all(debug=args.debug)
 
+
 def _unit(start=None, stop=None, axis='x', figwidth=22.5, debug=True, **kwargs):
   ds1 = '2001-01-01T23:59:56.85Z' if start is None else start
   ds2 = '2001-01-02T00:00:00.35Z' if stop is None else stop
   axis = 'x' if axis is None else axis
   figwidth = 22.5 if figwidth is None else figwidth
   _plot(ds1, ds2, axis=axis, figwidth=figwidth, debug=debug, **kwargs)
-  print("Writing", 'unit.png')
-  matplotlib.pyplot.savefig('unit.png', bbox_inches='tight', dpi=300)
+  outfile = f'unit.{FIGFMT}'
+  print("Writing", outfile)
+  savefig_kwargs = {'bbox_inches': 'tight'}
+  if FIGFMT == 'png':
+    savefig_kwargs['dpi'] = 300
+  elif FIGFMT == 'svg':
+    savefig_kwargs['metadata'] = {"Date": None}
+  with matplotlib.pyplot.rc_context({'svg.fonttype': 'none', 'svg.hashsalt': '67'} if FIGFMT == 'svg' else {}):
+    matplotlib.pyplot.savefig(outfile, **savefig_kwargs)
+  if SHOW_FIG:
+    matplotlib.pyplot.show()
   matplotlib.pyplot.close()
+  if OPEN_FIG:
+    _open_figure(outfile)
 
 if __name__ == '__main__':
   cli()

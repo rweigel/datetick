@@ -84,10 +84,10 @@ def datetick(*args,
   from .rules import rule as select_rule
 
   axis = 'x' if len(args) == 0 else args[0]
+  if axis not in ['x', 'y']:
+    raise ValueError(f"Invalid axis={axis!r}. Expected 'x' or 'y'.")
 
   axes = _check_axes(kwargs)
-  if axes is None:
-    return None
 
   bbox = axes.dataLim
   if axis == 'x':
@@ -99,7 +99,7 @@ def datetick(*args,
     lim_axis = axes.get_ylim()
     ticks = axes.get_yticks()
 
-  _check_bounds(lim_data, lim_axis, ticks, axis, debug=debug)
+  _check_bounds(lim_data, lim_axis, axis, debug=debug)
 
   if lim_data[0] == lim_data[1]:
     datamin_date = matplotlib.dates.num2date(lim_data[0])
@@ -276,18 +276,19 @@ def _check_axes(kwargs):
 
   if kwargs.get('axes', None) is not None:
     axes = kwargs['axes']
-    if not isinstance(axes, matplotlib.pyplot.Axes):
-      msg = f"Invalid axes argument axes={axes} is not an instance of matplotlib.pyplot.Axes."
+    if not hasattr(axes, 'figure'):
+      msg = f"Invalid axes argument axes={axes} does not have a figure attribute."
       raise ValueError(msg)
     try:
       fig = axes.figure
     except Exception as e:
       msg = f"Invalid axes argument axes={axes} - execution of axes.figure failed: {e}"
       raise ValueError(msg)
+    if fig is None:
+      raise ValueError(f"Invalid axes argument axes={axes} has figure=None.")
   else:
     if matplotlib.pyplot.get_fignums() == []:
-      util.warn("No current figure.")
-      return None
+      raise ValueError("No current figure. Cannot use datetick() without axes.")
     try:
       fig = matplotlib.pyplot.gcf()
     except Exception as e:
@@ -307,32 +308,33 @@ def _check_axes(kwargs):
 
   return axes
 
-def _check_bounds(lim_data, lim_axis, ticks, axis, debug=False):
+
+def _check_bounds(lim_data, lim_axis, axis, debug=False):
 
   # If all values are NaN, datamin = np.inf and datamax = -np.inf.
   try:
     matplotlib.dates.num2date(lim_data[0])
-  except:
-    msg = f"matplotlib.dates.num2date(axes.dataLim.{axis}x0) failed. Cannot use datetick()."
-    #_warn(msg)
-    return
+  except Exception as exc:
+    dim = 'x0' if axis == 'x' else 'y0'
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {exc}"
+    raise ValueError(msg) from exc
   try:
     matplotlib.dates.num2date(lim_data[1])
-  except:
-    msg = f"matplotlib.dates.num2date(axes.dataLim.{axis}x1) failed. Cannot use datetick()."
-    #_warn(msg)
-    return
+  except Exception as exc:
+    dim = 'x1' if axis == 'x' else 'y1'
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {exc}"
+    raise ValueError(msg) from exc
 
   try:
     matplotlib.dates.num2date(lim_axis[0])
-  except:
+  except Exception as exc:
     msg = f"axes.get_{axis}lim()[0] = {lim_axis[0]} is not a valid Matplotlib datenum."
-    raise ValueError(msg)
+    raise ValueError(msg) from exc
   try:
     matplotlib.dates.num2date(lim_axis[1])
-  except:
-    msg = f"axes.get_{axis}lim()[0] = {lim_axis[1]} is not a valid Matplotlib datenum."
-    raise ValueError(msg)
+  except Exception as exc:
+    msg = f"axes.get_{axis}lim()[1] = {lim_axis[1]} is not a valid Matplotlib datenum."
+    raise ValueError(msg) from exc
 
 
 def _set_cb(axis, axes, kwargs, debug=False):
@@ -476,10 +478,20 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
       labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
 
 
-  # Look for labels with two newlines. If third row has been seen before, remove.
+  # If a trailing row repeats on later labels, drop the repeated trailing row.
+  second_row = None
   third_row = None
   for idx, label in enumerate(labels):
     parts = label.split('\n')
+    if len(parts) == 2:
+      if second_row is None:
+        second_row = parts[1]
+        continue
+      if parts[1] == second_row:
+        labels[idx] = parts[0]
+      else:
+        second_row = parts[1]
+      continue
     if len(parts) != 3:
       continue
     if third_row is None:
@@ -537,20 +549,22 @@ def _manual_labels(axis, axes):
 
   from . import util
 
-  ticks = util.get_ticks(axis, axes, strings=False)
+  ticks = util.get_ticks(axis, axes)
   labels = util.get_ticklabels(axis, axes)
   # Make all labels have the same number of decimal places as one
   # with the most decimal places.
   n_places = 0
   for i in range(0, len(labels)):
     # Remove trailing zeros.
-    n_places = max(n_places, len(labels[i].rstrip("0").split(".")[-1]))
+    if "." in labels[i]:
+      n_places = max(n_places, len(labels[i].rstrip("0").split(".")[-1]))
   for i in range(0, len(labels)):
     parts = labels[i].split(".")
     labels[i] = parts[0]
+    fractional = ''
     if len(parts) > 1:
       fractional = parts[1][0:n_places]
-    if n_places > 0:
+    if n_places > 0 and len(parts) > 1:
       labels[i] += "." + fractional
 
   return ticks, labels
