@@ -112,25 +112,21 @@ def datetick(*args,
       axes.set_yticklabels([ticklabel])
     return
 
-  # Need to document why np.{min,max} was used originally. If kept, it creates
-  # problems if labels extend beyond the axis limits.
-  #tmin = np.min((lim[0], datamin))
-  #tmax = np.max((lim[1], datamax))
-  #tmin = lim[0]
-  #tmax = lim[1]
-  tmin = lim_data[0]
-  tmax = lim_data[1]
+  data_tspan = matplotlib.dates.num2date((lim_data[0], lim_data[1]))
+  axis_tspan = matplotlib.dates.num2date((lim_axis[0], lim_axis[1]))
 
-  tspan = matplotlib.dates.num2date((tmin, tmax))
-
-  delta_t = tspan[-1] - tspan[0]
+  delta_t_data = data_tspan[-1] - data_tspan[0]
+  delta_t_axis = axis_tspan[-1] - axis_tspan[0]
+  delta_t = max(delta_t_data, delta_t_axis)
   if debug:
-    print("Total seconds: %s" % delta_t.total_seconds())
+    print("Data total seconds: %s" % delta_t_data.total_seconds())
+    print("Axis total seconds: %s" % delta_t_axis.total_seconds())
+    print("Rule total seconds: %s" % delta_t.total_seconds())
     print(f'{axis} data min:         {matplotlib.dates.num2date(lim_data[0])}')
-    print(f'Default {axis}lim[0]:    {matplotlib.dates.num2date(lim_data[0])}')
+    print(f'Default {axis}lim[0]:    {matplotlib.dates.num2date(lim_axis[0])}')
     print(f'Default {axis}ticks[0]:  {matplotlib.dates.num2date(ticks[0])}')
     print(f'{axis} data max:         {matplotlib.dates.num2date(lim_data[-1])}')
-    print(f'Default {axis}lim[-1]:   {matplotlib.dates.num2date(lim_data[-1])}')
+    print(f'Default {axis}lim[-1]:   {matplotlib.dates.num2date(lim_axis[-1])}')
     print(f'Default {axis}ticks[-1]: {matplotlib.dates.num2date(ticks[-1])}')
     print(f'Default {axis}labels and ticks:')
     labels = util.get_ticklabels(axis, axes)
@@ -201,21 +197,24 @@ def datetick(*args,
       debug=debug
     )
 
-  # Adjust font size if overlap in labels.
-  font_size = util.get_font_size(axis, axes)
-  min_gap = compute.min_gap(axis, axes, debug=debug)
-  if debug:
-    print(f'Minimum gap between {axis}-tick labels: {min_gap:.1f} px.')
-
-  adjust_warning = None
-  font_size = util.get_font_size(axis, axes)
   font_size_change = 0
-  if min_gap < font_size and kwargs['rule_idx'] is None:
-    if font_size is not None:
-      adjust_warning = adjust.font_size(axis, axes, min_gap, font_size, debug=debug)
-      if adjust_warning is not None and min_gap_warn:
-        util.warn(adjust_warning)
-      font_size_change = util.get_font_size(axis, axes) - font_size
+  adjust_warning = None
+  # Adjust font size if overlap in labels.
+  if False:
+    font_size = util.get_font_size(axis, axes)
+    min_gap = compute.min_gap(axis, axes, debug=debug)
+    if debug:
+      print(f'Minimum gap between {axis}-tick labels: {min_gap:.1f} px.')
+
+    adjust_warning = None
+    font_size = util.get_font_size(axis, axes)
+    font_size_change = 0
+    if min_gap < font_size and kwargs['rule_idx'] is None:
+      if font_size is not None:
+        adjust_warning = adjust.font_size(axis, axes, min_gap, font_size, debug=debug)
+        if adjust_warning is not None and min_gap_warn:
+          util.warn(adjust_warning)
+        font_size_change = util.get_font_size(axis, axes) - font_size
 
   if False:
     a = min_gap < font_size
