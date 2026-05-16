@@ -631,7 +631,7 @@
         "byminute_arange": [
           0,
           60,
-          5
+          15
         ]
       }
     }
@@ -648,7 +648,11 @@
     "major": {
       "locator": {
         "class": "HourLocator",
-        "byhour": 1
+        "byhour_arange": [
+          0,
+          24,
+          1
+         ]
       },
       "formatter": {
         "class": "DateFormatter",
@@ -663,7 +667,7 @@
         "byminute_arange": [
           0,
           60,
-          10
+          15
         ]
       }
     }

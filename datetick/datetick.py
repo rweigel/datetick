@@ -99,7 +99,9 @@ def datetick(*args,
     lim_axis = axes.get_ylim()
     ticks = axes.get_yticks()
 
-  _check_bounds(lim_data, lim_axis, axis, debug=debug)
+  ok = _check_bounds(lim_data, lim_axis, axis, debug=debug)
+  if not ok:
+    return None
 
   if lim_data[0] == lim_data[1]:
     datamin_date = matplotlib.dates.num2date(lim_data[0])
@@ -113,11 +115,11 @@ def datetick(*args,
     return
 
   data_tspan = matplotlib.dates.num2date((lim_data[0], lim_data[1]))
-  axis_tspan = matplotlib.dates.num2date((lim_axis[0], lim_axis[1]))
-
   delta_t_data = data_tspan[-1] - data_tspan[0]
+
+  axis_tspan = matplotlib.dates.num2date((lim_axis[0], lim_axis[1]))
   delta_t_axis = axis_tspan[-1] - axis_tspan[0]
-  delta_t = max(delta_t_data, delta_t_axis)
+  delta_t = delta_t_axis # max(delta_t_data, delta_t_axis)
   if debug:
     print("Data total seconds: %s" % delta_t_data.total_seconds())
     print("Axis total seconds: %s" % delta_t_axis.total_seconds())
@@ -156,6 +158,7 @@ def datetick(*args,
     ticks, labels = _manual_labels(axis, axes)
   else:
     ticks, labels = _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=debug)
+
 
   if len(labels) == 0:
     if debug:
@@ -271,7 +274,6 @@ def datetick(*args,
 
 
 def _check_axes(kwargs):
-  from . import util
 
   if kwargs.get('axes', None) is not None:
     axes = kwargs['axes']
@@ -309,31 +311,43 @@ def _check_axes(kwargs):
 
 
 def _check_bounds(lim_data, lim_axis, axis, debug=False):
+  import math
+  from . import util
 
   # If all values are NaN, datamin = np.inf and datamax = -np.inf.
+  if math.isinf(lim_data[0]) or math.isinf(lim_data[1]):
+    util.warn("At least of one the data limits is NaN or +/-infinity. Cannot use datetick().")
+    return None
+
   try:
     matplotlib.dates.num2date(lim_data[0])
-  except Exception as exc:
+  except Exception as e:
     dim = 'x0' if axis == 'x' else 'y0'
-    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {exc}"
-    raise ValueError(msg) from exc
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
   try:
     matplotlib.dates.num2date(lim_data[1])
-  except Exception as exc:
+  except Exception as e:
     dim = 'x1' if axis == 'x' else 'y1'
-    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {exc}"
-    raise ValueError(msg) from exc
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
 
   try:
     matplotlib.dates.num2date(lim_axis[0])
-  except Exception as exc:
-    msg = f"axes.get_{axis}lim()[0] = {lim_axis[0]} is not a valid Matplotlib datenum."
-    raise ValueError(msg) from exc
+  except Exception as e:
+    msg = f"axes.get_{axis}lim()[0] = {lim_axis[0]} is not a valid Matplotlib datenum. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
   try:
     matplotlib.dates.num2date(lim_axis[1])
-  except Exception as exc:
-    msg = f"axes.get_{axis}lim()[1] = {lim_axis[1]} is not a valid Matplotlib datenum."
-    raise ValueError(msg) from exc
+  except Exception as e:
+    msg = f"axes.get_{axis}lim()[1] = {lim_axis[1]} is not a valid Matplotlib datenum. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
+
+  return True
 
 
 def _set_cb(axis, axes, kwargs, debug=False):
@@ -576,13 +590,24 @@ def _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=False):
   else:
     axis_obj = axes.yaxis
 
-  axis_obj.set_major_locator(util.make_locator(rule['major']['locator']))
+
+  if rule['major']['locator'] is not None:
+    #axis_obj.set_major_locator(util.make_locator(rule['major']['locator']))
+    if True:
+      import matplotlib.dates as mdates
+      locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+      axis_obj.set_major_locator(locator)
+
   if rule['major']['formatter'] is not None:
     axis_obj.set_major_formatter(util.make_formatter(rule['major']['formatter']))
+  else:
+    axis_obj.set_major_formatter(matplotlib.ticker.NullFormatter())
   if rule['minor']['locator'] is not None:
     axis_obj.set_minor_locator(util.make_locator(rule['minor']['locator']))
   if rule['minor']['formatter'] is not None:
     axis_obj.set_minor_formatter(util.make_formatter(rule['minor']['formatter']))
+  else:
+    axis_obj.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
   fig = axes.figure
 

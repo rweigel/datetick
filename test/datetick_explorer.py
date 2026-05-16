@@ -1,81 +1,43 @@
-# -*- coding: utf-8 -*-
 import datetime
+from dataclasses import dataclass, field
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.offsetbox import AnchoredText
 from matplotlib.widgets import Button, Slider
 from datetick import datetick
 
 
-def get_datetime(sliders):
-    return datetime.datetime(*[int(s.val) for s in sliders])
+INITIAL_START = '1999-01-01T00:00:00'
+INITIAL_END = '1999-01-01T05:00:00'
+FIGURE_SIZE = (16, 9)
+PLOT_HSPACE = 0.35
+PLOT_TITLE_Y = 1
+PLOT_TITLE_PAD = -14
+PLOT_LABEL_PAD = 0.25
+PLOT_LABEL_BORDER_PAD = 0.6
+PLOT_LABEL_BOX_STYLE = 'round,pad=0.25'
+PLOT_LABEL_FACE_COLOR = 'white'
+PLOT_LABEL_EDGE_COLOR = '0.5'
 
-def update(val):
-    xlow  = get_datetime(sliders_i)
-    xhigh = get_datetime(sliders_f)
-    print(f"---Update to {xlow.isoformat()} to {xhigh.isoformat()}---")
-    plotit(xlow, xhigh)
+SLIDER_LEFT = 0.15
+SLIDER_GAP = 0.4
+SLIDER_WIDTH = 0.3
+SLIDER_HEIGHT = 0.02
+SLIDER_ROW_COUNT = 6
+SLIDER_ROW_FILL = 0.85
+SLIDER_BOTTOM = 0.1
+SLIDER_EDGE_PAD = 0.5
+SLIDER_HANDLE_SIZE = 14
 
-def reset(event):
-    for s in sliders_i + sliders_f:
-        s.reset()
-    update(None)
+RESET_LEFT = 0.47
+RESET_WIDTH = 0.05
+RESET_HEIGHT = 0.02
+RESET_GAP_ABOVE_SLIDERS = 0.03
 
-def plotit(xlow, xhigh):
-    if xlow >= xhigh:
-        return
-    x = np.array([xlow, xhigh], dtype=object)
-    title = xlow.isoformat() + ' to ' + xhigh.isoformat()
+SUBPLOTS_BOTTOM = 0.25
 
-    print("---Updating matplotlib plot")
-    plt1.set_xdata(x)
-    ax1.set_xlim(xlow, xhigh)
-    ax1.set_title(title, loc='center', y=1, pad=-14)
-
-    print("---Updating datetick plot")
-    plt2.set_xdata(x)
-    ax2.set_xlim(xlow, xhigh)
-
-
-subplots_bottom = 0.25   # fraction of figure height reserved for sliders
-slider_left    = 0.15                        # left edge of first slider column
-slider_gap     = 0.4                         # horizontal gap between start and end columns
-slider_width   = 0.3                         # width of each slider
-slider_height  = 0.02                        # height of each slider
-n_slider_rows  = 6
-slider_row_gap = (subplots_bottom * 0.85) / n_slider_rows   # row spacing fits rows in reserved area
-slider_bottom  = 0.1          # bottom margin ≈ half a row gap
-
-reset_left   = 0.47
-reset_width  = 0.05
-reset_height = 0.02
-slider_top   = slider_bottom + (n_slider_rows - 1) * slider_row_gap + slider_height
-reset_bottom = slider_top + 0.03   # just above top slider row
-
-
-ds1 = '1999-01-01T00:00:00'
-ds2 = '1999-01-01T02:00:00'
-dt1 = datetime.datetime.fromisoformat(ds1)
-dt2 = datetime.datetime.fromisoformat(ds2)
-x = np.array([dt1, dt2], dtype=object)
-y = [0.0, 0.0]
-
-fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(16, 9))
-plt.subplots_adjust(bottom=subplots_bottom)
-
-plt1, = ax1.plot(x, y, '*')
-ax1.set_title('matplotlib', loc='left', y=1, pad=-14)
-ax1.set_title(ds1 + ' - ' + ds2, loc='center', y=1, pad=-14)
-ax1.grid()
-
-plt2, = ax2.plot(x, y, '*')
-ax2.set_title('datetick', loc='left', y=1, pad=-14)
-datetick('x', axes=ax2, debug=True)
-ax2.grid()
-
-ax3.axis('off')
-
-# Slider definitions: (label, min, max, valinit)
-slider_defs_i = [
+SLIDER_DEFS_I = [
     ('Year',   1900, 2100, 1999),
     ('Month',  1,    12,   1),
     ('Day',    1,    31,   1),
@@ -83,7 +45,7 @@ slider_defs_i = [
     ('Minute', 0,    59,   0),
     ('Second', 0,    59,   0),
 ]
-slider_defs_f = [
+SLIDER_DEFS_F = [
     ('Year',   1900, 2100, 1999),
     ('Month',  1,    12,   1),
     ('Day',    1,    31,   1),
@@ -92,21 +54,190 @@ slider_defs_f = [
     ('Second', 0,    59,   0),
 ]
 
-slider_list = [(slider_defs_i, []), (slider_defs_f, [])]
+
+@dataclass
+class ExplorerState:
+    fig: object
+    ax1: object
+    ax2: object
+    plt1: object
+    plt2: object
+    label1: object
+    label2: object
+    sliders_i: list = field(default_factory=list)
+    sliders_f: list = field(default_factory=list)
+    last_valid_i: list = field(default_factory=list)
+    last_valid_f: list = field(default_factory=list)
+    suppress_update: bool = False
 
 
-for col, (defs, sliders) in enumerate(slider_list):
-  x0 = slider_left + col * slider_gap
-  for row, (label, vmin, vmax, vinit) in enumerate(reversed(defs)):
-    ax_s = plt.axes([x0, slider_bottom + row * slider_row_gap, slider_width, slider_height])
-    s = Slider(ax_s, label, vmin, vmax, valinit=vinit, valfmt='%0.0f')
-    s.on_changed(update)
-    sliders.insert(0, s)
+def get_datetime(sliders):
+    return datetime.datetime(*[int(s.val) for s in sliders])
 
-sliders_i, sliders_f = slider_list[0][1], slider_list[1][1]
 
-axreset = plt.axes([reset_left, reset_bottom, reset_width, reset_height])
-breset = Button(axreset, 'Reset')
-breset.on_clicked(reset)
+def slider_values(sliders):
+    return [int(s.val) for s in sliders]
 
-plt.show()
+
+def create_plot(subplots_bottom):
+    ds1 = INITIAL_START
+    ds2 = INITIAL_END
+    dt1 = datetime.datetime.fromisoformat(ds1)
+    dt2 = datetime.datetime.fromisoformat(ds2)
+    x = np.array([dt1, dt2], dtype=object)
+    y = [0.0, 0.0]
+
+    fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=FIGURE_SIZE)
+    plt.subplots_adjust(bottom=subplots_bottom, hspace=PLOT_HSPACE)
+
+    plt1, = ax1.plot(x, y, '*')
+    locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax1.xaxis.set_major_locator(locator)
+    ax1.xaxis.set_major_formatter(formatter)
+    label1 = AnchoredText(
+        'matplotlib+AutoDateLocator/ConciseDateFormatter',
+        loc='upper left',
+        pad=PLOT_LABEL_PAD,
+        borderpad=PLOT_LABEL_BORDER_PAD,
+        frameon=True,
+    )
+    label1.patch.set_boxstyle(PLOT_LABEL_BOX_STYLE)
+    label1.patch.set_facecolor(PLOT_LABEL_FACE_COLOR)
+    label1.patch.set_edgecolor(PLOT_LABEL_EDGE_COLOR)
+    ax1.add_artist(label1)
+
+    ax1.set_title(ds1 + ' - ' + ds2, loc='center')#, y=1, pad=-14)
+    ax1.grid()
+
+    plt2, = ax2.plot(x, y, '*')
+    label2 = AnchoredText(
+        'datetick',
+        loc='upper left',
+        pad=PLOT_LABEL_PAD,
+        borderpad=PLOT_LABEL_BORDER_PAD,
+        frameon=True,
+    )
+    label2.patch.set_boxstyle(PLOT_LABEL_BOX_STYLE)
+    label2.patch.set_facecolor(PLOT_LABEL_FACE_COLOR)
+    label2.patch.set_edgecolor(PLOT_LABEL_EDGE_COLOR)
+    ax2.add_artist(label2)
+    datetick('x', axes=ax2, debug=True)
+    ax2.grid()
+
+    ax3.axis('off')
+    return ExplorerState(
+        fig=fig,
+        ax1=ax1,
+        ax2=ax2,
+        plt1=plt1,
+        plt2=plt2,
+        label1=label1,
+        label2=label2,
+    )
+
+
+def set_controls(subplots_bottom, update_callback, reset_callback):
+    slider_row_gap = (subplots_bottom * SLIDER_ROW_FILL) / SLIDER_ROW_COUNT
+    slider_top = SLIDER_BOTTOM + (SLIDER_ROW_COUNT - 1) * slider_row_gap + SLIDER_HEIGHT
+    reset_bottom = slider_top + RESET_GAP_ABOVE_SLIDERS
+
+    slider_list = [(SLIDER_DEFS_I, []), (SLIDER_DEFS_F, [])]
+
+
+    for col, (defs, sliders) in enumerate(slider_list):
+        x0 = SLIDER_LEFT + col * SLIDER_GAP
+        for row, (label, vmin, vmax, vinit) in enumerate(reversed(defs)):
+            ax_s = plt.axes([x0, SLIDER_BOTTOM + row * slider_row_gap, SLIDER_WIDTH, SLIDER_HEIGHT])
+            allowed_values = np.arange(vmin, vmax + 1)
+            s = Slider(
+                ax_s,
+                label,
+                vmin - SLIDER_EDGE_PAD,
+                vmax + SLIDER_EDGE_PAD,
+                valinit=vinit,
+                valfmt='%0.0f',
+                valstep=allowed_values,
+                handle_style={'size': SLIDER_HANDLE_SIZE},
+            )
+            s.on_changed(lambda val, slider=s: update_callback(val, slider))
+            sliders.insert(0, s)
+
+    sliders_i, sliders_f = slider_list[0][1], slider_list[1][1]
+
+    axreset = plt.axes([RESET_LEFT, reset_bottom, RESET_WIDTH, RESET_HEIGHT])
+    breset = Button(axreset, 'Reset')
+    breset.on_clicked(reset_callback)
+
+    return sliders_i, sliders_f
+
+
+def main():
+    subplots_bottom = SUBPLOTS_BOTTOM
+    state = create_plot(subplots_bottom)
+
+    def update_plot(xlow, xhigh):
+        if xlow >= xhigh:
+            return
+
+        x = np.array([xlow, xhigh], dtype=object)
+        title = xlow.isoformat() + ' to ' + xhigh.isoformat()
+
+        print("---Updating matplotlib plot")
+        state.plt1.set_xdata(x)
+        state.ax1.set_xlim(xlow, xhigh)
+        state.ax1.set_title(title, loc='center', y=PLOT_TITLE_Y, pad=PLOT_TITLE_PAD)
+
+        print("---Updating datetick plot")
+        state.plt2.set_xdata(x)
+        state.ax2.set_xlim(xlow, xhigh)
+
+    def restore_slider(slider):
+        state.suppress_update = True
+        try:
+            if slider in state.sliders_i:
+                idx = state.sliders_i.index(slider)
+                slider.set_val(state.last_valid_i[idx])
+            elif slider in state.sliders_f:
+                idx = state.sliders_f.index(slider)
+                slider.set_val(state.last_valid_f[idx])
+        finally:
+            state.suppress_update = False
+
+    def update(val, changed_slider=None):
+        if state.suppress_update:
+            return
+
+        try:
+            xlow = get_datetime(state.sliders_i)
+            xhigh = get_datetime(state.sliders_f)
+        except ValueError:
+            if changed_slider is not None:
+                restore_slider(changed_slider)
+            return
+
+        if xlow >= xhigh:
+            if changed_slider is not None:
+                restore_slider(changed_slider)
+            return
+
+        state.last_valid_i = slider_values(state.sliders_i)
+        state.last_valid_f = slider_values(state.sliders_f)
+        print(f"---Update to {xlow.isoformat()} to {xhigh.isoformat()}---")
+        update_plot(xlow, xhigh)
+
+    def reset(event):
+        for slider in state.sliders_i + state.sliders_f:
+            slider.reset()
+        update(None)
+
+    sliders_i, sliders_f = set_controls(subplots_bottom, update, reset)
+    state.sliders_i = sliders_i
+    state.sliders_f = sliders_f
+    state.last_valid_i = slider_values(sliders_i)
+    state.last_valid_f = slider_values(sliders_f)
+    plt.show()
+
+
+if __name__ == '__main__':
+    main()
