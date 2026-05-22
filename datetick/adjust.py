@@ -3,7 +3,69 @@ import matplotlib
 from . import util
 from . import compute
 
-def font_size(axis, axes, min_gap, font_size_min, debug=False):
+def rule(axis, axes, rule_idx_change, debug=False):
+  """
+  Adjust rule if overlap in labels after shrinking font size.
+  Try to use next rule so fewer labels are used.
+  """
+  font_size = util.get_font_size(axis, axes)
+  min_gap = compute.min_gap(axis, axes, debug=debug)
+
+  max_attempts = 1
+  a = min_gap < font_size
+  b = min_gap > 10*font_size
+  if a or b:
+    # Adjust rule if overlap in labels after shrinking font size.
+    # Try to use next rule so fewer labels are used.
+    if rule_idx_change is None:
+      rule_idx_change = 0
+
+    if a:
+      rule_idx_change += 1
+    else:
+      rule_idx_change -= 1
+
+    if abs(rule_idx_change) < max_attempts + 1:
+      if debug:
+        msg = f"\nAttempting to use datetick with rule change {rule_idx_change}. "
+        msg += f'Attempt {abs(rule_idx_change)} of {max_attempts}.\n'
+      return rule_idx_change, None
+    else:
+      if a:
+        adjust_warning = f' Tried to use {max_attempts} rules but minimum gap is '
+        adjust_warning += f'still less than font_size = {font_size} px.'
+      else:
+        adjust_warning = f' Tried to use {max_attempts} rules but minimum gap is '
+        adjust_warning += f'still greater than 10*font_size = {10*font_size} px.'
+      return 0, adjust_warning
+
+  return 0, None
+
+
+def font_size_for_overlap(axis, axes, min_gap_warn, debug=False):
+  adjust_warning = None
+  # Adjust font size if overlap in labels.
+
+  font_size = util.get_font_size(axis, axes)
+  min_gap = compute.min_gap(axis, axes, debug=debug)
+
+  if debug:
+    print(f'Minimum gap between {axis}-tick labels: {min_gap:.1f} px.')
+
+  adjust_warning = None
+  font_size = util.get_font_size(axis, axes)
+  font_size_change = 0
+  if min_gap < font_size:
+    if font_size is not None:
+      adjust_warning = _font_size(axis, axes, min_gap, font_size, debug=debug)
+      if adjust_warning is not None and min_gap_warn:
+        util.warn(adjust_warning)
+      font_size_change = util.get_font_size(axis, axes) - font_size
+
+  return font_size_change, adjust_warning
+
+
+def _font_size(axis, axes, min_gap, font_size_min, debug=False):
 
   ticklabels = util.get_ticklabels(axis, axes, strings=False)
 
@@ -84,7 +146,43 @@ def _fit_font_size(axis, axes, target_gap, font_size_min, font_size, debug=False
   return best
 
 
-def time_range(axis, axes, data_lim, debug=False):
+def millis(labels, min_digits=2):
+  """
+  Remove redundant trailing zeros in fractional part of milliseconds in labels.
+
+  Example:
+    1.100000, 1.200000
+  becomes, if min_digits = 1,
+    1.1, 1.2
+  If min_digits = 2
+    1.10, 1.20
+
+  Example:
+    1.150000, 1.200000
+  becomes, if min_digits = 1,
+    1.15, 1.20
+  If min_digits = 3
+    1.150, 1.200
+  """
+
+  # Find max significant (non-trailing-zero) decimal places across all labels.
+  n_sig = 0
+  for label in labels:
+    if "." in label:
+      n_sig = max(n_sig, len(label.rstrip("0").split(".")[-1]))
+
+  n_places = max(min_digits, n_sig) if min_digits is not None else n_sig
+
+  for i in range(len(labels)):
+    if "." in labels[i]:
+      parts = labels[i].split(".")
+      frac = parts[1].ljust(n_places, "0")[0:n_places]
+      labels[i] = parts[0] + ("." + frac if n_places > 0 else "")
+
+  return labels
+
+
+def time_range(axis, axes, lim_data, debug=False):
 
   ticks = util.get_ticks(axis, axes)
 
@@ -93,58 +191,74 @@ def time_range(axis, axes, data_lim, debug=False):
     fig.canvas.draw()
     dt = ticks[1] - ticks[0]
     pad = 0.05 * dt
-    first_candidates = ticks[ticks <= data_lim[0]]
-    last_candidates = ticks[ticks >= data_lim[1]]
+    first_candidates = ticks[ticks <= lim_data[0]]
+    last_candidates = ticks[ticks >= lim_data[1]]
     first  = first_candidates[-1]  if len(first_candidates) > 0 else ticks[0] - dt
     last = last_candidates[0]  if len(last_candidates) > 0 else ticks[-1] + dt
     if debug:
       lower = matplotlib.dates.num2date(first-pad)
       upper = matplotlib.dates.num2date(last+pad)
-      print(f'_adjust_range(): Setting lower limit to {lower} and upper limit to {upper}')
+      print(f'adjust.time_range(): Setting lower limit to {lower} and upper limit to {upper}')
     if axis == 'x':
       axes.set_xlim(first - pad, last + pad)
     else:
       axes.set_ylim(first - pad, last + pad)
 
 
-def xlabels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, major_font_shrink_factor=0.9, major_font_shrink_always=False, debug=False):
+def first_last_labels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, debug=False):
 
   xticklabels = axes.get_xticklabels()
   lastlabel_text = xticklabels[-1].get_text()
   firstlabel_text = xticklabels[0].get_text()
   adjusted = False
 
-  if adjust_first_xlabel and '\n' in firstlabel_text:
-    if len(firstlabel_text.split('\n')[-1]) > 7:
-      if debug:
-        _first = firstlabel_text.replace("\n", "\\n")
-        print(f'Adjusting first x-label: "{_first}"')
-      adjusted = True
-      # If fmt1 in first label longer than YYYY-MM, set justification to left.
-      xticklabels[0].set_ha('left')
-      # Shift to right by 1/2 width of fmt1 in first label.
-      first_fmt1 = firstlabel_text.split('\n')[0]
-      offset = compute.numsize(axes, first_fmt1, +1, debug=debug)
-      xticklabels[0].set_transform(xticklabels[0].get_transform() - offset)
+  if adjust_first_xlabel:
+    if '\n' in firstlabel_text:
+      if len(firstlabel_text.split('\n')[-1]) > 7:
+        if debug:
+          _first = firstlabel_text.replace("\n", "\\n")
+          print(f'Adjusting first x-label: "{_first}"')
+        adjusted = True
+        # If fmt1 in first label longer than YYYY-MM, set justification to left.
+        xticklabels[0].set_ha('left')
+        # Shift to right by 1/2 width of fmt1 in first label.
+        first_fmt1 = firstlabel_text.split('\n')[0]
+        if debug:
+          print(f'Computing first x-label shift based on size of first_fmt1 = "{first_fmt1}"')
+        offset = compute.numsize(axes, first_fmt1, +1, debug=debug)
+        xticklabels[0].set_transform(xticklabels[0].get_transform() - offset)
+      else:
+        if debug:
+          print('First x-label does not have newline; no adjustment needed.')
 
-  if adjust_last_xlabel and '\n' in lastlabel_text:
-    if len(lastlabel_text.split('\n')[-1]) > 7:
-      if debug:
-        _last = lastlabel_text.replace("\n", "\\n")
-        print(f'Adjusting last x-label: "{_last}"')
-      adjusted = True
-      # If fmt1 in last label longer than YYYY-MM, set justification to right.
-      xticklabels[-1].set_ha('right')
-      # Shift to left by 1/2 width of fmt1 in last label.
-      last_fmt1 = lastlabel_text.split('\n')[0]
-      offset = compute.numsize(axes, last_fmt1, -1, debug=debug)
-      xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
+  if adjust_last_xlabel:
+    if '\n' in lastlabel_text:
+      if len(lastlabel_text.split('\n')[-1]) > 7:
+        if debug:
+          _last = lastlabel_text.replace("\n", "\\n")
+          print(f'Adjusting last x-label: "{_last}"')
+        adjusted = True
+        # If fmt1 in last label longer than YYYY-MM, set justification to right.
+        xticklabels[-1].set_ha('right')
+        # Shift to left by 1/2 width of fmt1 in last label.
+        last_fmt1 = lastlabel_text.split('\n')[0]
+        offset = compute.numsize(axes, last_fmt1, -1, debug=debug)
+        xticklabels[-1].set_transform(xticklabels[-1].get_transform() - offset)
+      else:
+        if debug:
+          print('Last x-label does not have newline; no adjustment needed.')
 
-  if adjusted or major_font_shrink_always:
-    # Make all labels without newline slightly smaller than default fontsize 
-    # so it is clearer that major_sub_format applies to larger number.
-    if debug:
-      print('Adjusting font size of x-labels without newline')
-    for label in xticklabels:
-      if '\n' not in label.get_text():
-        label.set_fontsize(label.get_fontsize()*major_font_shrink_factor)
+  return adjusted
+
+
+def non_sub_label_font_size(axes, major_font_shrink_factor=0.9, debug=False):
+  xticklabels = axes.get_xticklabels()
+
+  # Make all labels without newline slightly smaller than default fontsize 
+  # so it is clearer that major_sub_format applies to larger number.
+  if debug:
+    print('Adjusting font size of x-labels without newline')
+  for label in xticklabels:
+    if '\n' not in label.get_text():
+      label.set_fontsize(label.get_fontsize()*major_font_shrink_factor)
+

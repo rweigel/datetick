@@ -17,6 +17,7 @@ def datetick(*args,
              min_font_size=6,
              min_gap_warn=False,
              rule_idx=None,
+             rule_idx_change=None,
              set_cb=True,
              debug=False):
   """
@@ -80,7 +81,7 @@ def datetick(*args,
   # Get all kwargs passed using locals
   kwargs = {k: v for k, v in locals().items() if k != 'args'}
 
-  from . import adjust, compute, util
+  from . import adjust, util
   from .rules import rule as select_rule
 
   axis = 'x' if len(args) == 0 else args[0]
@@ -141,7 +142,6 @@ def datetick(*args,
     msg = f'No config rule matched delta_t={delta_t_str}. '
     msg += 'Using default Matplotlib locator and formatter.'
     util.warn(msg)
-    ticks, labels = _manual_labels(axis, axes)
     return {
       'delta_t': delta_t,
       'ticks': ticks,
@@ -152,12 +152,22 @@ def datetick(*args,
 
   if rule['major']['locator'] is None:
     if debug:
-      msg = 'No major locator found for this time span. '
+      msg = 'No major locator rule for this time span. '
       msg += 'Using default Matplotlib locator and formatter.'
       print(msg)
-    ticks, labels = _manual_labels(axis, axes)
+    labels = adjust.millis(labels, min_digits=1)
+    if debug:
+      print(f'{axis}labels and ticks after modifying millis:')
+      util.print_ticks(axis, axes, ticks, labels)
   else:
-    ticks, labels = _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=debug)
+    ticks, labels = _apply_rule(axis, axes, rule, lim_data, debug=debug)
+    if debug:
+      print(f'{axis}labels and ticks after applying locators and formatters:')
+      util.print_ticks(axis, axes, ticks, labels)
+    labels = adjust.millis(labels, min_digits=2)
+    if debug:
+      print(f'{axis}labels and ticks after modifying millis:')
+      util.print_ticks(axis, axes, ticks, labels)
 
 
   if len(labels) == 0:
@@ -165,8 +175,24 @@ def datetick(*args,
       print('No labels. Returning without applying major_sub_format or set_cb.')
     return
 
+  if adjust_range:
+    if debug:
+      print(f'Adjusting {axis}-range')
+    adjust.time_range(axis, axes, lim_data, debug=debug)
+    if debug:
+      print(f'{axis}labels and ticks after adjusting range:')
+      axes.figure.canvas.draw()
+      ticks = util.get_ticks(axis, axes)
+      labels = util.get_ticklabels(axis, axes)
+      util.print_ticks(axis, axes, ticks, labels)
 
-  if rule['major']['sub_format'] != '':
+
+  if rule['major']['sub_format'] == '':
+    _update_labels(axis, axes, ticks, labels)
+    if debug:
+      print(f'{axis}labels and ticks after updating plot:')
+      util.print_ticks(axis, axes, ticks, labels)
+  else:
     args = [
       axis,
       lim_axis,
@@ -175,87 +201,44 @@ def datetick(*args,
       rule['major']['sub_format'],
       rule['major']['sub_transition']
     ]
+
     labels = _add_major_sub_string(*args, debug=debug)
 
     if debug:
       print(f'{axis}labels and ticks after applying major_sub_format:')
       util.print_ticks(axis, axes, ticks, labels)
 
-    labels = _truncate_millis(labels)
-
-    if debug:
-      print(f'{axis}labels and ticks after applying _truncate_millis:')
-      util.print_ticks(axis, axes, ticks, labels)
-
-    _update_labels(axis, axes, labels)
+    _update_labels(axis, axes, ticks, labels)
     if debug:
       print(f'{axis}labels and ticks after updating plot:')
       util.print_ticks(axis, axes, ticks, labels)
 
-    adjust.xlabels(axes,
+    adjusted = adjust.first_last_labels(axes,
       adjust_first_xlabel=adjust_first_xlabel,
       adjust_last_xlabel=adjust_last_xlabel,
-      major_font_shrink_factor=major_font_shrink_factor,
-      major_font_shrink_always=major_font_shrink_always,
       debug=debug
     )
 
+    if adjusted or major_font_shrink_always:
+      adjust.non_sub_label_font_size(axes, major_font_shrink_factor, debug=debug)
+
+
   font_size_change = 0
-  adjust_warning = None
-  # Adjust font size if overlap in labels.
-  if False:
-    font_size = util.get_font_size(axis, axes)
-    min_gap = compute.min_gap(axis, axes, debug=debug)
-    if debug:
-      print(f'Minimum gap between {axis}-tick labels: {min_gap:.1f} px.')
+  rule_idx_change = 0
+  font_size_change_warning = None
+  rule_idx_change_warning = None
+  if kwargs['rule_idx_change'] is None:
+    font_size_change, font_size_change_warning = \
+      adjust.font_size_for_overlap(axis, axes, min_gap_warn, debug=debug)
 
-    adjust_warning = None
-    font_size = util.get_font_size(axis, axes)
-    font_size_change = 0
-    if min_gap < font_size and kwargs['rule_idx'] is None:
-      if font_size is not None:
-        adjust_warning = adjust.font_size(axis, axes, min_gap, font_size, debug=debug)
-        if adjust_warning is not None and min_gap_warn:
-          util.warn(adjust_warning)
-        font_size_change = util.get_font_size(axis, axes) - font_size
-
-  if False:
-    a = min_gap < font_size
-    b = min_gap > 10*font_size
-    c = adjust_warning is not None
-    d = kwargs['rule_idx'] is None
-    if (a or b or c) and d:
-      # Adjust rule if overlap in labels after shrinking font size.
-      # Try to use next rule so fewer labels are used.
-      max_attempts = 1
-      if kwargs['rule_idx'] is None:
-        kwargs['rule_idx'] = 0
-
-      if True:
-        if a:
-          delta = 1
-        else:
-          delta = -1
-
-        kwargs['rule_idx'] += delta
-
+    rule_idx_change, rule_idx_change_warning = \
+      adjust.rule(axis, axes, rule_idx_change, debug=debug)
+    if rule_idx_change != 0:
       if debug:
-        msg = f"\nAttempting to use datetick with rule {kwargs['rule_idx']}. "
-        msg += f'Attempt {abs(kwargs["rule_idx"])} of {max_attempts}.\n'
-        print(msg)
-        breakpoint()
-
-        if abs(kwargs['rule_idx']) < max_attempts + 1:
-          kwargs['axes'] = axes
-          return datetick(axis, **kwargs)
-        else:
-          adjust_warning = adjust_warning or ''
-          if a:
-            adjust_warning += f' Tried to use {max_attempts} rules but minimum gap is '
-            adjust_warning += f'still less than font_size = {font_size} px.'
-          else:
-            adjust_warning += f' Tried to use {max_attempts} rules but minimum gap is '
-            adjust_warning += f'still greater than 10*font_size = {10*font_size} px.'
+        print(f'Font size overlap exists after font size adjustment. Re-running datetick() with rule_idx_change = {rule_idx_change}.\n')
+      kwargs['rule_idx_change'] = rule_idx_change
+      kwargs['axes'] = axes
+      return datetick(axis, **kwargs)
 
 
   # Trigger update of ticks when limits change due to user interaction.
@@ -267,9 +250,10 @@ def datetick(*args,
           'ticks': ticks,
           'labels': labels,
           'rule': rule,
-          'rule_idx': kwargs['rule_idx'],
+          'rule_idx_change': kwargs['rule_idx'],
+          'rule_idx_change_warning': rule_idx_change_warning,
           'font_size_change': font_size_change,
-          'warning': adjust_warning
+          'font_size_change_warning': font_size_change_warning
         }
 
 
@@ -410,6 +394,7 @@ def _set_cb(axis, axes, kwargs, debug=False):
 def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major_sub_transition, debug=False):
 
   time = matplotlib.dates.num2date(ticks)
+  print('Adding major_sub_format to select labels.')
 
   first = 0
   if False and ticks[0] < lim_axis[0]:
@@ -480,14 +465,14 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
 
       if major_sub_format_len > 7 and major_sub_transition in ['month', 'day', 'hour', 'minute', 'second']:
         if debug:
-          print(f'Removing major_sub_format to first tick label at {matplotlib.dates.num2date(ticks[first])} to avoid overlap with second label.')
+          print(f'  Removing major_sub_format to first tick label at {matplotlib.dates.num2date(ticks[first])} to avoid overlap with second label.')
         labels[first] = labels[first].split('\n')[0]
       if debug:
-        print(f'Applying major_sub_format to tick label at {matplotlib.dates.num2date(ticks[i])}.')
+        print(f'  Applying major_sub_format to tick label at {matplotlib.dates.num2date(ticks[i])}.')
       labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
     else:
       if debug:
-        print(f'Applying major_sub_format to tick label at {matplotlib.dates.num2date(ticks[i])}.')
+        print(f'  Applying major_sub_format to tick label at {matplotlib.dates.num2date(ticks[i])}.')
       labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
 
 
@@ -518,7 +503,7 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
   return labels
 
 
-def _update_labels(axis, axes, labels):
+def _update_labels(axis, axes, ticks, labels):
   if axis == 'x':
     """
       Without the set_xticks(), warning is generated:
@@ -530,70 +515,28 @@ def _update_labels(axis, axes, labels):
       Better: Create custom class:
         https://matplotlib.org/stable/gallery/ticks/date_index_formatter.html
     """
-    axes.set_xticks(axes.get_xticks())
+    axes.set_xticks(ticks)
     axes.set_xticklabels(labels)
 
   if axis == 'y':
-    axes.set_yticks(axes.get_yticks())
+    axes.set_yticks(ticks)
     axes.set_yticklabels(labels)
 
 
-def _truncate_millis(labels):
-  # If all values are fractions, determine if all labels can be represented with
-  # two decimal places. If so, format labels with two decimal places.
-  truncate = True
-  for i in range(0, len(labels)):
-    if "." not in labels[i]:
-      truncate = False
-      break
-    digits = labels[i].split(".")[1]
-    if len(digits) == 3 and digits[2] != "0":
-      truncate = False
-      break
-  if truncate:
-    for i in range(0, len(labels)):
-      labels_split = labels[i].split(".")
-      millis = labels_split[1]
-      labels[i] = f".{millis[0:2]}{millis[3:]}"
-  return labels
-
-
-def _manual_labels(axis, axes):
+def _apply_rule(axis, axes, rule, lim_data, debug=False):
 
   from . import util
 
-  ticks = util.get_ticks(axis, axes)
-  labels = util.get_ticklabels(axis, axes)
-  # Make all labels have the same number of decimal places as one
-  # with the most decimal places.
-  n_places = 0
-  for i in range(0, len(labels)):
-    # Remove trailing zeros.
-    if "." in labels[i]:
-      n_places = max(n_places, len(labels[i].rstrip("0").split(".")[-1]))
-  for i in range(0, len(labels)):
-    parts = labels[i].split(".")
-    labels[i] = parts[0]
-    fractional = ''
-    if len(parts) > 1:
-      fractional = parts[1][0:n_places]
-    if n_places > 0 and len(parts) > 1:
-      labels[i] += "." + fractional
-
-  return ticks, labels
-
-
-def _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=False):
-  from . import adjust, util
   if axis == 'x':
     axis_obj = axes.xaxis
   else:
     axis_obj = axes.yaxis
 
+  use_auto_date_locator = False
 
   if rule['major']['locator'] is not None:
-    #axis_obj.set_major_locator(util.make_locator(rule['major']['locator']))
-    if True:
+    axis_obj.set_major_locator(util.make_locator(rule['major']['locator']))
+    if use_auto_date_locator:
       import matplotlib.dates as mdates
       locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
       axis_obj.set_major_locator(locator)
@@ -609,26 +552,7 @@ def _locator_labels(axis, axes, rule, lim_data, adjust_range, debug=False):
   else:
     axis_obj.set_minor_formatter(matplotlib.ticker.NullFormatter())
 
-  fig = axes.figure
-
-  fig.canvas.draw() # Render new labels so updated for next line
-  ticks = util.get_ticks(axis, axes)
-
-  labels = util.get_ticklabels(axis, axes)
-
-  if debug:
-    print(f'{axis}labels and ticks after applying locators and formatters:')
-    fig.canvas.draw()
-    util.print_ticks(axis, axes, ticks, labels)
-
-  if adjust_range:
-    adjust.time_range(axis, axes, lim_data, debug=debug)
-    if debug:
-      print(f'{axis}labels and ticks after adjusting range:')
-      fig.canvas.draw()
-      util.print_ticks(axis, axes, ticks, labels)
-
-  fig.canvas.draw()
+  axes.figure.canvas.draw()
   ticks = util.get_ticks(axis, axes)
   labels = util.get_ticklabels(axis, axes)
 

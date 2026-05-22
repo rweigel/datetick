@@ -220,8 +220,8 @@ def _readmes(results, debug=False):
       note = f"{idx+1}\\."
       if results[idx]['font_size_change'] != 0:
         note += f" (font size change: {results[idx]['font_size_change']:.1f} pt)"
-      if results[idx]['rule_idx'] is not None:
-        note += f" (rule change: {results[idx]['rule_idx']})"
+      if results[idx]['rule_idx_change'] != 0:
+        note += f" (rule change: {results[idx]['rule_idx_change']})"
       if len(note) > 0:
         note = f"\n{note}\n\n"
 
@@ -345,19 +345,31 @@ def _script_dir():
 
 def _open_figure(path):
   import subprocess
-  from PIL import Image, UnidentifiedImageError
+  from PIL import Image, ImageTk, UnidentifiedImageError
+
+  def _show_with_tk(image):
+    import tkinter as tk
+
+    root = tk.Tk()
+    root.title(os.path.basename(path))
+
+    photo = ImageTk.PhotoImage(image)
+    label = tk.Label(root, image=photo, borderwidth=0)
+    label.image = photo
+    label.pack()
+
+    root.mainloop()
 
   try:
-    image = Image.open(path)
-    image.load()
-    image.show()
-    image.close()
+    with Image.open(path) as image:
+      image.load()
+      _show_with_tk(image)
     return
-  except (UnidentifiedImageError, OSError):
+  except (UnidentifiedImageError, OSError, RuntimeError, ImportError):
     pass
 
   if os.sys.platform == 'darwin':
-    command = ['open', path]
+    command = ['open', '-W', path]
   elif os.name == 'nt':
     os.startfile(path)
     return

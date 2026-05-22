@@ -74,15 +74,15 @@ def numsize(ax, num, sign, debug=False):
   offset =  matplotlib.transforms.ScaledTranslation(sign*delta/dpi, 0, ax.figure.dpi_scale_trans)
 
   if debug:
-    print('_numsize():')
-    print(f'  num      = "{num}"')
-    print(f'  fontsize = {fontsize}')
-    print(f'  dpi      = {dpi}')
-    print(f'  width    = {w}')
-    print(f'  height   = {h}')
-    print(f'  descent  = {d}')
-    print(f'  delta    = {delta}')
+    print('  compute.numsize():')
+    print(f'    num      = "{num}"')
+    print(f'    fontsize = {fontsize}')
+    print(f'    dpi      = {dpi}')
+    print(f'    width    = {w}')
+    print(f'    height   = {h}')
+    print(f'    descent  = {d}')
+    print(f'    delta    = {delta}')
     _offset = re.sub(r"\n\s+", "", str(offset))
-    print(f'  offset   = {_offset}')
+    print(f'    offset   = {_offset}')
 
   return offset
