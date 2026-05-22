@@ -4,8 +4,9 @@ from . import util
 
 __all__ = ['datetick', 'util', 'rules', '__version__']
 
-from importlib.metadata import version, PackageNotFoundError
+
 try:
+    from importlib.metadata import version
     __version__ = version('datetick')
-except PackageNotFoundError:
+except:
     __version__ = 'unknown'
