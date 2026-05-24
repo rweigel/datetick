@@ -44,56 +44,56 @@ plt.show()
 ## <code>axis=x</code>
 
 
-1\. (rule change: None)
+1\.
+
+![test/visual_test/latest/19991231220000-20000102020000-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/19991231220000-20000102020000-6.4in_v1.svg)
+
+
+2\.
+
+![test/visual_test/latest/19991231220000-20000102020000-6.4in_v2.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/19991231220000-20000102020000-6.4in_v2.svg)
+
+
+3\.
+
+![test/visual_test/latest/20000101000000-20000103000000-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v1.svg)
+
+
+4\.
+
+![test/visual_test/latest/20000101000000-20000103000000-6.4in_v2.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v2.svg)
+
+
+5\.
+
+![test/visual_test/latest/20000101000000-20000103000000-6.4in_v3.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v3.svg)
+
+
+6\. Right label is right aligned in PNG.
 
 ![test/visual_test/latest/20000101000000-20000103000000-6.4in_v1.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v1.png)
 
 
-2\. (rule change: None)
+7\. Right label is not right aligned in SVG due to Matplotlib bug.
 
-![test/visual_test/latest/20000101000000-20000103000000-6.4in_v2.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v2.png)
-
-
-3\. (rule change: None)
-
-![test/visual_test/latest/20000101000000-20000103000000-6.4in_v3.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v3.png)
+![test/visual_test/latest/20000101000000-20000103000000-6.4in_v4.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v4.svg)
 
 
-4\. (rule change: None)
+8\.
 
-![test/visual_test/latest/20000101000000-20000103000000-6.4in_v4.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20000101000000-20000103000000-6.4in_v4.png)
-
-
-5\. (rule change: None)
-
-![test/visual_test/latest/20001231113000-20010103003000-6.4in_v1.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v1.png)
+![test/visual_test/latest/20001231113000-20010103003000-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v1.svg)
 
 
-6\. (rule change: None)
+9\.
 
-![test/visual_test/latest/20001231113000-20010103003000-6.4in_v2.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v2.png)
-
-
-7\. (rule change: None)
-
-![test/visual_test/latest/20001231113000-20010103003000-6.4in_v3.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v3.png)
+![test/visual_test/latest/20001231113000-20010103003000-6.4in_v2.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v2.svg)
 
 
-8\. (rule change: None)
+10\.
 
-![test/visual_test/latest/20001231113000-20010103003000-6.4in_v4.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v4.png)
-
-
-9\. (rule change: None)
-
-![test/visual_test/latest/20001231113000-20010103003000-6.4in_v5.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v5.png)
+![test/visual_test/latest/20001231113000-20010103003000-6.4in_v3.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v3.svg)
 
 
-10\. (rule change: None)
+11\.
 
-![test/visual_test/latest/20001231113000-20010103003000-6.4in_v6.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20001231113000-20010103003000-6.4in_v6.png)
-
-
-11\. (rule change: None)
-
-![test/visual_test/latest/20010101000000.0-20010101000000.1-6.4in_v1.png](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.1-6.4in_v1.png)
+![test/visual_test/latest/20010101000000.0-20010101000000.1-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.1-6.4in_v1.svg)

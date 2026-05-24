@@ -1,5 +1,16 @@
 [
   {
+    "start": "1999-12-31T22:00:00Z",
+    "stop": "2000-01-02T02:00:00Z",
+    "_delta_t": "1d4h"
+  },
+  {
+    "start": "1999-12-31T22:00:00Z",
+    "stop": "2000-01-02T02:00:00Z",
+    "adjust_range": true,
+    "_delta_t": "1d4h"
+  },
+  {
     "start": "2000-01-01T00:00:00Z",
     "stop": "2000-01-03T00:00:00Z",
     "_delta_t": "1d23h"
@@ -23,7 +34,19 @@
     "_delta_t": "1d23h",
     "adjust_range_tight": true,
     "adjust_first_xlabel": true,
-    "adjust_last_xlabel": true
+    "adjust_last_xlabel": true,
+    "_comment": "Right label is right aligned in PNG.",
+    "_fmt": "png"
+  },
+  {
+    "start": "2000-01-01T00:00:00Z",
+    "stop": "2000-01-03T00:00:00Z",
+    "_delta_t": "1d23h",
+    "adjust_range_tight": true,
+    "adjust_first_xlabel": true,
+    "adjust_last_xlabel": true,
+    "_comment": "Right label is not right aligned in SVG due to Matplotlib bug.",
+    "_fmt": "svg"
   },
   {
     "start": "2000-12-31T11:30:00Z",
@@ -36,34 +59,7 @@
     "_delta_t": "1d23h",
     "font_shrink_always": true
   },
-  {
-    "start": "2000-12-31T11:30:00Z",
-    "stop": "2001-01-03T00:30:00Z",
-    "_delta_t": "1d23h",
-    "adjust_first_xlabel": true
-  },
-  {
-    "start": "2000-12-31T11:30:00Z",
-    "stop": "2001-01-03T00:30:00Z",
-    "_delta_t": "1d23h",
-    "adjust_last_xlabel": true
-  },
-  {
-    "start": "2000-12-31T11:30:00Z",
-    "stop": "2001-01-03T00:30:00Z",
-    "_delta_t": "1d23h",
-    "adjust_first_xlabel": true,
-    "adjust_last_xlabel": true
-  },
-  {
-    "start": "2000-12-31T11:30:00Z",
-    "stop": "2001-01-03T00:30:00Z",
-    "_delta_t": "1d23h",
-    "adjust_range": true,
-    "adjust_first_xlabel": true,
-    "adjust_last_xlabel": true
-  },
-  {
+ {
     "start": "2000-12-31T11:30:00Z",
     "stop": "2001-01-03T00:30:00Z",
     "_delta_t": "1d23h",

@@ -20,26 +20,15 @@ N_MAX = float('inf')
 
 #DIRS = ['x, y']
 DIRS = ['x']
-#FIGWIDTHS = [9.6, 6.4, 3.2, 1.6]
-#FIGWIDTHS = [1.6]
-#FIGWIDTHS = [3.2]
-FIGWIDTHS = [6.4]
-#FIGWIDTHS = [9.6]
-FIGFMT = 'png'
+#WIDTHS = [9.6, 6.4, 3.2, 1.6]
+#WIDTHS = [1.6]
+#WIDTHS = [3.2]
+WIDTHS = [6.4]
+#WIDTHS = [9.6]
+FMT = 'svg'
+FMT_FROM_CLI = False
 OPEN_FIG = False
 SHOW_FIG = False
-
-
-def _configure_logging(enable_datetick_logs=False, enable_script_logs=False):
-  logging.basicConfig(
-    level=logging.WARNING,
-    format='%(name)s.%(funcName)s:%(levelname)s: %(message)s',
-    force=True,
-  )
-  logging.getLogger().setLevel(logging.WARNING)
-  logging.getLogger('matplotlib').setLevel(logging.WARNING)
-  logging.getLogger('datetick').setLevel(logging.DEBUG if enable_datetick_logs else logging.WARNING)
-  logging.getLogger(__name__).setLevel(logging.DEBUG if enable_script_logs else logging.WARNING)
 
 try:
   import pytest
@@ -54,6 +43,18 @@ else:
   _short_mark = pytest.mark.short
 
 
+def _configure_logging(enable_datetick_logs=False, enable_script_logs=False):
+  logging.basicConfig(
+    level=logging.WARNING,
+    format='%(name)s.%(funcName)s:%(levelname)s: %(message)s',
+    force=True,
+  )
+  logging.getLogger().setLevel(logging.WARNING)
+  logging.getLogger('matplotlib').setLevel(logging.WARNING)
+  logging.getLogger('datetick').setLevel(logging.DEBUG if enable_datetick_logs else logging.WARNING)
+  logging.getLogger(__name__).setLevel(logging.DEBUG if enable_script_logs else logging.WARNING)
+
+
 @_short_mark
 def test_one():
   test_all(idx=1)
@@ -63,14 +64,15 @@ def test_all(idx=None):
 
   info = {}
   for axis in DIRS:
-    info[axis] = {'files': [], 'results': []}
-    for figwidth in FIGWIDTHS:
+    info[axis] = {'files': [], 'results': [], 'tests': []}
+    for figwidth in WIDTHS:
       if DEBUG_SCRIPT:
         print(f"Running visual test with axis='{axis}' and figwidth={figwidth}in")
 
-      files, results = _run_all(axis=axis, figwidth=figwidth, idx=idx)
+      files, results, tests = _run_all(axis=axis, figwidth=figwidth, idx=idx)
       info[axis]['files'] += files
       info[axis]['results'] += results
+      info[axis]['tests'] += tests
 
     #files[axis] = sorted(files[axis])
 
@@ -89,6 +91,7 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
 
   files = []
   results = []
+  tests_run = []
   tidx = 1
   for entries in [tests_manual, tests_generated]:
     for test in entries:
@@ -99,16 +102,19 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
       dt_str_o = test['start']
       dt_str_f = test['stop']
 
-      # Keep only 
+      # Keep only kwargs that are not private (start with '_') and not 'start' or 'stop'
       kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
 
       if DEBUG_SCRIPT:
-        print(f"{tidx}. delta_t={test['_delta_t']} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
+        delta_t_str = test.get('_delta_t', datetick.util.format_delta(util.parse_ds(dt_str_f) - util.parse_ds(dt_str_o)))
+        print(f"{tidx}. delta_t={delta_t_str} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
 
       result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_font_size=None, min_gap_warn=True, **kwargs)
       results.append(result)
+      tests_run.append(test)
 
-      file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files)
+      fmt = FMT if FMT_FROM_CLI else test.get('_fmt', FMT)
+      file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files, fmt)
       files.append(file)
 
       if short or tidx >= N_MAX:
@@ -116,7 +122,7 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
 
       tidx += 1
 
-  return files, results
+  return files, results, tests_run
 
 
 def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
@@ -226,14 +232,17 @@ def _readmes(results):
     image_links = []
 
     files = results['files']
-    results = results['results']
+    results_list = results['results']
+    tests = results['tests']
 
     for idx, file in enumerate(files):
       note = f"{idx+1}\\."
-      if results[idx]['font_size_change'] != 0:
-        note += f" (font size change: {results[idx]['font_size_change']:.1f} pt)"
-      if results[idx]['rule_idx_change'] != 0:
-        note += f" (rule change: {results[idx]['rule_idx_change']})"
+      if tests[idx].get('_comment'):
+        note += f" {tests[idx]['_comment']}"
+      if results_list[idx]['font_size_change'] != 0:
+        note += f" (font size change: {results_list[idx]['font_size_change']:.1f} pt)"
+      if results_list[idx]['rule_idx_change']:
+        note += f" (rule change: {results_list[idx]['rule_idx_change']})"
       if len(note) > 0:
         note = f"\n{note}\n\n"
 
@@ -301,21 +310,21 @@ def _readmes(results):
     file.writelines("\n" + "\n\n".join(image_lines))
 
 
-def _supported_figfmts():
+def _supported_fmts():
   from matplotlib.backend_bases import FigureCanvasBase
   return tuple(sorted(FigureCanvasBase.get_supported_filetypes().keys()))
 
 
-def _savefig(ds1, ds2, axis, figwidth, files):
+def _savefig(ds1, ds2, axis, figwidth, files, fmt):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
   base = f'{_out_dir(axis)}/{ds1}-{ds2}-{figwidth}in'
-  file = f'{base}_v1.{FIGFMT}'
+  file = f'{base}_v1.{fmt}'
   if file in files:
     v = 2
     while file in files:
-      file = f'{base}_v{v}.{FIGFMT}'
+      file = f'{base}_v{v}.{fmt}'
       v += 1
 
   if DEBUG_SCRIPT:
@@ -326,9 +335,9 @@ def _savefig(ds1, ds2, axis, figwidth, files):
   kwargs = {'bbox_inches': 'tight'}
 
   rc = {}
-  if FIGFMT == 'png':
+  if fmt == 'png':
     kwargs['dpi'] = 220
-  elif FIGFMT == 'svg':
+  elif fmt == 'svg':
     # Don't convert text to paths in SVG to keep it searchable and selectable
     kwargs['metadata'] = {"Date": None}  # Remove creation date for testing
     rc = {'svg.fonttype': 'none', 'svg.hashsalt': '67'}
@@ -401,9 +410,9 @@ def _use_default_interactive_backend():
 def cli():
   import ast
   import argparse
-  global DIRS, FIGWIDTHS, FIGFMT, OPEN_FIG, SHOW_FIG, DEBUG_SCRIPT, N_MAX
+  global DIRS, WIDTHS, FMT, FMT_FROM_CLI, OPEN_FIG, SHOW_FIG, DEBUG_SCRIPT, N_MAX
 
-  def parse_figwidths(value):
+  def parse_widths(value):
     return [float(part) for part in value.split(',') if part]
 
   def parse_dirs(value):
@@ -412,12 +421,12 @@ def cli():
       raise argparse.ArgumentTypeError("dirs must be a comma-separated list containing only 'x' and/or 'y'")
     return dirs
 
-  def parse_figfmt(value):
-    figfmt = value.lower()
-    if figfmt not in _supported_figfmts():
-      supported = ', '.join(_supported_figfmts())
-      raise argparse.ArgumentTypeError(f"unsupported figfmt {value!r}; choose from: {supported}")
-    return figfmt
+  def parse_fmt(value):
+    fmt = value.lower()
+    if fmt not in _supported_fmts():
+      supported = ', '.join(_supported_fmts())
+      raise argparse.ArgumentTypeError(f"unsupported fmt {value!r}; choose from: {supported}")
+    return fmt
 
   def parse_plot_kwargs(unknown_args):
     kwargs = {}
@@ -455,10 +464,10 @@ def cli():
   parser = argparse.ArgumentParser(
     usage=(
       'visual_test.py [--idx IDX] [--n-max N] [--debug] [--debug-script {0,1}] '
-      '[--figwidths W1,W2] [--dirs x[,y]] [--figfmt FORMAT] [--open] [--show]\n\n'
+      '[--widths W1,W2] [--dirs x[,y]] [--fmt FORMAT] [--open] [--show]\n\n'
       '       visual_test.py short [--debug] [--debug-script {0,1}]\n\n'
       '       visual_test.py unit [--start START] [--stop STOP] [--axis {x,y}] '
-      '[--figwidth W] [--figfmt FORMAT] [--open] [--show] [--debug] [--debug-script {0,1}] [--PLOT-KWARGS ...]'
+      '[--figwidth W] [--fmt FORMAT] [--open] [--show] [--debug] [--debug-script {0,1}] [--PLOT-KWARGS ...]'
     ),
     description=(
       'Run datetick visual tests.\n\n'
@@ -475,9 +484,9 @@ def cli():
       '    --n-max N\n'
       '    --debug\n'
       '    --debug-script {0,1}\n'
-      '    --figwidths W1,W2\n'
+      '    --widths W1,W2\n'
       '    --dirs x[,y]\n'
-      '    --figfmt FORMAT\n'
+      '    --fmt FORMAT\n'
       '    --open\n\n'
       '  short:\n'
       '    --debug\n'
@@ -487,12 +496,12 @@ def cli():
       '    --stop STOP\n'
       '    --axis {x,y}\n'
       '    --figwidth W\n'
-      '    --figfmt FORMAT\n'
+      '    --fmt FORMAT\n'
       '    --open\n'
       '    --show\n'
       '    --debug\n'
       '    --debug-script {0,1}\n'
-      f'    supported formats: {", ".join(_supported_figfmts())}\n'
+      f'    supported formats: {", ".join(_supported_fmts())}\n'
       '    extra datetick() kwargs as --name value pairs, for example: --adjust-range False --rule-idx 2'
     ),
   )
@@ -501,8 +510,8 @@ def cli():
   parser.add_argument('--n-max', type=int, help='Maximum number of cases to run.')
   parser.add_argument('--debug', action='store_true', help='Enable datetick debug output.')
   parser.add_argument('--debug-script', action='store_true', help='Enable or disable script debug output.')
-  parser.add_argument('--figwidths', type=parse_figwidths, help='Comma-separated figure widths in inches.')
-  parser.add_argument('--figfmt', type=parse_figfmt, help='Image format for saved output.')
+  parser.add_argument('--widths', type=parse_widths, help='Comma-separated figure widths in inches.')
+  parser.add_argument('--fmt', type=parse_fmt, help='Image format for saved output.')
   parser.add_argument('--open', action='store_true', help='Open each saved figure after writing it.')
   parser.add_argument('--show', action='store_true', help='Use the default interactive backend and show each plot window.')
   parser.add_argument('--dirs', type=parse_dirs, help="Comma-separated plot axes, e.g. 'x' or 'x,y'.")
@@ -522,10 +531,11 @@ def cli():
   if args.debug_script is not None:
     DEBUG_SCRIPT = bool(args.debug_script)
   _configure_logging(enable_datetick_logs=args.debug, enable_script_logs=DEBUG_SCRIPT)
-  if args.figwidths is not None:
-    FIGWIDTHS = args.figwidths
-  if args.figfmt is not None:
-    FIGFMT = args.figfmt
+  if args.widths is not None:
+    WIDTHS = args.widths
+  if args.fmt is not None:
+    FMT = args.fmt
+    FMT_FROM_CLI = True
   OPEN_FIG = args.open
   SHOW_FIG = args.show
   if args.dirs is not None:
@@ -544,12 +554,12 @@ def cli():
       invalid_short_args.append('--idx')
     if args.n_max is not None:
       invalid_short_args.append('--n-max')
-    if args.figwidths is not None:
-      invalid_short_args.append('--figwidths')
+    if args.widths is not None:
+      invalid_short_args.append('--widths')
     if args.dirs is not None:
       invalid_short_args.append('--dirs')
-    if args.figfmt is not None:
-      invalid_short_args.append('--figfmt')
+    if args.fmt is not None:
+      invalid_short_args.append('--fmt')
     if args.open:
       invalid_short_args.append('--open')
     if args.show:
@@ -573,8 +583,8 @@ def cli():
       invalid_unit_args.append('--idx')
     if args.n_max is not None:
       invalid_unit_args.append('--n-max')
-    if args.figwidths is not None:
-      invalid_unit_args.append('--figwidths')
+    if args.widths is not None:
+      invalid_unit_args.append('--widths')
     if args.dirs is not None:
       invalid_unit_args.append('--dirs')
     if invalid_unit_args:
@@ -598,20 +608,21 @@ def _unit(start=None, stop=None, axis='x', figwidth=22.5, **kwargs):
   axis = 'x' if axis is None else axis
   figwidth = 22.5 if figwidth is None else figwidth
   _plot(ds1, ds2, axis=axis, figwidth=figwidth, **kwargs)
-  outfile = f'unit.{FIGFMT}'
+  outfile = f'unit.{FMT}'
   print("Writing", outfile)
   savefig_kwargs = {'bbox_inches': 'tight'}
-  if FIGFMT == 'png':
+  if FMT == 'png':
     savefig_kwargs['dpi'] = 300
-  elif FIGFMT == 'svg':
+  elif FMT == 'svg':
     savefig_kwargs['metadata'] = {"Date": None}
-  with matplotlib.pyplot.rc_context({'svg.fonttype': 'none', 'svg.hashsalt': '67'} if FIGFMT == 'svg' else {}):
+  with matplotlib.pyplot.rc_context({'svg.fonttype': 'none', 'svg.hashsalt': '67'} if FMT == 'svg' else {}):
     matplotlib.pyplot.savefig(outfile, **savefig_kwargs)
   if SHOW_FIG:
     matplotlib.pyplot.show()
   matplotlib.pyplot.close()
   if OPEN_FIG:
     _open_figure(outfile)
+
 
 if __name__ == '__main__':
   cli()
