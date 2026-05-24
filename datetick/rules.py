@@ -1,4 +1,10 @@
-def rules(rules_file=None, debug=False):
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+
+def rules(rules_file=None):
   import os
   import json
 
@@ -20,7 +26,7 @@ def rules(rules_file=None, debug=False):
 
   return rules
 
-def rule(delta_t, rule_idx=None, rules_file=None, debug=False):
+def rule(delta_t, rule_idx=None, rules_file=None):
   """
   major_sub_format contains additional information that is used for the first
    tick label or when there is a major change. For example, if
@@ -33,7 +39,7 @@ def rule(delta_t, rule_idx=None, rules_file=None, debug=False):
   It is needed to workaround the bug discussed at stackoverflow.com/q/31072589
   """
 
-  loaded_rules = rules(rules_file=rules_file, debug=debug)
+  loaded_rules = rules(rules_file=rules_file)
 
   total_seconds = delta_t.total_seconds()
   for matched_index, matched_rule in enumerate(loaded_rules):
@@ -53,11 +59,11 @@ def rule(delta_t, rule_idx=None, rules_file=None, debug=False):
 
   #warnings.warn(f"No matching config rule found for delta_t={delta_t}; returning None.")
 
-  if debug:
+  if logger.isEnabledFor(logging.DEBUG):
     from . import util
 
     delta_t_str = util.format_delta(delta_t)
-    print(f'No rule found for delta_t = {delta_t_str}')
+    logger.debug('No rule found for delta_t = %s', delta_t_str)
 
   return None
 

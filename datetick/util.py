@@ -1,4 +1,8 @@
+import logging
 import matplotlib
+
+
+logger = logging.getLogger(__name__)
 
 
 def make_locator(spec):
@@ -130,7 +134,7 @@ def print_ticks(axis, axes, ticks, labels):
     if ticks[i] < lim[0] or ticks[i] > lim[1]:
       note = ' (may be clipped by mpl b/c outside of axis limits)'
     label = str(labels[i]).replace("\n", "\\n")
-    print(f' {label}    {matplotlib.dates.num2date(ticks[i])} {note}')
+    logger.debug(' %s    %s%s', label, matplotlib.dates.num2date(ticks[i]), note)
 
 
 def backend_is_interactive(matplotlib_module=None):
@@ -142,3 +146,80 @@ def backend_is_interactive(matplotlib_module=None):
   if backend is None:
     return False
   return backend.lower() in {name.lower() for name in matplotlib.rcsetup.interactive_bk}
+
+
+def check_axes(kwargs):
+
+  if kwargs.get('axes', None) is not None:
+    axes = kwargs['axes']
+    if not hasattr(axes, 'figure'):
+      msg = f"Invalid axes argument axes={axes} does not have a figure attribute."
+      raise ValueError(msg)
+    try:
+      fig = axes.figure
+    except Exception as e:
+      msg = f"Invalid axes argument axes={axes} - execution of axes.figure failed: {e}"
+      raise ValueError(msg)
+    if fig is None:
+      raise ValueError(f"Invalid axes argument axes={axes} has figure=None.")
+  else:
+    if matplotlib.pyplot.get_fignums() == []:
+      raise ValueError("No current figure. Cannot use datetick() without axes.")
+    try:
+      fig = matplotlib.pyplot.gcf()
+    except Exception as e:
+      raise ValueError(f"matplotlib.pyplot.gcf() failed: {e}")
+    try:
+      axes = matplotlib.pyplot.gca()
+    except Exception as e:
+      raise ValueError(f"matplotlib.pyplot.gca() failed: {e}")
+
+  try:
+    fig.canvas.draw()
+  except Exception as e:
+    raise ValueError(f"fig.canvas.draw() failed: {e}")
+
+  if not hasattr(axes, 'dataLim'):
+    raise ValueError("axes does not have dataLim attribute. Cannot use datetick().")
+
+  return axes
+
+
+def check_bounds(lim_data, lim_axis, axis):
+  import math
+  from . import util
+
+  # If all values are NaN, datamin = np.inf and datamax = -np.inf.
+  if math.isinf(lim_data[0]) or math.isinf(lim_data[1]):
+    util.warn("At least of one the data limits is NaN or +/-infinity. Cannot use datetick().")
+    return None
+
+  try:
+    matplotlib.dates.num2date(lim_data[0])
+  except Exception as e:
+    dim = 'x0' if axis == 'x' else 'y0'
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
+  try:
+    matplotlib.dates.num2date(lim_data[1])
+  except Exception as e:
+    dim = 'x1' if axis == 'x' else 'y1'
+    msg = f"matplotlib.dates.num2date(axes.dataLim.{dim}) failed. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
+
+  try:
+    matplotlib.dates.num2date(lim_axis[0])
+  except Exception as e:
+    msg = f"axes.get_{axis}lim()[0] = {lim_axis[0]} is not a valid Matplotlib datenum. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
+  try:
+    matplotlib.dates.num2date(lim_axis[1])
+  except Exception as e:
+    msg = f"axes.get_{axis}lim()[1] = {lim_axis[1]} is not a valid Matplotlib datenum. Cannot use datetick(): {e}"
+    util.warn(msg)
+    return False
+
+  return True

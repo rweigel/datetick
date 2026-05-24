@@ -1,6 +1,10 @@
+import logging
 import matplotlib
 
-def min_gap(axis, axes, debug=False):
+
+logger = logging.getLogger(__name__)
+
+def min_gap(axis, axes):
 
   from . import util
   axes.figure.canvas.draw()
@@ -10,7 +14,7 @@ def min_gap(axis, axes, debug=False):
 
   bboxes = [label.get_window_extent(renderer) for label in ticklabels]
 
-  def _min_gap(axis, bboxes, ticklabels, sub_labels=False, debug=False):
+  def _min_gap(axis, bboxes, ticklabels, sub_labels=False):
 
     min_ = float('inf')
 
@@ -34,55 +38,47 @@ def min_gap(axis, axes, debug=False):
 
       min_ = min(min_, separation) if i > 0 else separation
       if separation <= 0:
-        if debug:
+        if logger.isEnabledFor(logging.DEBUG):
           prev = ticklabels[i].get_text().replace('\n', '\\n')
           next_ = ticklabels[i+1].get_text().replace('\n', '\\n')
-          print(f"  Tick labels '{next_}' and '{prev}' may overlap (separation={separation:.1f}px).")
+          logger.debug("  Tick labels '%s' and '%s' may overlap (separation=%.1fpx).", next_, prev, separation)
 
     return min_
 
-  min_gap_primary = _min_gap(axis, bboxes, ticklabels, sub_labels=False, debug=debug)
-  min_gap_sub = _min_gap(axis, bboxes, ticklabels, sub_labels=True, debug=debug)
+  min_gap_primary = _min_gap(axis, bboxes, ticklabels, sub_labels=False)
+  min_gap_sub = _min_gap(axis, bboxes, ticklabels, sub_labels=True)
 
   return min(min_gap_sub, min_gap_primary)
 
 
-def numsize(ax, num, sign, debug=False):
-  '''Returns (width, height) of str(num) in pixels.
-
-  If ax is given, measures against that axes' renderer and DPI (correct).
-  Otherwise creates a temporary figure using rcParams figure.dpi.
-  '''
-  import re
-
+def numsize(ax, num, sign):
+  '''Returns the x-offset of str(num) in display dots.'''
   num = str(num)
 
-  #dpi = ax.figure.get_dpi() if ax is not None else matplotlib.rcParams['figure.dpi']
-  dpi = 72 # Why not use above dpi? On OS-X when dpi = 200 is returned, offset is wrong.
-  fig = matplotlib.figure.Figure(dpi=dpi)
-  canvas = matplotlib.backends.backend_agg.FigureCanvasAgg(fig)
-  ax_tmp = fig.add_subplot(111)
-  renderer = canvas.get_renderer()
-  fontsize = matplotlib.rcParams['xtick.labelsize']
-  t = ax_tmp.text(0.5, 0.5, num, fontsize=fontsize)
+  ax.figure.canvas.draw()
+  renderer = ax.figure.canvas.get_renderer()
 
-  w, h, d = renderer.get_text_width_height_descent(num, t.get_fontproperties(), ismath=False)
-  dpi = ax.figure.get_dpi() if ax is not None else matplotlib.rcParams['figure.dpi']
-  delta = w/len(num)
-  # It seems like sign should not be needed, but does not work if
-  # + offset instead of - offset is used code that uses offset.
-  offset =  matplotlib.transforms.ScaledTranslation(sign*delta/dpi, 0, ax.figure.dpi_scale_trans)
+  ticklabels = ax.get_xticklabels()
+  if ticklabels:
+    font_props = ticklabels[0].get_fontproperties()
+  else:
+    fontsize = matplotlib.rcParams['xtick.labelsize']
+    font_props = matplotlib.font_manager.FontProperties(size=fontsize)
 
-  if debug:
-    print('  compute.numsize():')
-    print(f'    num      = "{num}"')
-    print(f'    fontsize = {fontsize}')
-    print(f'    dpi      = {dpi}')
-    print(f'    width    = {w}')
-    print(f'    height   = {h}')
-    print(f'    descent  = {d}')
-    print(f'    delta    = {delta}')
-    _offset = re.sub(r"\n\s+", "", str(offset))
-    print(f'    offset   = {_offset}')
+  # first_last_labels() shifts by half the width of the first line.
+  width_px, height_px, descent_px = renderer.get_text_width_height_descent(
+    num, font_props, ismath=False
+  )
+  dx = sign * 0.5 * width_px
 
-  return offset
+  if logger.isEnabledFor(logging.DEBUG):
+    logger.debug('  compute.numsize():')
+    logger.debug('    num      = "%s"', num)
+    logger.debug('    fontsize = %s', font_props.get_size_in_points())
+    logger.debug('    width_px = %s', width_px)
+    logger.debug('    height_px = %s', height_px)
+    logger.debug('    descent_px = %s', descent_px)
+    logger.debug('    delta_px = %s', dx)
+    logger.debug('    dx       = %s', dx)
+
+  return dx

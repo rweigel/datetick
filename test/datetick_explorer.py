@@ -122,7 +122,7 @@ def create_plot(subplots_bottom):
     label2.patch.set_facecolor(PLOT_LABEL_FACE_COLOR)
     label2.patch.set_edgecolor(PLOT_LABEL_EDGE_COLOR)
     ax2.add_artist(label2)
-    datetick('x', axes=ax2, debug=True)
+    datetick('x', axes=ax2)
     ax2.grid()
 
     ax3.axis('off')

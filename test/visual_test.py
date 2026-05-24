@@ -1,5 +1,6 @@
 # Create plots with varying time ranges.
 
+import logging
 import os
 
 import matplotlib
@@ -29,6 +30,17 @@ OPEN_FIG = False
 SHOW_FIG = False
 
 
+def _configure_logging(enable_datetick_logs=False, enable_script_logs=False):
+  logging.basicConfig(
+    level=logging.WARNING,
+    format='%(name)s.%(funcName)s:%(levelname)s: %(message)s',
+    force=True,
+  )
+  logging.getLogger().setLevel(logging.WARNING)
+  logging.getLogger('matplotlib').setLevel(logging.WARNING)
+  logging.getLogger('datetick').setLevel(logging.DEBUG if enable_datetick_logs else logging.WARNING)
+  logging.getLogger(__name__).setLevel(logging.DEBUG if enable_script_logs else logging.WARNING)
+
 try:
   import pytest
 except ImportError:
@@ -43,11 +55,11 @@ else:
 
 
 @_short_mark
-def test_one(debug=False):
-  test_all(debug=False, idx=1)
+def test_one():
+  test_all(idx=1)
 
 
-def test_all(debug=False, idx=None):
+def test_all(idx=None):
 
   info = {}
   for axis in DIRS:
@@ -56,17 +68,17 @@ def test_all(debug=False, idx=None):
       if DEBUG_SCRIPT:
         print(f"Running visual test with axis='{axis}' and figwidth={figwidth}in")
 
-      files, results = _run_all(axis=axis, figwidth=figwidth, idx=idx, debug=debug)
+      files, results = _run_all(axis=axis, figwidth=figwidth, idx=idx)
       info[axis]['files'] += files
       info[axis]['results'] += results
 
     #files[axis] = sorted(files[axis])
 
   if idx is None:
-    _readmes(info, debug=debug)
+    _readmes(info)
 
 
-def _run_all(axis='x', figwidth=6.4, idx=None, short=False, debug=False):
+def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
 
   import json
   test_file = os.path.join(_script_dir(), 'visual_test.json')
@@ -93,10 +105,10 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False, debug=False):
       if DEBUG_SCRIPT:
         print(f"{tidx}. delta_t={test['_delta_t']} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
 
-      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_font_size=None, min_gap_warn=True, debug=debug, **kwargs)
+      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_font_size=None, min_gap_warn=True, **kwargs)
       results.append(result)
 
-      file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files, debug=debug)
+      file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files)
       files.append(file)
 
       if short or tidx >= N_MAX:
@@ -166,7 +178,7 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
     if datetick_kwargs:
       bbox['facecolor'] = 'lightblue'
       for key, value in kwargs.items():
-        if key in ('debug', 'min_gap_warn', 'min_font_size'):
+        if key in ('min_gap_warn', 'min_font_size'):
           continue
         text += f'\n{key}={value}'
 
@@ -208,7 +220,7 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
   return result
 
 
-def _readmes(results, debug=False):
+def _readmes(results):
 
   def _image_subsection(results, latest_dir, base, axis):
     image_links = []
@@ -293,7 +305,8 @@ def _supported_figfmts():
   from matplotlib.backend_bases import FigureCanvasBase
   return tuple(sorted(FigureCanvasBase.get_supported_filetypes().keys()))
 
-def _savefig(ds1, ds2, axis, figwidth, files, debug=False):
+
+def _savefig(ds1, ds2, axis, figwidth, files):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
@@ -508,6 +521,7 @@ def cli():
     N_MAX = args.n_max
   if args.debug_script is not None:
     DEBUG_SCRIPT = bool(args.debug_script)
+  _configure_logging(enable_datetick_logs=args.debug, enable_script_logs=DEBUG_SCRIPT)
   if args.figwidths is not None:
     FIGWIDTHS = args.figwidths
   if args.figfmt is not None:
@@ -552,7 +566,7 @@ def cli():
       invalid_short_args.extend(f'--{key.replace("_", "-")}' for key in sorted(plot_kwargs))
     if invalid_short_args:
       parser.error(f"short command only accepts --debug and --debug-script; invalid: {', '.join(invalid_short_args)}")
-    test_one(debug=args.debug)
+    test_one()
   elif command == 'unit':
     invalid_unit_args = []
     if args.idx is not None:
@@ -570,21 +584,20 @@ def cli():
       stop=args.stop,
       axis=args.axis,
       figwidth=args.figwidth,
-      debug=args.debug,
       **plot_kwargs,
     )
   elif args.idx is not None:
-    test_all(debug=args.debug, idx=args.idx)
+    test_all(idx=args.idx)
   else:
-    test_all(debug=args.debug)
+    test_all()
 
 
-def _unit(start=None, stop=None, axis='x', figwidth=22.5, debug=True, **kwargs):
+def _unit(start=None, stop=None, axis='x', figwidth=22.5, **kwargs):
   ds1 = '2001-01-01T23:59:56.85Z' if start is None else start
   ds2 = '2001-01-02T00:00:00.35Z' if stop is None else stop
   axis = 'x' if axis is None else axis
   figwidth = 22.5 if figwidth is None else figwidth
-  _plot(ds1, ds2, axis=axis, figwidth=figwidth, debug=debug, **kwargs)
+  _plot(ds1, ds2, axis=axis, figwidth=figwidth, **kwargs)
   outfile = f'unit.{FIGFMT}'
   print("Writing", outfile)
   savefig_kwargs = {'bbox_inches': 'tight'}
