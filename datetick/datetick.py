@@ -47,8 +47,12 @@ def datetick(*args,
   adjust_range: If True, expand axis range so data are always within a major tick.
 
   adjust_last_xlabel: If True, adjust last x-label to avoid extending past lower axis limit.
+                      If 'offset', use the offset method. If 'custom', use one
+                      custom multiline text artist. If 'custom_split', use
+                      separate custom text artists for each line (default when
+                      adjust_last_xlabel = True).
 
-  adjust_first_xlabel: If True, adjust first x-label to avoid extending past upper axis limit.
+  adjust_first_xlabel: The same string options as adjust_last_xlabel are also accepted.
 
   font_shrink_factor: If adjust_first_xlabel or adjust_last_xlabel is True,
                       shrink font size of x-labels without newline by this
@@ -74,9 +78,7 @@ def datetick(*args,
 
   # Get all kwargs passed using locals
   kwargs = {k: v for k, v in locals().items() if k != 'args'}
-
-  from . import adjust, util
-  from .rules import rule as select_rule
+  from . import adjust, util, rules
 
   axis = 'x' if len(args) == 0 else args[0]
   if axis not in ['x', 'y']:
@@ -129,8 +131,8 @@ def datetick(*args,
     labels = util.get_ticklabels(axis, axes)
     util.print_ticks(axis, axes, ticks, labels)
 
-  rule = select_rule(delta_t, rule_idx=kwargs['rule_idx'])
 
+  rule = rules.rule(delta_t, rule_idx_change=kwargs['rule_idx_change'])
   if rule is None:
     delta_t_str = util.format_delta(delta_t)
     msg = f'No config rule matched delta_t = {delta_t_str}. '
@@ -142,6 +144,8 @@ def datetick(*args,
       'labels': labels,
       'rule': rule
     }
+  else:
+    logger.debug('Matched rule: %s', rule)
 
 
   if rule['major']['locator'] is None:
@@ -163,6 +167,8 @@ def datetick(*args,
       logger.debug('%slabels and ticks after modifying millis:', axis)
       util.print_ticks(axis, axes, ticks, labels)
 
+    if len(labels) == 1:
+      breakpoint()
 
   if len(labels) == 0:
     logger.debug('No labels. Returning without applying major_sub_format or set_cb.')
@@ -212,23 +218,20 @@ def datetick(*args,
       adjust.non_sub_label_font_size(axes, font_shrink_factor)
 
 
-  font_size_change = 0
-  rule_idx_change = 0
-  font_size_change_warning = None
-  rule_idx_change_warning = None
-  if kwargs['rule_idx_change'] is None:
-    font_size_change, font_size_change_warning = \
-      adjust.font_size_for_overlap(axis, axes, min_gap_warn)
+  font_size_change = adjust.font_size_for_overlap(axis, axes, min_font_size, min_gap_warn)
 
-    rule_idx_change, rule_idx_change_warning = \
-      adjust.rule(axis, axes, rule_idx_change)
+  rule_idx_change = adjust.rule(axis, axes, rule_idx_change)
 
+  if abs(rule_idx_change) > 3 or len(labels) < 3:
+    logger.debug('Max rule_idx_change exceeded. No further rule adjustments will be made.')
+  else:
     if rule_idx_change != 0:
-      logger.debug(
-        'Font size overlap exists after font size adjustment. '
-        'Re-running datetick() with rule_idx_change = %s.\n',
-        rule_idx_change,
-      )
+      if rule_idx_change > 0:
+        msg = 'Label overlap. '
+      else:
+        msg = 'Large gap between labels. '
+      msg += 'Re-running datetick() with rule_idx_change = %s.\n'
+      logger.debug(msg, rule_idx_change)
       kwargs['rule_idx_change'] = rule_idx_change
       kwargs['axes'] = axes
       return datetick(axis, **kwargs)
@@ -244,10 +247,8 @@ def datetick(*args,
           'ticks': ticks,
           'labels': labels,
           'rule': rule,
-          'rule_idx_change': kwargs['rule_idx'],
-          'rule_idx_change_warning': rule_idx_change_warning,
-          'font_size_change': font_size_change,
-          'font_size_change_warning': font_size_change_warning
+          'rule_idx_change': rule_idx_change,
+          'font_size_change': font_size_change
         }
 
 
@@ -441,6 +442,7 @@ def _update_labels(axis, axes, ticks, labels):
   labels = util.get_ticklabels(axis, axes)
 
   return ticks, labels
+
 
 def _apply_rule(axis, axes, rule, lim_data):
 

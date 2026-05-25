@@ -25,6 +25,7 @@ DIRS = ['x']
 #WIDTHS = [3.2]
 WIDTHS = [6.4]
 #WIDTHS = [9.6]
+WIDTHS_FROM_CLI = False
 FMT = 'svg'
 FMT_FROM_CLI = False
 OPEN_FIG = False
@@ -35,7 +36,7 @@ try:
 except ImportError:
   pytest = None
 
-
+  
 if pytest is None:
   def _short_mark(func):
     return func
@@ -64,15 +65,16 @@ def test_all(idx=None):
 
   info = {}
   for axis in DIRS:
-    info[axis] = {'files': [], 'results': [], 'tests': []}
+    info[axis] = {'files': [], 'results': [], 'tests': [], 'test_indices': []}
     for figwidth in WIDTHS:
       if DEBUG_SCRIPT:
         print(f"Running visual test with axis='{axis}' and figwidth={figwidth}in")
 
-      files, results, tests = _run_all(axis=axis, figwidth=figwidth, idx=idx)
+      files, results, tests, test_indices = _run_all(axis=axis, figwidth=figwidth, idx=idx)
       info[axis]['files'] += files
       info[axis]['results'] += results
       info[axis]['tests'] += tests
+      info[axis]['test_indices'] += test_indices
 
     #files[axis] = sorted(files[axis])
 
@@ -92,6 +94,7 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
   files = []
   results = []
   tests_run = []
+  test_indices = []
   tidx = 1
   for entries in [tests_manual, tests_generated]:
     for test in entries:
@@ -109,20 +112,23 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
         delta_t_str = test.get('_delta_t', datetick.util.format_delta(util.parse_ds(dt_str_f) - util.parse_ds(dt_str_o)))
         print(f"{tidx}. delta_t={delta_t_str} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
 
-      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=figwidth, min_font_size=None, min_gap_warn=True, **kwargs)
+      width = figwidth if WIDTHS_FROM_CLI else test.get('_width', figwidth)
+
+      result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=width, min_gap_warn=True, **kwargs)
       results.append(result)
       tests_run.append(test)
+      test_indices.append(tidx)
 
       fmt = FMT if FMT_FROM_CLI else test.get('_fmt', FMT)
-      file = _savefig(dt_str_o, dt_str_f, axis, figwidth, files, fmt)
+      file = _savefig(dt_str_o, dt_str_f, axis, width, files, fmt)
       files.append(file)
 
       if short or tidx >= N_MAX:
-        break
+        return files, results, tests_run, test_indices
 
       tidx += 1
 
-  return files, results, tests_run
+  return files, results, tests_run, test_indices
 
 
 def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
@@ -234,9 +240,10 @@ def _readmes(results):
     files = results['files']
     results_list = results['results']
     tests = results['tests']
+    test_indices = results['test_indices']
 
     for idx, file in enumerate(files):
-      note = f"{idx+1}\\."
+      note = f"{test_indices[idx]}\\."
       if tests[idx].get('_comment'):
         note += f" {tests[idx]['_comment']}"
       if results_list[idx]['font_size_change'] != 0:
@@ -410,7 +417,7 @@ def _use_default_interactive_backend():
 def cli():
   import ast
   import argparse
-  global DIRS, WIDTHS, FMT, FMT_FROM_CLI, OPEN_FIG, SHOW_FIG, DEBUG_SCRIPT, N_MAX
+  global DIRS, WIDTHS, WIDTHS_FROM_CLI, FMT, FMT_FROM_CLI, OPEN_FIG, SHOW_FIG, DEBUG_SCRIPT, N_MAX
 
   def parse_widths(value):
     return [float(part) for part in value.split(',') if part]
@@ -533,6 +540,7 @@ def cli():
   _configure_logging(enable_datetick_logs=args.debug, enable_script_logs=DEBUG_SCRIPT)
   if args.widths is not None:
     WIDTHS = args.widths
+    WIDTHS_FROM_CLI = True
   if args.fmt is not None:
     FMT = args.fmt
     FMT_FROM_CLI = True

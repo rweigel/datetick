@@ -26,7 +26,7 @@ def rules(rules_file=None):
 
   return rules
 
-def rule(delta_t, rule_idx=None, rules_file=None):
+def rule(delta_t, rule_idx_change=None, rules_file=None):
   """
   major_sub_format contains additional information that is used for the first
    tick label or when there is a major change. For example, if
@@ -48,8 +48,8 @@ def rule(delta_t, rule_idx=None, rules_file=None):
     hi = _to_seconds(rng.get('max'))
     lo = lo if lo is not None else 0
     if lo <= total_seconds and (hi is None or total_seconds < hi):
-      if isinstance(rule_idx, int):
-        target_index = matched_index + rule_idx
+      if isinstance(rule_idx_change, int):
+        target_index = matched_index + rule_idx_change
         if target_index < 0:
           return loaded_rules[0]
         if target_index >= len(loaded_rules):
