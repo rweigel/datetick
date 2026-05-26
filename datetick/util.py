@@ -36,6 +36,24 @@ def make_locator(spec):
   return LOCATOR_MAP[spec['class']](spec)
 
 
+def reset(axis, axes):
+  # Reset locator and formatter to default Matplotlib default. Otherwise,
+  # the labels will still have the previous rule's formatting applied.
+  logger.debug("Resetting %s-axis locator and formatter to default Matplotlib.", axis)
+
+  if axis == 'x':
+    axes.xaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
+    axes.xaxis.set_major_formatter(matplotlib.dates.AutoDateFormatter(axes.xaxis.get_major_locator()))
+  else:
+    axes.yaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
+    axes.yaxis.set_major_formatter(matplotlib.dates.AutoDateFormatter(axes.yaxis.get_major_locator()))
+
+  axes.figure.canvas.draw()
+  labels = get_ticklabels(axis, axes)
+  ticks = get_ticks(axis, axes)
+
+  return ticks, labels
+
 def make_formatter(spec):
 
   def _millis(x, pos):

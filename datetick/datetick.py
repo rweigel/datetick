@@ -111,6 +111,8 @@ def datetick(*args,
       axes.set_yticklabels([ticklabel])
     return
 
+  labels = util.get_ticklabels(axis, axes)
+
   data_tspan = matplotlib.dates.num2date((lim_data[0], lim_data[1]))
   delta_t_data = data_tspan[-1] - data_tspan[0]
 
@@ -128,7 +130,6 @@ def datetick(*args,
     logger.debug('Default %slim[-1]:   %s', axis, matplotlib.dates.num2date(lim_axis[-1]))
     logger.debug('Default %sticks[-1]: %s', axis, matplotlib.dates.num2date(ticks[-1]))
     logger.debug('Default %slabels and ticks:', axis)
-    labels = util.get_ticklabels(axis, axes)
     util.print_ticks(axis, axes, ticks, labels)
 
 
@@ -148,9 +149,15 @@ def datetick(*args,
     logger.debug('Matched rule: %s', rule)
 
 
-  if rule['major']['locator'] is None:
-    logger.debug('No major locator rule for this time span. Using default Matplotlib locator and formatter.')
+  if kwargs['rule_idx_change'] is not None:
+    ticks, labels = util.reset(axis, axes)
+    if logger.isEnabledFor(logging.DEBUG):
+      logger.debug('%slabels and ticks reset:', axis)
+      util.print_ticks(axis, axes, ticks, labels)
 
+  if rule['major']['locator'] is None:
+
+    logger.debug('No major locator rule for this time span. Using default Matplotlib locator and formatter.')
     labels = adjust.millis(labels, min_digits=1)
     if logger.isEnabledFor(logging.DEBUG):
       logger.debug('%slabels and ticks after modifying millis:', axis)
@@ -182,6 +189,16 @@ def datetick(*args,
       logger.debug('%slabels and ticks after adjusting range:', axis)
       util.print_ticks(axis, axes, ticks, labels)
 
+
+  # If font size was changed before rule change applied, font size on
+  # some labels persist.
+  orig_font_size = getattr(axes, '_datetick_font_size', None)
+  if orig_font_size is not None:
+    logger.debug('  Found _datetick_font_size. Setting all labels to have this font size.')
+    for label in labels:
+      label.set_fontsize(orig_font_size)
+  else:
+    getattr(axes, '_datetick_font_size', util.get_font_size(axis, axes))
 
   if rule['major']['sub_format'] == '':
     ticks, labels = _update_labels(axis, axes, ticks, labels)
@@ -217,7 +234,6 @@ def datetick(*args,
     if adjusted or font_shrink_always:
       adjust.non_sub_label_font_size(axes, font_shrink_factor)
 
-
   font_size_change = adjust.font_size_for_overlap(axis, axes, min_font_size, min_gap_warn)
 
   rule_idx_change = adjust.rule(axis, axes, rule_idx_change)
@@ -250,7 +266,6 @@ def datetick(*args,
           'rule_idx_change': rule_idx_change,
           'font_size_change': font_size_change
         }
-
 
 
 def _set_cb(axis, axes, kwargs):

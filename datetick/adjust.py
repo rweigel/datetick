@@ -461,13 +461,18 @@ def _custom_label(axes, label, which, split=True):
   setattr(axes, f'_datetick_custom_{which}_xlabel', custom_labels)
 
 
-def non_sub_label_font_size(axes, font_shrink_factor=0.9):
+def non_sub_label_font_size(axes, font_shrink_factor):
   xticklabels = axes.get_xticklabels()
 
   # Make all labels without newline slightly smaller than default fontsize 
   # so it is clearer that major_sub_format applies to larger number.
   if logger.isEnabledFor(logging.DEBUG):
     logger.debug('Adjusting font size of x-labels without newline')
+
+  orig = xticklabels[0].get_fontsize()
+  new = orig*font_shrink_factor
+
   for label in xticklabels:
     if '\n' not in label.get_text():
-      label.set_fontsize(label.get_fontsize()*font_shrink_factor)
+      logger.debug(f"  Reducing font size of {label} from {orig} to {new}")
+      label.set_fontsize(new)

@@ -26,6 +26,7 @@ def rules(rules_file=None):
 
   return rules
 
+
 def rule(delta_t, rule_idx_change=None, rules_file=None):
   """
   major_sub_format contains additional information that is used for the first

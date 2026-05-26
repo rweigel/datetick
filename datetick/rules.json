@@ -455,8 +455,8 @@
     },
     "minor": {
       "locator": {
-        "class": "SecondLocator",
-        "bysecond_arange": [0, 60, 1]
+        "class": "MinuteLocator",
+        "byminute_arange": [0, 60, 1]
       }
     }
   },
@@ -487,8 +487,8 @@
     },
     "minor": {
       "locator": {
-        "class": "SecondLocator",
-        "bysecond_arange": [
+        "class": "MinuteLocator",
+        "byminute_arange": [
           0,
           60,
           1
@@ -508,11 +508,7 @@
     "major": {
       "locator": {
         "class": "MinuteLocator",
-        "byminute_arange": [
-          0,
-          60,
-          5
-        ]
+        "byminute_arange": [0, 60, 5]
       },
       "formatter": {
         "class": "DateFormatter",
