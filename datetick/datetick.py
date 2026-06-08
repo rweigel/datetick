@@ -134,26 +134,25 @@ def datetick(*args,
 
 
   rule = rules.rule(delta_t, rule_idx_change=kwargs['rule_idx_change'])
-  if rule is None:
-    delta_t_str = util.format_delta(delta_t)
-    msg = f'No config rule matched delta_t = {delta_t_str}. '
+  if rule is not None:
+    logger.debug('Matched rule: %s', rule)
+  else:
+    msg = f'No config rule matched delta_t = {util.format_delta(delta_t)}. '
     msg += 'Using default Matplotlib locator and formatter.'
     util.warn(msg)
     return {
       'delta_t': delta_t,
       'ticks': ticks,
       'labels': labels,
-      'rule': rule
+      'rule': None,
+      'rule_idx_change': None,
+      'font_size_change': None
     }
-  else:
-    logger.debug('Matched rule: %s', rule)
-
 
   if kwargs['rule_idx_change'] is not None:
+    # Reset rule_idx_change to None so starting labels don't have datetick()
+    # formatting.
     ticks, labels = util.reset(axis, axes)
-    if logger.isEnabledFor(logging.DEBUG):
-      logger.debug('%slabels and ticks reset:', axis)
-      util.print_ticks(axis, axes, ticks, labels)
 
   if rule['major']['locator'] is None:
 
@@ -174,21 +173,10 @@ def datetick(*args,
       logger.debug('%slabels and ticks after modifying millis:', axis)
       util.print_ticks(axis, axes, ticks, labels)
 
-    if len(labels) == 1:
-      breakpoint()
 
   if len(labels) == 0:
     logger.debug('No labels. Returning without applying major_sub_format or set_cb.')
     return
-
-  if adjust_range or adjust_range_tight:
-    logger.debug('Adjusting %s-range', axis)
-
-    ticks, labels = adjust.time_range(axis, axes, lim_data, adjust_range_tight)
-    if logger.isEnabledFor(logging.DEBUG):
-      logger.debug('%slabels and ticks after adjusting range:', axis)
-      util.print_ticks(axis, axes, ticks, labels)
-
 
   # If font size was changed before rule change applied, font size on
   # some labels persist.
@@ -199,6 +187,16 @@ def datetick(*args,
       label.set_fontsize(orig_font_size)
   else:
     getattr(axes, '_datetick_font_size', util.get_font_size(axis, axes))
+
+
+  if adjust_range or adjust_range_tight:
+    logger.debug('Adjusting %s-range', axis)
+
+    ticks, labels = adjust.time_range(axis, axes, lim_data, adjust_range_tight)
+    if logger.isEnabledFor(logging.DEBUG):
+      logger.debug('%slabels and ticks after adjusting range:', axis)
+      util.print_ticks(axis, axes, ticks, labels)
+
 
   if rule['major']['sub_format'] == '':
     ticks, labels = _update_labels(axis, axes, ticks, labels)
@@ -228,8 +226,9 @@ def datetick(*args,
 
     adjusted = adjust.first_last_labels(axes,
       adjust_first_xlabel=adjust_first_xlabel,
-      adjust_last_xlabel=adjust_last_xlabel
-    )
+      adjust_last_xlabel=adjust_last_xlabel,
+      edge_label_mode='custom',
+      edge_label_split=True)
 
     if adjusted or font_shrink_always:
       adjust.non_sub_label_font_size(axes, font_shrink_factor)

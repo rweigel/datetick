@@ -15,7 +15,7 @@ def rule(axis, axes, rule_idx_change):
   min_gap = compute.min_gap(axis, axes)
 
   a = min_gap < font_size
-  b = min_gap > 5*font_size
+  b = min_gap > 8*font_size
   if not a and not b:
     if logger.isEnabledFor(logging.DEBUG):
       logger.debug('No adjustment needed for rule_idx_change.')
@@ -234,7 +234,7 @@ def time_range(axis, axes, lim_data, tight):
   return ticks, labels
 
 
-def first_last_labels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, edge_label_mode='custom', split=True):
+def first_last_labels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False, edge_label_mode='custom', edge_label_split=True):
 
   # Remove existing custom first/last labels if they exist.
   for which in ['first', 'last']:
@@ -261,8 +261,8 @@ def first_last_labels(axes, adjust_first_xlabel=False, adjust_last_xlabel=False,
   xticklabels[0].set_alpha(original_first_alpha)
   xticklabels[-1].set_alpha(original_last_alpha)
 
-  default_first = _edge_label_options(adjust_first_xlabel, edge_label_mode=edge_label_mode, split=split)
-  default_last = _edge_label_options(adjust_last_xlabel, edge_label_mode=edge_label_mode, split=split)
+  default_first = _edge_label_options(adjust_first_xlabel, edge_label_mode=edge_label_mode, split=edge_label_split)
+  default_last = _edge_label_options(adjust_last_xlabel, edge_label_mode=edge_label_mode, split=edge_label_split)
 
   adjusted = False
 

@@ -55,19 +55,7 @@
     "_delta_t": "1d23h",
     "adjust_range_tight": true,
     "adjust_first_xlabel": true,
-    "adjust_last_xlabel": true,
-    "_comment": "Right label is right aligned in PNG.",
-    "_fmt": "png"
-  },
-  {
-    "start": "2000-01-01T00:00:00Z",
-    "stop": "2000-01-03T00:00:00Z",
-    "_delta_t": "1d23h",
-    "adjust_range_tight": true,
-    "adjust_first_xlabel": true,
-    "adjust_last_xlabel": true,
-    "_comment": "Right label is not right aligned in SVG due to Matplotlib bug.",
-    "_fmt": "svg"
+    "adjust_last_xlabel": true
   },
   {
     "start": "2000-12-31T11:30:00Z",

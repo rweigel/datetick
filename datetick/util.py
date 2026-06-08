@@ -52,11 +52,26 @@ def reset(axis, axes):
   labels = get_ticklabels(axis, axes)
   ticks = get_ticks(axis, axes)
 
+  if logger.isEnabledFor(logging.DEBUG):
+    logger.debug('%slabels and ticks after reset:', axis)
+    print_ticks(axis, axes, ticks, labels)
+
   return ticks, labels
+
 
 def make_formatter(spec):
 
   def _millis(x, pos):
+    x = matplotlib.dates.num2date(x)
+    label = x.strftime('.%f')
+    from . import adjust
+    #breakpoint()
+    label = adjust.millis([label])[0]
+    #label = label[0:4]
+
+    return label
+
+  def __millis(x, pos):
     x = matplotlib.dates.num2date(x)
     label = x.strftime('.%f')
     label = label[0:4]

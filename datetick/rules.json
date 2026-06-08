@@ -5,13 +5,94 @@
         "seconds": 0
       },
       "max": {
-        "seconds": 0.1
+        "seconds": 0.001
       }
     },
     "major": null,
     "minor": null,
     "major_sub_format": "%Y-%m-%d",
     "major_sub_transition": null
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 0.001
+      },
+      "max": {
+        "seconds": 0.0025
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 250
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      },
+      "sub_format": "%H:%M:%S\n%Y-%m-%d",
+      "sub_transition": "second"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 125
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 0.0025
+      },
+      "max": {
+        "seconds": 0.005
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 500
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      },
+      "sub_format": "%H:%M:%S\n%Y-%m-%d",
+      "sub_transition": "second"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 250
+      }
+    }
+  },
+  {
+    "range": {
+      "min": {
+        "seconds": 0.005
+      },
+      "max": {
+        "seconds": 0.1
+      }
+    },
+    "major": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 10000
+      },
+      "formatter": {
+        "class": "MillisecondFuncFormatter"
+      },
+      "sub_format": "%H:%M:%S\n%Y-%m-%d",
+      "sub_transition": "second"
+    },
+    "minor": {
+      "locator": {
+        "class": "MicrosecondLocator",
+        "interval": 5000
+      }
+    }
   },
   {
     "range": {
