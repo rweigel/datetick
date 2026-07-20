@@ -36,7 +36,7 @@ try:
 except ImportError:
   pytest = None
 
-  
+
 if pytest is None:
   def _short_mark(func):
     return func

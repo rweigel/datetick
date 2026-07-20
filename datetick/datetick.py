@@ -21,6 +21,7 @@ def datetick(*args,
              min_gap_warn=False,
              rule_idx=None,
              rule_idx_change=None,
+             rule_idx_reverted=False,
              set_cb=True):
   """
   datetick() formats the major and minor x-tick labels of the current figure.
@@ -235,21 +236,30 @@ def datetick(*args,
 
   font_size_change = adjust.font_size_for_overlap(axis, axes, min_font_size, min_gap_warn)
 
-  rule_idx_change = adjust.rule(axis, axes, rule_idx_change)
+  if not kwargs['rule_idx_reverted']:
 
-  if abs(rule_idx_change) > 3 or len(labels) < 3:
-    logger.debug('Max rule_idx_change exceeded. No further rule adjustments will be made.')
-  else:
-    if rule_idx_change != 0:
-      if rule_idx_change > 0:
-        msg = 'Label overlap. '
-      else:
-        msg = 'Large gap between labels. '
-      msg += 'Re-running datetick() with rule_idx_change = %s.\n'
-      logger.debug(msg, rule_idx_change)
-      kwargs['rule_idx_change'] = rule_idx_change
-      kwargs['axes'] = axes
-      return datetick(axis, **kwargs)
+    rule_idx_change = adjust.rule(axis, axes, rule_idx_change)
+
+    if abs(rule_idx_change) > 2 or len(labels) < 3:
+      logger.debug('Max rule_idx_change exceeded. No further rule adjustments will be made.')
+    else:
+      if rule_idx_change != 0:
+        if rule_idx_change > 0:
+          msg = 'Label overlap. '
+        else:
+          msg = 'Large gap between labels. '
+        msg += 'Re-running datetick() with rule_idx_change = %s.\n'
+        logger.debug(msg, rule_idx_change)
+        kwargs['rule_idx_change'] = rule_idx_change
+        kwargs['axes'] = axes
+        return datetick(axis, **kwargs)
+      elif kwargs['rule_idx_change'] not in (None, 0) and not kwargs['rule_idx_reverted']:
+        logger.debug('Rule adjustment reversed. Reverting to original rule.')
+        kwargs['rule_idx'] = None
+        kwargs['rule_idx_change'] = None
+        kwargs['rule_idx_reverted'] = True
+        kwargs['axes'] = axes
+        return datetick(axis, **kwargs)
 
 
   # Trigger update of ticks when limits change due to user interaction.
