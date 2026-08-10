@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datetick"
-version = "0.9.14"
+version = "0.9.15"
 authors = [
   {name = "Bob Weigel", email = "rweigel@gmu.edu"},
   {name = "Brendan Gallagher"},
@@ -25,6 +25,7 @@ Homepage = "https://github.com/rweigel/datetick/"
 
 [tool.setuptools.packages.find]
 where = ["."]
+exclude = ["build*"]
 
 [tool.setuptools.package-data]
 datetick = ["rules.json"]
