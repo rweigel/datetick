@@ -54,10 +54,8 @@ def rule(axis, axes, rule_idx_change):
 
 
 def font_size_for_overlap(axis, axes, min_font_size, min_gap_warn):
-  adjust_warning = None
   # Adjust font size if overlap in labels.
 
-  font_size = util.get_font_size(axis, axes)
   min_gap = compute.min_gap(axis, axes)
 
   if logger.isEnabledFor(logging.DEBUG):
@@ -83,7 +81,7 @@ def _reduce_font_size(axis, axes, min_gap, font_size_min):
   font_size_orig = util.get_font_size(axis, axes)
 
   if logger.isEnabledFor(logging.DEBUG):
-    msg = f'Minimum gap of {min_gap:.1f} px bewteen labels is less than font size of '
+    msg = f'Minimum gap of {min_gap:.1f} px between labels is less than font size of '
     msg += f'{font_size_orig} pt. Shrinking font size to avoid overlap.'
     logger.debug(msg)
 
@@ -441,8 +439,10 @@ def _custom_label(axes, label, which, split=True):
     setattr(axes, f'_datetick_custom_{which}_xlabel', custom_label)
     return
 
-  line_spacing = getattr(label, '_linespacing', 1.2)
-  line_height_px = font_props.get_size_in_points() * line_spacing * axes.figure.dpi / 72.0
+  _, line_height_px, descent_px = renderer.get_text_width_height_descent(
+    'lp', font_props, ismath=False
+  )
+  line_height_px = (line_height_px - descent_px) * 1.2
   line_height_axes = (
     axes.transAxes.inverted().transform((0, line_height_px))[1]
     - axes.transAxes.inverted().transform((0, 0))[1]

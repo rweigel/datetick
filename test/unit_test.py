@@ -11,6 +11,7 @@ import datetick as datetick_pkg
 
 
 datetick_module = importlib.import_module('datetick.datetick')
+adjust_module = importlib.import_module('datetick.adjust')
 rules_module = importlib.import_module('datetick.rules')
 util_module = importlib.import_module('datetick.util')
 
@@ -168,12 +169,61 @@ def test_repeated_third_row_is_removed_from_three_line_labels():
   assert result[2] == '00\nJan'
 
 
-def test_manual_labels_handle_mixed_fractional_and_integer_strings():
-  with patched_attr(util_module, 'get_ticks', lambda axis, axes: [0, 1]):
-    with patched_attr(util_module, 'get_ticklabels', lambda axis, axes: ['00', '00.50']):
-      ticks, labels = datetick_module._manual_labels('x', object())
-  assert ticks == [0, 1]
+def test_millis_handles_mixed_fractional_and_integer_strings():
+  labels = adjust_module.millis(['00', '00.50'], min_digits=1)
   assert labels == ['00', '00.5']
+
+
+def test_custom_label_does_not_depend_on_private_linespacing():
+  fig, ax = matplotlib.pyplot.subplots()
+  try:
+    ax.set_xticks([0])
+    label = ax.set_xticklabels(['first\nline'])[0]
+    fig.canvas.draw()
+    bbox = label.get_window_extent(renderer=fig.canvas.get_renderer())
+    label.set_visible(False)
+    label.get_window_extent = lambda renderer=None: bbox
+    label._linespacing = 'invalid'
+    adjust_module._custom_label(ax, label, which='first', split=True)
+    assert len(ax._datetick_custom_first_xlabel) == 2
+  finally:
+    matplotlib.pyplot.close(fig)
+
+
+def test_rule_idx_selects_absolute_rule():
+  delta_t = datetime.timedelta(days=31)
+  first = rules_module.rule(delta_t, rule_idx=0)
+  sixth = rules_module.rule(delta_t, rule_idx=5)
+  assert first != sixth
+
+
+def test_callback_refresh_clears_retry_state():
+  fig, ax = make_datetime_plot(axis='x')
+  calls = []
+
+  def record_call(axis, **kwargs):
+    calls.append((axis, kwargs))
+
+  kwargs = {
+    'axes': ax,
+    'rule_idx_change': -1,
+    'rule_idx_change_reverted': -1,
+    '_font_size_orig': 8,
+    'set_cb': True,
+  }
+  try:
+    with patched_attr(datetick_module, 'datetick', record_call):
+      datetick_module._set_cb('x', ax, kwargs)
+      ax.callbacks.process('xlim_changed', ax)
+
+    axis, refresh_kwargs = calls[-1]
+    assert axis == 'x'
+    assert refresh_kwargs['rule_idx_change'] is None
+    assert refresh_kwargs['rule_idx_change_reverted'] is None
+    assert refresh_kwargs['_font_size_orig'] is None
+    assert refresh_kwargs['set_cb'] is False
+  finally:
+    matplotlib.pyplot.close(fig)
 
 
 def test_mixed_naive_and_aware_datetimes_do_not_crash():
@@ -208,6 +258,41 @@ def test_multi_year_span_returns_rule_result():
     result = datetick_pkg.datetick('x', axes=ax)
     assert isinstance(result, dict)
     assert result['delta_t'].days >= 365
+  finally:
+    matplotlib.pyplot.close(fig)
+
+
+def test_reversed_rule_adjustment_restores_original_font_size():
+  fig, ax = make_datetime_plot(
+    axis='x',
+    start=datetime.datetime(2001, 1, 1),
+    stop=datetime.datetime(2001, 2, 1),
+  )
+  ax.tick_params(axis='x', labelsize=13)
+  rule_changes = iter([1, 0])
+  shrink_calls = []
+
+  def shrink_font(axis, axes, min_font_size, min_gap_warn):
+    shrink_calls.append(True)
+    for label in util_module.get_ticklabels(axis, axes, strings=False):
+      label.set_fontsize(6)
+    return -7
+
+  try:
+    with patched_attr(adjust_module, 'font_size_for_overlap', shrink_font):
+      with patched_attr(adjust_module, 'rule', lambda *args: next(rule_changes)):
+        result = datetick_pkg.datetick('x', axes=ax)
+
+    font_sizes = {
+      label.get_fontsize()
+      for label in util_module.get_ticklabels('x', ax, strings=False)
+    }
+    assert result['font_size_change'] == 0
+    assert result['rule_idx_change'] is None
+    assert result['rule_idx_change_reverted'] == 1
+    assert len(shrink_calls) == 2
+    assert font_sizes == {13.0}
+    assert not hasattr(ax, '_datetick_font_size')
   finally:
     matplotlib.pyplot.close(fig)
 

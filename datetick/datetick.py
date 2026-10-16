@@ -21,7 +21,8 @@ def datetick(*args,
              min_gap_warn=False,
              rule_idx=None,
              rule_idx_change=None,
-             rule_idx_reverted=False,
+             rule_idx_change_reverted=None,
+             _font_size_orig=None,
              set_cb=True):
   """
   datetick() formats the major and minor x-tick labels of the current figure.
@@ -47,13 +48,13 @@ def datetick(*args,
   --------
   adjust_range: If True, expand axis range so data are always within a major tick.
 
-  adjust_last_xlabel: If True, adjust last x-label to avoid extending past lower axis limit.
-                      If 'offset', use the offset method. If 'custom', use one
-                      custom multiline text artist. If 'custom_split', use
-                      separate custom text artists for each line (default when
-                      adjust_last_xlabel = True).
+  adjust_last_xlabel: If True, adjust last x-label to avoid extending past lower
+                      axis limit. If 'offset', use the offset method. If 
+                      'custom', use one custom multiline text artist. If
+                      'custom_split', use separate custom text artists for
+                      each line (default when adjust_last_xlabel = True).
 
-  adjust_first_xlabel: The same string options as adjust_last_xlabel are also accepted.
+  adjust_first_xlabel: Same string options as adjust_last_xlabel.
 
   font_shrink_factor: If adjust_first_xlabel or adjust_last_xlabel is True,
                       shrink font size of x-labels without newline by this
@@ -113,6 +114,9 @@ def datetick(*args,
     return
 
   labels = util.get_ticklabels(axis, axes)
+  if _font_size_orig is None:
+    _font_size_orig = util.get_font_size(axis, axes)
+    kwargs['_font_size_orig'] = _font_size_orig
 
   data_tspan = matplotlib.dates.num2date((lim_data[0], lim_data[1]))
   delta_t_data = data_tspan[-1] - data_tspan[0]
@@ -134,7 +138,11 @@ def datetick(*args,
     util.print_ticks(axis, axes, ticks, labels)
 
 
-  rule = rules.rule(delta_t, rule_idx_change=kwargs['rule_idx_change'])
+  rule = rules.rule(
+    delta_t,
+    rule_idx=kwargs['rule_idx'],
+    rule_idx_change=kwargs['rule_idx_change']
+  )
   if rule is not None:
     logger.debug('Matched rule: %s', rule)
   else:
@@ -147,17 +155,20 @@ def datetick(*args,
       'labels': labels,
       'rule': None,
       'rule_idx_change': None,
+      'rule_idx_change_reverted': rule_idx_change_reverted,
       'font_size_change': None
     }
 
-  if kwargs['rule_idx_change'] is not None:
-    # Reset rule_idx_change to None so starting labels don't have datetick()
-    # formatting.
+  if kwargs['rule_idx_change'] is not None or kwargs['rule_idx_change_reverted'] is not None:
+    # Reset locator/formatter so starting labels don't have datetick()
+    # formatting from a previous rule change or revert.
     ticks, labels = util.reset(axis, axes)
 
   if rule['major']['locator'] is None:
 
-    logger.debug('No major locator rule for this time span. Using default Matplotlib locator and formatter.')
+    msg = 'No major locator rule for this time span. '
+    msg += 'Using default Matplotlib locator and formatter.'
+    logger.debug(msg)
     labels = adjust.millis(labels, min_digits=1)
     if logger.isEnabledFor(logging.DEBUG):
       logger.debug('%slabels and ticks after modifying millis:', axis)
@@ -178,16 +189,6 @@ def datetick(*args,
   if len(labels) == 0:
     logger.debug('No labels. Returning without applying major_sub_format or set_cb.')
     return
-
-  # If font size was changed before rule change applied, font size on
-  # some labels persist.
-  orig_font_size = getattr(axes, '_datetick_font_size', None)
-  if orig_font_size is not None:
-    logger.debug('  Found _datetick_font_size. Setting all labels to have this font size.')
-    for label in labels:
-      label.set_fontsize(orig_font_size)
-  else:
-    getattr(axes, '_datetick_font_size', util.get_font_size(axis, axes))
 
 
   if adjust_range or adjust_range_tight:
@@ -234,32 +235,40 @@ def datetick(*args,
     if adjusted or font_shrink_always:
       adjust.non_sub_label_font_size(axes, font_shrink_factor)
 
-  font_size_change = adjust.font_size_for_overlap(axis, axes, min_font_size, min_gap_warn)
+  # Label updates may preserve a reduced size from the previous rule attempt.
+  if rule_idx_change is not None or rule_idx_change_reverted is not None:
+    logger.debug('Restoring font size to %.1f pt.', _font_size_orig)
+    labels = util.get_ticklabels(axis, axes, strings=False)
+    for label in labels:
+      label.set_fontsize(_font_size_orig)
 
-  if not kwargs['rule_idx_reverted']:
+  if kwargs['rule_idx_change_reverted'] is not None:
+    font_size_change = 0
+  else:
+    font_size_change = adjust.font_size_for_overlap(axis, axes, min_font_size, min_gap_warn)
+
+  if kwargs['rule_idx_change_reverted'] is None:
 
     rule_idx_change = adjust.rule(axis, axes, rule_idx_change)
 
-    if abs(rule_idx_change) > 2 or len(labels) < 3:
+    if rule_idx_change == 0 and kwargs['rule_idx_change'] not in (None, 0):
+      logger.debug('Rule adjustment reversed. Reverting to original rule.')
+      kwargs['rule_idx_change_reverted'] = kwargs['rule_idx_change']
+      kwargs['rule_idx_change'] = None
+      kwargs['axes'] = axes
+      return datetick(axis, **kwargs)
+    elif abs(rule_idx_change) > 2 or len(labels) < 3:
       logger.debug('Max rule_idx_change exceeded. No further rule adjustments will be made.')
-    else:
-      if rule_idx_change != 0:
-        if rule_idx_change > 0:
-          msg = 'Label overlap. '
-        else:
-          msg = 'Large gap between labels. '
-        msg += 'Re-running datetick() with rule_idx_change = %s.\n'
-        logger.debug(msg, rule_idx_change)
-        kwargs['rule_idx_change'] = rule_idx_change
-        kwargs['axes'] = axes
-        return datetick(axis, **kwargs)
-      elif kwargs['rule_idx_change'] not in (None, 0) and not kwargs['rule_idx_reverted']:
-        logger.debug('Rule adjustment reversed. Reverting to original rule.')
-        kwargs['rule_idx'] = None
-        kwargs['rule_idx_change'] = None
-        kwargs['rule_idx_reverted'] = True
-        kwargs['axes'] = axes
-        return datetick(axis, **kwargs)
+    elif rule_idx_change != 0:
+      if rule_idx_change > 0:
+        msg = 'Label overlap. '
+      else:
+        msg = 'Large gap between labels. '
+      msg += 'Re-running datetick() with rule_idx_change = %s.\n'
+      logger.debug(msg, rule_idx_change)
+      kwargs['rule_idx_change'] = rule_idx_change
+      kwargs['axes'] = axes
+      return datetick(axis, **kwargs)
 
 
   # Trigger update of ticks when limits change due to user interaction.
@@ -273,6 +282,7 @@ def datetick(*args,
           'labels': labels,
           'rule': rule,
           'rule_idx_change': rule_idx_change,
+          'rule_idx_change_reverted': rule_idx_change_reverted,
           'font_size_change': font_size_change
         }
 
@@ -286,7 +296,14 @@ def _set_cb(axis, axes, kwargs):
     else:
       axes.yaxis.set_minor_locator(matplotlib.dates.AutoDateLocator())
       axes.yaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
-    datetick(axis_name, **{**kwargs, 'set_cb': False})
+    refresh_kwargs = {
+      **kwargs,
+      'rule_idx_change': None,
+      'rule_idx_change_reverted': None,
+      '_font_size_orig': None,
+      'set_cb': False
+    }
+    datetick(axis_name, **refresh_kwargs)
 
 
   def on_xlims_change(ax):
@@ -314,7 +331,8 @@ def _set_cb(axis, axes, kwargs):
     if prev_resize is not None:
       axes.figure.canvas.mpl_disconnect(prev_resize)
 
-  logger.debug('%slim_changed callbacks registered: %s', axis, len(axes.callbacks.callbacks.get(f'{axis}lim_changed', {})))
+  cbs = len(axes.callbacks.callbacks.get(f'{axis}lim_changed', {}))
+  logger.debug('%slim_changed callbacks registered: %s', axis, cbs)
 
   disconect()
 
@@ -350,7 +368,8 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
 
   # Always apply major_sub_format to first tick label
   if logger.isEnabledFor(logging.DEBUG):
-    logger.debug('Applying major_sub_format to first tick label at %s.', matplotlib.dates.num2date(ticks[first]))
+    d = matplotlib.dates.num2date(ticks[first])
+    logger.debug('Applying major_sub_format to first tick label at %s.', d)
   labels[first] = '%s\n%s' % (labels[first], datetime.datetime.strftime(time[first], major_sub_format))
 
   major_sub_format_len = len(datetime.datetime.strftime(time[first], major_sub_format))
@@ -363,7 +382,8 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
     # Modify major labels after first under certain conditions.
     modify = False
     if logger.isEnabledFor(logging.DEBUG):
-      logger.debug('Checking if major_sub_format should be applied to tick label at %s.', matplotlib.dates.num2date(ticks[i]))
+      d = matplotlib.dates.num2date(ticks[i])
+      logger.debug('Checking if major_sub_format should be applied to tick label at %s.', d)
       logger.debug('  major_sub_transition = %s', major_sub_transition)
       logger.debug('  time[%s] = %s', i-1, time[i-1])
       logger.debug('  time[%s] = %s', i, time[i])
@@ -401,17 +421,23 @@ def _add_major_sub_string(axis, lim_axis, ticks, labels, major_sub_format, major
       # likely run together. This keeps major_sub_format label for second major
       # tick.
 
-      if major_sub_format_len > 7 and major_sub_transition in ['month', 'day', 'hour', 'minute', 'second']:
+      transition_list = ['month', 'day', 'hour', 'minute', 'second']
+      if major_sub_format_len > 7 and major_sub_transition in transition_list:
         if logger.isEnabledFor(logging.DEBUG):
-          logger.debug('  Removing major_sub_format to first tick label at %s to avoid overlap with second label.', matplotlib.dates.num2date(ticks[first]))
+          d = matplotlib.dates.num2date(ticks[first])
+          logger.debug('  Removing major_sub_format to first tick label at %s to avoid overlap with second label.', d)
         labels[first] = labels[first].split('\n')[0]
       if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('  Applying major_sub_format to tick label at %s.', matplotlib.dates.num2date(ticks[i]))
-      labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
+        d = matplotlib.dates.num2date(ticks[i])
+        logger.debug('  Applying major_sub_format to tick label at %s.', d)
+      ds = datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format)
+      labels[i] = '%s\n%s' % (labels[i], ds)
     else:
       if logger.isEnabledFor(logging.DEBUG):
-        logger.debug('  Applying major_sub_format to tick label at %s.', matplotlib.dates.num2date(ticks[i]))
-      labels[i] = '%s\n%s' % (labels[i], datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format))
+        d = matplotlib.dates.num2date(ticks[i])
+        logger.debug('  Applying major_sub_format to tick label at %s.', d)
+      ds = datetime.datetime.strftime(matplotlib.dates.num2date(ticks[i]), major_sub_format)
+      labels[i] = '%s\n%s' % (labels[i], ds)
 
 
   # If a trailing row repeats on later labels, drop the repeated trailing row.

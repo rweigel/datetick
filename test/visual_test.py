@@ -37,6 +37,7 @@ except ImportError:
   pytest = None
 
 
+
 if pytest is None:
   def _short_mark(func):
     return func
@@ -250,6 +251,8 @@ def _readmes(results):
         note += f" (font size change: {results_list[idx]['font_size_change']:.1f} pt)"
       if results_list[idx]['rule_idx_change']:
         note += f" (rule change: {results_list[idx]['rule_idx_change']})"
+      if results_list[idx].get('rule_idx_change_reverted') is not None:
+        note += f" (rule change: {results_list[idx]['rule_idx_change_reverted']} reverted)"
       if len(note) > 0:
         note = f"\n{note}\n\n"
 

@@ -65,9 +65,7 @@ def make_formatter(spec):
     x = matplotlib.dates.num2date(x)
     label = x.strftime('.%f')
     from . import adjust
-    #breakpoint()
     label = adjust.millis([label])[0]
-    #label = label[0:4]
 
     return label
 
@@ -178,7 +176,14 @@ def backend_is_interactive(matplotlib_module=None):
   backend = matplotlib_module.get_backend()
   if backend is None:
     return False
-  return backend.lower() in {name.lower() for name in matplotlib.rcsetup.interactive_bk}
+
+  try:
+    from matplotlib.backends.registry import backend_registry, BackendFilter
+    interactive_backends = backend_registry.list_builtin(BackendFilter.INTERACTIVE)
+  except ImportError:
+    interactive_backends = matplotlib_module.rcsetup.interactive_bk
+
+  return backend.lower() in {name.lower() for name in interactive_backends}
 
 
 def check_axes(kwargs):

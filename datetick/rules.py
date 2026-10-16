@@ -27,7 +27,7 @@ def rules(rules_file=None):
   return rules
 
 
-def rule(delta_t, rule_idx_change=None, rules_file=None):
+def rule(delta_t, rule_idx=None, rule_idx_change=None, rules_file=None):
   """
   major_sub_format contains additional information that is used for the first
    tick label or when there is a major change. For example, if
@@ -42,21 +42,27 @@ def rule(delta_t, rule_idx_change=None, rules_file=None):
 
   loaded_rules = rules(rules_file=rules_file)
 
-  total_seconds = delta_t.total_seconds()
-  for matched_index, matched_rule in enumerate(loaded_rules):
-    rng = matched_rule['range']
-    lo = _to_seconds(rng.get('min'))
-    hi = _to_seconds(rng.get('max'))
-    lo = lo if lo is not None else 0
-    if lo <= total_seconds and (hi is None or total_seconds < hi):
-      if isinstance(rule_idx_change, int):
-        target_index = matched_index + rule_idx_change
-        if target_index < 0:
-          return loaded_rules[0]
-        if target_index >= len(loaded_rules):
-          return loaded_rules[-1]
-        return loaded_rules[target_index]
-      return matched_rule
+  matched_index = None
+  if rule_idx is not None:
+    if not isinstance(rule_idx, int):
+      raise TypeError('rule_idx must be an integer or None.')
+    matched_index = min(max(rule_idx, 0), len(loaded_rules) - 1)
+  else:
+    total_seconds = delta_t.total_seconds()
+    for index, candidate in enumerate(loaded_rules):
+      rng = candidate['range']
+      lo = _to_seconds(rng.get('min'))
+      hi = _to_seconds(rng.get('max'))
+      lo = lo if lo is not None else 0
+      if lo <= total_seconds and (hi is None or total_seconds < hi):
+        matched_index = index
+        break
+
+  if matched_index is not None:
+    if isinstance(rule_idx_change, int):
+      matched_index += rule_idx_change
+      matched_index = min(max(matched_index, 0), len(loaded_rules) - 1)
+    return loaded_rules[matched_index]
 
   #warnings.warn(f"No matching config rule found for delta_t={delta_t}; returning None.")
 
