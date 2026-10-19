@@ -11,24 +11,16 @@ import util
 matplotlib.use('Agg')
 import matplotlib.pyplot
 
-# Print debug info for this script.
-DEBUG_SCRIPT = False
-
-# Maximum number of test cases to run.
-N_MAX = float('inf')
-
-#DIRS = ['x, y']
-DIRS = ['x']
-
-#WIDTHS = [9.6, 6.4, 3.2, 1.6]
-WIDTHS = [6.4]
-WIDTHS_FROM_CLI = False
-
-FMT = 'svg'
-FMT_FROM_CLI = False
-
-OPEN_FIG = False
-SHOW_FIG = False
+def default_options():
+  return {
+    'dirs': ('x',),
+    'widths': None,
+    'fmt': None,
+    'n_max': float('inf'),
+    'debug_script': False,
+    'open_fig': False,
+    'show_fig': False,
+  }
 
 try:
   import pytest
@@ -43,7 +35,7 @@ else:
   _short_mark = pytest.mark.short
 
 
-def _configure_logging(enable_datetick_logs=False, enable_script_logs=False):
+def _configure_logging(enable_datetick_logs=False):
   logging.basicConfig(
     level=logging.WARNING,
     format='%(name)s.%(funcName)s:%(levelname)s: %(message)s',
@@ -52,24 +44,26 @@ def _configure_logging(enable_datetick_logs=False, enable_script_logs=False):
   logging.getLogger().setLevel(logging.WARNING)
   logging.getLogger('matplotlib').setLevel(logging.WARNING)
   logging.getLogger('datetick').setLevel(logging.DEBUG if enable_datetick_logs else logging.WARNING)
-  logging.getLogger(__name__).setLevel(logging.DEBUG if enable_script_logs else logging.WARNING)
 
 
 @_short_mark
-def test_one():
-  test_all(idx=1)
+def test_one(*, options=None):
+  test_all(idx=1, options=options)
 
 
-def test_all(idx=None):
+def test_all(idx=None, *, options=None):
+
+  options = {**default_options(), **(options if options is not None else {})}
+  widths = options['widths'] if options['widths'] is not None else (6.4,)
 
   info = {}
-  for axis in DIRS:
+  for axis in options['dirs']:
     info[axis] = {'files': [], 'results': [], 'tests': [], 'test_indices': []}
-    for figwidth in WIDTHS:
-      if DEBUG_SCRIPT:
+    for figwidth in widths:
+      if options['debug_script']:
         print(f"Running visual test with axis='{axis}' and figwidth={figwidth}in")
 
-      files, results, tests, test_indices = _run_all(axis=axis, figwidth=figwidth, idx=idx)
+      files, results, tests, test_indices = _run_all(axis=axis, figwidth=figwidth, idx=idx, options=options)
       info[axis]['files'] += files
       info[axis]['results'] += results
       info[axis]['tests'] += tests
@@ -78,11 +72,12 @@ def test_all(idx=None):
     #files[axis] = sorted(files[axis])
 
   if idx is None:
-    _readmes(info)
+    _readmes(info, debug_script=options['debug_script'])
 
 
-def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
+def _run_all(axis='x', figwidth=6.4, idx=None, short=False, *, options=None):
 
+  options = {**default_options(), **(options if options is not None else {})}
   import json
   test_file = os.path.join(_script_dir(), 'visual_test.json')
   with open(test_file, 'r') as file:
@@ -107,22 +102,24 @@ def _run_all(axis='x', figwidth=6.4, idx=None, short=False):
       # Keep only kwargs that are not private (start with '_') and not 'start' or 'stop'
       kwargs = {k: v for k, v in test.items() if not k.startswith('_') and k not in ('start', 'stop')}
 
-      if DEBUG_SCRIPT:
+      if options['debug_script']:
         delta_t_str = test.get('_delta_t', datetick.util.format_delta(util.parse_ds(dt_str_f) - util.parse_ds(dt_str_o)))
         print(f"{tidx}. delta_t={delta_t_str} | start={dt_str_o} | stop={dt_str_f} | kwargs={kwargs}")
 
-      width = figwidth if WIDTHS_FROM_CLI else test.get('_width', figwidth)
+      width = figwidth if options['widths'] is not None else test.get('_width', figwidth)
 
       result = _plot(dt_str_o, dt_str_f, axis=axis, figwidth=width, min_gap_warn=True, **kwargs)
       results.append(result)
       tests_run.append(test)
       test_indices.append(tidx)
 
-      fmt = FMT if FMT_FROM_CLI else test.get('_fmt', FMT)
-      file = _savefig(dt_str_o, dt_str_f, axis, width, files, fmt)
+      fmt = options['fmt'] if options['fmt'] is not None else test.get('_fmt', 'svg')
+      file = _savefig(dt_str_o, dt_str_f, axis, width, files, fmt,
+              show_fig=options['show_fig'], open_fig=options['open_fig'],
+              debug_script=options['debug_script'])
       files.append(file)
 
-      if short or tidx >= N_MAX:
+      if short or tidx >= options['n_max']:
         return files, results, tests_run, test_indices
 
       tidx += 1
@@ -231,7 +228,7 @@ def _plot(ds1, ds2, axis='x', figwidth=6.5, **kwargs):
   return result
 
 
-def _readmes(results):
+def _readmes(results, *, debug_script=False):
 
   def _image_subsection(results, latest_dir, base, axis):
     image_links = []
@@ -299,20 +296,20 @@ def _readmes(results):
   n_images = sum(len(results[axis]['files']) for axis in results.keys())
 
   combined_lines = lines + image_lines
-  if DEBUG_SCRIPT:
+  if debug_script:
     print(f"\nUpdating {readme} with {n_images} images")
   with open(readme, 'w') as file:
     file.writelines(combined_lines)
 
   # Create README.rel.md with base replaced with relative path for local viewing
   readme_rel = os.path.join(os.path.dirname(readme), 'README.rel.md')
-  if DEBUG_SCRIPT:
+  if debug_script:
     print(f"Writing {readme_rel} with URL replaced by relative path")
   with open(readme_rel, 'w') as file:
     file.writelines(line.replace(base, "") for line in combined_lines)
 
   readme = os.path.join(_out_dir(axis), 'README.md')
-  if DEBUG_SCRIPT:
+  if debug_script:
     print(f"Writing {readme} in image subdirectory.")
   with open(readme, 'w') as file:
     file.writelines("\n" + "\n\n".join(image_lines))
@@ -323,7 +320,7 @@ def _supported_fmts():
   return tuple(sorted(FigureCanvasBase.get_supported_filetypes().keys()))
 
 
-def _savefig(ds1, ds2, axis, figwidth, files, fmt):
+def _savefig(ds1, ds2, axis, figwidth, files, fmt, *, show_fig=False, open_fig=False, debug_script=False):
   ds1 = ds1.replace(":","").replace("-","").replace("T","").replace("Z","")
   ds2 = ds2.replace(":","").replace("-","").replace("T","").replace("Z","")
 
@@ -335,7 +332,7 @@ def _savefig(ds1, ds2, axis, figwidth, files, fmt):
       file = f'{base}_v{v}.{fmt}'
       v += 1
 
-  if DEBUG_SCRIPT:
+  if debug_script:
     print("  Writing", file)
   dirname = os.path.dirname(file)
   if not os.path.exists(dirname):
@@ -353,11 +350,11 @@ def _savefig(ds1, ds2, axis, figwidth, files, fmt):
   with matplotlib.pyplot.rc_context(rc):
     matplotlib.pyplot.savefig(file, **kwargs)
 
-  if SHOW_FIG:
+  if show_fig:
     matplotlib.pyplot.show()
   matplotlib.pyplot.close()
 
-  if OPEN_FIG:
+  if open_fig:
     _open_figure(file)
 
   return file
@@ -415,10 +412,9 @@ def _use_default_interactive_backend():
     raise RuntimeError(f"Could not switch to the default interactive backend: {exc}") from exc
 
 
-def cli():
+def cli(argv=None):
   import ast
   import argparse
-  global DIRS, WIDTHS, WIDTHS_FROM_CLI, FMT, FMT_FROM_CLI, OPEN_FIG, SHOW_FIG, DEBUG_SCRIPT, N_MAX
 
   def parse_widths(value):
     return [float(part) for part in value.split(',') if part]
@@ -528,31 +524,27 @@ def cli():
   parser.add_argument('--axis', choices=('x', 'y'), help='Unit mode plot axis.')
   parser.add_argument('--figwidth', type=float, help='Unit mode figure width in inches.')
 
-  args, unknown_args = parser.parse_known_args()
+  args, unknown_args = parser.parse_known_args(argv)
   legacy_commands = [arg for arg in unknown_args if arg in ('--short', '--unit')]
   if legacy_commands:
     parser.error(f"use positional command names instead of flags: {', '.join(legacy_commands)}")
   plot_kwargs = parse_plot_kwargs(unknown_args)
 
-  if args.n_max is not None:
-    N_MAX = args.n_max
-  if args.debug_script is not None:
-    DEBUG_SCRIPT = bool(args.debug_script)
-  _configure_logging(enable_datetick_logs=args.debug, enable_script_logs=DEBUG_SCRIPT)
-  if args.widths is not None:
-    WIDTHS = args.widths
-    WIDTHS_FROM_CLI = True
-  if args.fmt is not None:
-    FMT = args.fmt
-    FMT_FROM_CLI = True
-  OPEN_FIG = args.open
-  SHOW_FIG = args.show
-  if args.dirs is not None:
-    DIRS = args.dirs
+  options = default_options()
+  options.update({
+    'dirs': args.dirs if args.dirs is not None else options['dirs'],
+    'widths': args.widths,
+    'fmt': args.fmt,
+    'n_max': args.n_max if args.n_max is not None else options['n_max'],
+    'debug_script': args.debug_script,
+    'open_fig': args.open,
+    'show_fig': args.show,
+  })
+  _configure_logging(enable_datetick_logs=args.debug)
 
-  if OPEN_FIG and SHOW_FIG:
+  if options['open_fig'] and options['show_fig']:
     parser.error("--open and --show cannot be used together")
-  if SHOW_FIG:
+  if options['show_fig']:
     _use_default_interactive_backend()
 
   command = args.command
@@ -585,7 +577,7 @@ def cli():
       invalid_short_args.extend(f'--{key.replace("_", "-")}' for key in sorted(plot_kwargs))
     if invalid_short_args:
       parser.error(f"short command only accepts --debug and --debug-script; invalid: {', '.join(invalid_short_args)}")
-    test_one()
+    test_one(options=options)
   elif command == 'unit':
     invalid_unit_args = []
     if args.idx is not None:
@@ -603,33 +595,36 @@ def cli():
       stop=args.stop,
       axis=args.axis,
       figwidth=args.figwidth,
+      fmt=options['fmt'] if options['fmt'] is not None else 'svg',
+      show_fig=options['show_fig'],
+      open_fig=options['open_fig'],
       **plot_kwargs,
     )
   elif args.idx is not None:
-    test_all(idx=args.idx)
+    test_all(idx=args.idx, options=options)
   else:
-    test_all()
+    test_all(options=options)
 
 
-def _unit(start=None, stop=None, axis='x', figwidth=22.5, **kwargs):
+def _unit(start=None, stop=None, axis='x', figwidth=22.5, *, fmt='svg', show_fig=False, open_fig=False, **kwargs):
   ds1 = '2001-01-01T23:59:56.85Z' if start is None else start
   ds2 = '2001-01-02T00:00:00.35Z' if stop is None else stop
   axis = 'x' if axis is None else axis
   figwidth = 22.5 if figwidth is None else figwidth
   _plot(ds1, ds2, axis=axis, figwidth=figwidth, **kwargs)
-  outfile = f'unit.{FMT}'
+  outfile = f'unit.{fmt}'
   print("Writing", outfile)
   savefig_kwargs = {'bbox_inches': 'tight'}
-  if FMT == 'png':
+  if fmt == 'png':
     savefig_kwargs['dpi'] = 300
-  elif FMT == 'svg':
+  elif fmt == 'svg':
     savefig_kwargs['metadata'] = {"Date": None}
-  with matplotlib.pyplot.rc_context({'svg.fonttype': 'none', 'svg.hashsalt': '67'} if FMT == 'svg' else {}):
+  with matplotlib.pyplot.rc_context({'svg.fonttype': 'none', 'svg.hashsalt': '67'} if fmt == 'svg' else {}):
     matplotlib.pyplot.savefig(outfile, **savefig_kwargs)
-  if SHOW_FIG:
+  if show_fig:
     matplotlib.pyplot.show()
   matplotlib.pyplot.close()
-  if OPEN_FIG:
+  if open_fig:
     _open_figure(outfile)
 
 
