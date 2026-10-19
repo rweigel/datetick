@@ -38,7 +38,7 @@ plt.show()
 # Comparison to default `Matplotlib`
 
 
-<code>Python-3.12/Matplotlib-3.11.1</code>
+<code>Python-3.12/Matplotlib-3.8.4</code>
 
 
 ## <code>axis=x</code>
@@ -199,92 +199,92 @@ plt.show()
 ![test/visual_test/latest/20010131235959.99865-20010201000000.00015-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.99865-20010201000000.00015-6.4in_v1.svg)
 
 
-32\. (font size change: -1.0 pt)
+32\. (font size change: -0.8 pt)
 
 ![test/visual_test/latest/20010101000000.0-20010101000000.00175-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.00175-6.4in_v1.svg)
 
 
-33\. Cross second boundary (font size change: -1.0 pt)
+33\. Cross second boundary (font size change: -0.8 pt)
 
 ![test/visual_test/latest/20010101000000.998425-20010101000001.000175-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.998425-20010101000001.000175-6.4in_v1.svg)
 
 
-34\. Cross minute boundary (font size change: -1.0 pt)
+34\. Cross minute boundary (font size change: -0.8 pt)
 
 ![test/visual_test/latest/20010101000059.998425-20010101000100.000175-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000059.998425-20010101000100.000175-6.4in_v1.svg)
 
 
-35\. Cross hour boundary (font size change: -1.0 pt)
+35\. Cross hour boundary (font size change: -0.8 pt)
 
 ![test/visual_test/latest/20010101005959.998425-20010101010000.000175-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101005959.998425-20010101010000.000175-6.4in_v1.svg)
 
 
-36\. Cross day boundary (font size change: -1.0 pt)
+36\. Cross day boundary (font size change: -0.8 pt)
 
 ![test/visual_test/latest/20010101235959.998425-20010102000000.000175-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101235959.998425-20010102000000.000175-6.4in_v1.svg)
 
 
-37\. Cross month boundary (font size change: -1.0 pt)
+37\. Cross month boundary (font size change: -0.8 pt)
 
 ![test/visual_test/latest/20010131235959.998425-20010201000000.000175-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.998425-20010201000000.000175-6.4in_v1.svg)
 
 
-38\. (font size change: -2.0 pt)
+38\. (font size change: -1.8 pt)
 
 ![test/visual_test/latest/20010101000000.0-20010101000000.002-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.002-6.4in_v1.svg)
 
 
-39\. Cross second boundary (font size change: -2.0 pt)
+39\. Cross second boundary (font size change: -1.8 pt)
 
 ![test/visual_test/latest/20010101000000.9982-20010101000001.0002-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.9982-20010101000001.0002-6.4in_v1.svg)
 
 
-40\. Cross minute boundary (font size change: -2.0 pt)
+40\. Cross minute boundary (font size change: -1.8 pt)
 
 ![test/visual_test/latest/20010101000059.9982-20010101000100.0002-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000059.9982-20010101000100.0002-6.4in_v1.svg)
 
 
-41\. Cross hour boundary (font size change: -2.0 pt)
+41\. Cross hour boundary (font size change: -1.8 pt)
 
 ![test/visual_test/latest/20010101005959.9982-20010101010000.0002-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101005959.9982-20010101010000.0002-6.4in_v1.svg)
 
 
-42\. Cross day boundary (font size change: -2.0 pt)
+42\. Cross day boundary (font size change: -1.8 pt)
 
 ![test/visual_test/latest/20010101235959.9982-20010102000000.0002-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101235959.9982-20010102000000.0002-6.4in_v1.svg)
 
 
-43\. Cross month boundary (font size change: -2.0 pt)
+43\. Cross month boundary (font size change: -1.9 pt)
 
 ![test/visual_test/latest/20010131235959.9982-20010201000000.0002-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.9982-20010201000000.0002-6.4in_v1.svg)
 
 
-44\. (font size change: -3.0 pt)
+44\. (font size change: -2.8 pt)
 
 ![test/visual_test/latest/20010101000000.0-20010101000000.00225-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.00225-6.4in_v1.svg)
 
 
-45\. Cross second boundary (font size change: -3.0 pt)
+45\. Cross second boundary (font size change: -2.8 pt)
 
 ![test/visual_test/latest/20010101000000.997975-20010101000001.000225-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.997975-20010101000001.000225-6.4in_v1.svg)
 
 
-46\. Cross minute boundary (font size change: -3.0 pt)
+46\. Cross minute boundary (font size change: -2.8 pt)
 
 ![test/visual_test/latest/20010101000059.997975-20010101000100.000225-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000059.997975-20010101000100.000225-6.4in_v1.svg)
 
 
-47\. Cross hour boundary (font size change: -3.0 pt)
+47\. Cross hour boundary (font size change: -2.8 pt)
 
 ![test/visual_test/latest/20010101005959.997975-20010101010000.000225-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101005959.997975-20010101010000.000225-6.4in_v1.svg)
 
 
-48\. Cross day boundary (font size change: -3.0 pt)
+48\. Cross day boundary (font size change: -2.8 pt)
 
 ![test/visual_test/latest/20010101235959.997975-20010102000000.000225-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101235959.997975-20010102000000.000225-6.4in_v1.svg)
 
 
-49\. Cross month boundary (font size change: -3.0 pt)
+49\. Cross month boundary (font size change: -2.8 pt)
 
 ![test/visual_test/latest/20010131235959.997975-20010201000000.000225-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.997975-20010201000000.000225-6.4in_v1.svg)
 
@@ -379,7 +379,7 @@ plt.show()
 ![test/visual_test/latest/20010131235959.99685-20010201000000.00035-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.99685-20010201000000.00035-6.4in_v1.svg)
 
 
-68\. (rule change: 1 reverted)
+68\.
 
 ![test/visual_test/latest/20010101000000.0-20010101000000.004-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.004-6.4in_v1.svg)
 
@@ -409,32 +409,32 @@ plt.show()
 ![test/visual_test/latest/20010131235959.9964-20010201000000.0004-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.9964-20010201000000.0004-6.4in_v1.svg)
 
 
-74\. (font size change: -1.0 pt)
+74\. (font size change: -1.2 pt)
 
 ![test/visual_test/latest/20010101000000.0-20010101000000.0045-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000000.0045-6.4in_v1.svg)
 
 
-75\. Cross second boundary (font size change: -1.0 pt)
+75\. Cross second boundary (font size change: -1.2 pt)
 
 ![test/visual_test/latest/20010101000000.99595-20010101000001.00045-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.99595-20010101000001.00045-6.4in_v1.svg)
 
 
-76\. Cross minute boundary (font size change: -1.0 pt)
+76\. Cross minute boundary (font size change: -1.2 pt)
 
 ![test/visual_test/latest/20010101000059.99595-20010101000100.00045-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000059.99595-20010101000100.00045-6.4in_v1.svg)
 
 
-77\. Cross hour boundary (font size change: -1.0 pt)
+77\. Cross hour boundary (font size change: -1.2 pt)
 
 ![test/visual_test/latest/20010101005959.99595-20010101010000.00045-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101005959.99595-20010101010000.00045-6.4in_v1.svg)
 
 
-78\. Cross day boundary (font size change: -1.0 pt)
+78\. Cross day boundary (font size change: -1.2 pt)
 
 ![test/visual_test/latest/20010101235959.99595-20010102000000.00045-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101235959.99595-20010102000000.00045-6.4in_v1.svg)
 
 
-79\. Cross month boundary (font size change: -1.0 pt)
+79\. Cross month boundary (font size change: -1.2 pt)
 
 ![test/visual_test/latest/20010131235959.99595-20010201000000.00045-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235959.99595-20010201000000.00045-6.4in_v1.svg)
 
@@ -1419,27 +1419,27 @@ plt.show()
 ![test/visual_test/latest/20010131235945.6-20010201000001.6-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235945.6-20010201000001.6-6.4in_v1.svg)
 
 
-276\. (rule change: 1 reverted)
+276\.
 
 ![test/visual_test/latest/20010101000000.0-20010101000018.0-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20010101000018.0-6.4in_v1.svg)
 
 
-277\. Cross minute boundary (rule change: 1 reverted)
+277\. Cross minute boundary
 
 ![test/visual_test/latest/20010101000043.8-20010101000101.8-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000043.8-20010101000101.8-6.4in_v1.svg)
 
 
-278\. Cross hour boundary (rule change: 1 reverted)
+278\. Cross hour boundary
 
 ![test/visual_test/latest/20010101005943.8-20010101010001.8-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101005943.8-20010101010001.8-6.4in_v1.svg)
 
 
-279\. Cross day boundary (rule change: 1 reverted)
+279\. Cross day boundary
 
 ![test/visual_test/latest/20010101235943.8-20010102000001.8-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101235943.8-20010102000001.8-6.4in_v1.svg)
 
 
-280\. Cross month boundary (rule change: 1 reverted)
+280\. Cross month boundary
 
 ![test/visual_test/latest/20010131235943.8-20010201000001.8-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010131235943.8-20010201000001.8-6.4in_v1.svg)
 
@@ -2734,12 +2734,12 @@ plt.show()
 ![test/visual_test/latest/20010101000000.0-20810101000000.0-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20810101000000.0-6.4in_v1.svg)
 
 
-539\. (rule change: 1 reverted)
+539\. (font size change: -0.1 pt)
 
 ![test/visual_test/latest/20010101000000.0-20910101000000.0-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20910101000000.0-6.4in_v1.svg)
 
 
-540\. (rule change: 1 reverted)
+540\. (font size change: -0.1 pt)
 
 ![test/visual_test/latest/20010101000000.0-20910102000000.0-6.4in_v1.svg](https://raw.githubusercontent.com/rweigel/datetick/main/test/visual_test/latest/20010101000000.0-20910102000000.0-6.4in_v1.svg)
 

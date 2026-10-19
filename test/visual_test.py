@@ -1,16 +1,15 @@
 # Create plots with varying time ranges.
 
-import logging
 import os
-
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot
-
+import logging
 import datetick
+import matplotlib
 
 # Import ./util.py test functions for generating test cases
 import util
+
+matplotlib.use('Agg')
+import matplotlib.pyplot
 
 # Print debug info for this script.
 DEBUG_SCRIPT = False
@@ -20,14 +19,14 @@ N_MAX = float('inf')
 
 #DIRS = ['x, y']
 DIRS = ['x']
+
 #WIDTHS = [9.6, 6.4, 3.2, 1.6]
-#WIDTHS = [1.6]
-#WIDTHS = [3.2]
 WIDTHS = [6.4]
-#WIDTHS = [9.6]
 WIDTHS_FROM_CLI = False
+
 FMT = 'svg'
 FMT_FROM_CLI = False
+
 OPEN_FIG = False
 SHOW_FIG = False
 
@@ -35,7 +34,6 @@ try:
   import pytest
 except ImportError:
   pytest = None
-
 
 
 if pytest is None:
@@ -519,7 +517,7 @@ def cli():
   parser.add_argument('--idx', type=int, help='Run only the test case with the given index (1-based).')
   parser.add_argument('--n-max', type=int, help='Maximum number of cases to run.')
   parser.add_argument('--debug', action='store_true', help='Enable datetick debug output.')
-  parser.add_argument('--debug-script', action='store_true', help='Enable or disable script debug output.')
+  parser.add_argument('--debug-script', action='store_true', help='Enable debug output for this script.')
   parser.add_argument('--widths', type=parse_widths, help='Comma-separated figure widths in inches.')
   parser.add_argument('--fmt', type=parse_fmt, help='Image format for saved output.')
   parser.add_argument('--open', action='store_true', help='Open each saved figure after writing it.')
